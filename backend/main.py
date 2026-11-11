@@ -131,6 +131,11 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
     return process(req)
 
 
+def sha256_of(text: str) -> str:
+    """Huella del texto ORIGINAL usada para deduplicar (columna text_sha256)."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False) -> AnalyzeResponse | None:
     """Pipeline completo: detección → enmascarado → riesgo → BD. Lo usan /analyze y
     ml/import_history.py (source="import"), para que ambos pasen exactamente por la misma lógica.
@@ -139,7 +144,7 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
     """
     t0 = time.perf_counter()
     text = req.text
-    text_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    text_sha256 = sha256_of(text)
     if dedupe and db.sha256_exists(text_sha256):
         return None
 

@@ -82,13 +82,14 @@ def test_detect_format():
 def test_chatgpt_only_user_messages_with_dates():
     msgs = list(IH.iter_chatgpt(chatgpt_export()))
     assert len(msgs) == 3  # c, e (solo la parte de texto) y g; no system/assistant/oculto
-    assert all(ts.tzinfo for _, ts in msgs)
-    assert sorted(m[0] for m in msgs)[0].startswith("Explícame")
+    assert all(m.ts.tzinfo for m in msgs)
+    assert sorted(m.text for m in msgs)[0].startswith("Explícame")
+    assert [m.has_files for m in msgs].count(True) == 1  # el multimodal con imagen
 
 
 def test_claude_only_human_messages():
     msgs = list(IH.iter_claude(claude_export()))
-    assert [t for t, _ in msgs][1] == "Resume este texto"  # texto desde `content`
+    assert msgs[1].text == "Resume este texto"  # texto desde `content`
     assert len(msgs) == 3  # incluido el vacío; se descarta al importar
 
 
@@ -117,7 +118,7 @@ def test_import_chatgpt_masks_dedupes_and_marks_source(env, capsys):
 def test_import_claude(env):
     tmp_path, db_file = env
     s = IH.main(["--file", str(write(tmp_path, "c.json", claude_export()))])
-    assert s["formato"] == "claude" and s["insertados"] == 2 and s["vacios"] == 1
+    assert s["formato"] == "claude" and s["insertados"] == 2 and s["vacios_sin_contenido_en_export"] == 1
     data = rows(db_file)
     assert {r["platform"] for r in data} == {"claude"}
     assert data[0]["text_masked"] == "Mi correo es <EMAIL>"
@@ -181,3 +182,85 @@ def test_insert_rejects_unknown_source(env):
     with pytest.raises(ValueError):
         db.insert_prompt({"ts": "x", "platform": "chatgpt", "text_masked": "x", "text_sha256": "1", "length": 1,
                           "risk": "bajo", "findings": [], "blocked": False, "source": "otro"})
+
+
+# ---------------------------------------------------------------- fix: texto solo en `content`
+def claude_content_only_export():
+    """Fixture FALSO con la forma real del export de Claude: `text` vacío y el texto en `content`."""
+    def block(t):
+        return {"start_timestamp": "2026-10-31T10:00:00Z", "stop_timestamp": "2026-10-31T10:00:00Z",
+                "flags": None, "type": "text", "text": t, "citations": []}
+    return [{
+        "uuid": "c1", "name": "x", "summary": "", "created_at": "2026-10-31T10:00:00Z",
+        "updated_at": "2026-10-31T10:05:00Z", "account": {"uuid": "a"},
+        "chat_messages": [
+            {"uuid": "m1", "sender": "human", "created_at": "2026-10-31T10:00:00Z", "updated_at": "",
+             "text": "", "content": [block("Hola, "), block(f"mi key es {F.OPENAI_KEY}")],
+             "attachments": [], "files": [], "parent_message_uuid": "0"},
+            {"uuid": "m2", "sender": "human", "created_at": "2026-11-02T09:00:00Z", "updated_at": "",
+             "text": "texto viejo que NO debe usarse",
+             "content": [block(f"Escríbeme a {F.EMAIL}")], "attachments": [], "files": [],
+             "parent_message_uuid": "m1"},
+            {"uuid": "m3", "sender": "human", "created_at": "2026-11-03T09:00:00Z", "updated_at": "",
+             "text": "", "content": [{"type": "tool_result", "content": [], "name": "x"},
+                                     {"type": "document", "file_uuid": "f"}],
+             "attachments": [{"file_name": "notas.txt", "extracted_content": "contenido del adjunto falso"}],
+             "files": [{"file_name": "notas.txt"}], "parent_message_uuid": "m2"},
+            {"uuid": "m4", "sender": "human", "created_at": "2026-11-04T09:00:00Z", "updated_at": "",
+             "text": "", "content": [], "attachments": [], "files": [{"file_name": "foto.png"}],
+             "parent_message_uuid": "m3"},
+            {"uuid": "m5", "sender": "human", "created_at": "2026-11-05T09:00:00Z", "updated_at": "",
+             "text": "", "content": [], "attachments": [], "files": [], "parent_message_uuid": "m4"},
+            {"uuid": "m6", "sender": "human", "created_at": "2026-11-06T09:00:00Z", "updated_at": "",
+             "text": "", "content": [block("Hola, "), block(f"mi key es {F.OPENAI_KEY}")],  # repetido
+             "attachments": [], "files": [], "parent_message_uuid": "m5"},
+        ],
+    }]
+
+
+def test_claude_text_only_in_content_blocks():
+    msgs = list(IH.iter_claude(claude_content_only_export()))
+    assert msgs[0].text == f"Hola, \nmi key es {F.OPENAI_KEY}"
+    assert msgs[1].text == f"Escríbeme a {F.EMAIL}"  # (a) content gana sobre (b) text
+    assert msgs[2].text == ""  # tool_result / document no son texto del usuario
+    assert msgs[3].text == "" and msgs[3].has_files
+    assert msgs[4].text == "" and not msgs[4].has_files
+
+
+def test_claude_falls_back_to_text_field():
+    msg = {"sender": "human", "text": "solo en text", "content": []}
+    assert IH.claude_text(msg) == "solo en text"
+
+
+def test_attachments_only_with_flag():
+    msgs_off = list(IH.iter_claude(claude_content_only_export()))
+    msgs_on = list(IH.iter_claude(claude_content_only_export(), include_attachments=True))
+    assert msgs_off[2].text == ""
+    assert msgs_on[2].text == "contenido del adjunto falso"
+
+
+def test_dry_run_counts(env):
+    tmp_path, db_file = env
+    f = write(tmp_path, "claude.json", claude_content_only_export())
+    s = IH.main(["--file", str(f), "--dry-run"])
+    assert s["mensajes_de_usuario"] == 6
+    assert s["por_importar"] == 2 and s["duplicados"] == 1  # m6 repite m1
+    assert s["con_secretos"] == 1 and s["con_pii"] == 1
+    assert s["vacios_solo_archivos"] == 2 and s["vacios_sin_contenido_en_export"] == 1
+    assert s["por_anio"] == {"2026": 3}
+    assert s["por_mes"] == {"2026-10": 1, "2026-11": 2}
+    assert s["longitud_mediana"] > 0
+    assert not db_file.exists()  # dry-run no crea la BD
+
+    s_att = IH.main(["--file", str(f), "--dry-run", "--include-attachments"])
+    assert s_att["por_importar"] == 3 and s_att["vacios_solo_archivos"] == 1
+
+
+def test_dry_run_counts_duplicates_already_in_db(env, capsys):
+    tmp_path, db_file = env
+    f = write(tmp_path, "claude.json", claude_content_only_export())
+    IH.main(["--file", str(f)])  # importación real: 2 insertados
+    s = IH.main(["--file", str(f), "--dry-run"])
+    assert s.get("por_importar", 0) == 0 and s["duplicados"] == 3
+    out = capsys.readouterr().out
+    assert F.OPENAI_KEY not in out and F.EMAIL not in out

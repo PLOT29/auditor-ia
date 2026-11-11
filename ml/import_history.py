@@ -1,17 +1,24 @@
 """Importa tu historial de ChatGPT o Claude a la BD del auditor (CE-11).
 
+    python ml/import_history.py --file "C:\\ruta\\conversations.json" --dry-run   # solo cuenta
     python ml/import_history.py --file "C:\\ruta\\conversations.json"
-    python ml/import_history.py --file "...\\conversations.json" --dry-run   # solo cuenta
+    python ml/import_history.py --file "..." --include-attachments   # + texto extraído de adjuntos
 
 - Detecta el formato automáticamente:
     ChatGPT → lista de conversaciones con "mapping" (nodos con author.role == "user")
     Claude  → lista de conversaciones con "chat_messages" (sender == "human")
-- Extrae SOLO los mensajes del usuario, con su fecha.
+- Extrae SOLO los mensajes del usuario, con su fecha. En Claude, el texto sale de:
+    (a) los bloques de `content` con type == "text", concatenados;
+    (b) si eso queda vacío, el campo `text`;
+    (c) con --include-attachments, además `attachments[].extracted_content` (apagado por
+        defecto: puede traer documentos enteros).
 - Cada mensaje pasa por el MISMO pipeline que /analyze (backend/main.py → process()):
   detección de secretos y PII, enmascarado, riesgo e inserción en la BD con
   platform = chatgpt | claude y source = 'import'.
 - Deduplica por text_sha256 (contra la BD y dentro del mismo archivo), así que se puede
   volver a correr sin duplicar.
+- --dry-run no escribe nada: cuenta por mes y año, cuántos traen secretos o PII, la
+  longitud mediana y cuántos se descartarían por duplicados.
 - Nunca imprime ni guarda el texto original: solo conteos y fechas.
 - El archivo debe estar FUERA del repo (un export contiene tus conversaciones completas).
 """
@@ -21,16 +28,21 @@ import argparse
 import json
 import logging
 import os
+import statistics
 import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, NamedTuple
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
 
-Message = tuple[str, datetime]
+
+class Message(NamedTuple):
+    text: str
+    ts: datetime
+    has_files: bool = False  # trae archivos/imágenes (para explicar los mensajes vacíos)
 
 
 # ------------------------------------------------------------------ formatos
@@ -65,7 +77,8 @@ def _from_iso(value) -> datetime | None:
         return None
 
 
-def iter_chatgpt(convs: list) -> Iterator[Message]:
+def iter_chatgpt(convs: list, include_attachments: bool = False) -> Iterator[Message]:
+    # include_attachments no aplica: el export de ChatGPT no trae el texto de los adjuntos.
     for conv in convs:
         conv_ts = _from_epoch(conv.get("create_time"))
         for node in (conv.get("mapping") or {}).values():
@@ -77,79 +90,113 @@ def iter_chatgpt(convs: list) -> Iterator[Message]:
             content = msg.get("content") or {}
             if content.get("content_type") not in ("text", "multimodal_text"):
                 continue
-            text = "\n".join(p for p in content.get("parts") or [] if isinstance(p, str))
+            parts = content.get("parts") or []
+            text = "\n".join(p for p in parts if isinstance(p, str))
             ts = _from_epoch(msg.get("create_time")) or conv_ts
             if ts:
-                yield text, ts
+                yield Message(text, ts, any(not isinstance(p, str) for p in parts))
 
 
-def iter_claude(convs: list) -> Iterator[Message]:
+def claude_text(msg: dict, include_attachments: bool = False) -> str:
+    """(a) bloques `content` type=text → (b) campo `text` → (c) opcional: adjuntos extraídos."""
+    blocks = [b.get("text") or "" for b in msg.get("content") or []
+              if isinstance(b, dict) and b.get("type") == "text"]
+    text = "\n".join(t for t in blocks if t.strip()).strip()
+    if not text:
+        text = (msg.get("text") or "").strip()
+    if include_attachments:
+        extra = [a["extracted_content"].strip() for a in msg.get("attachments") or []
+                 if isinstance(a, dict) and isinstance(a.get("extracted_content"), str) and a["extracted_content"].strip()]
+        text = "\n\n".join([t for t in [text, *extra] if t])
+    return text
+
+
+def iter_claude(convs: list, include_attachments: bool = False) -> Iterator[Message]:
     for conv in convs:
         conv_ts = _from_iso(conv.get("created_at"))
         for msg in conv.get("chat_messages") or []:
             if msg.get("sender") != "human":
                 continue
-            text = msg.get("text") or ""
-            if not text.strip():
-                text = "\n".join(c.get("text", "") for c in msg.get("content") or []
-                                 if isinstance(c, dict) and c.get("type") == "text")
             ts = _from_iso(msg.get("created_at")) or conv_ts
             if ts:
-                yield text, ts
+                has_files = bool(msg.get("files") or msg.get("attachments")) or any(
+                    isinstance(b, dict) and b.get("type") not in ("text", None) for b in msg.get("content") or [])
+                yield Message(claude_text(msg, include_attachments), ts, has_files)
 
 
-def load_messages(path: Path, fmt: str = "auto") -> tuple[str, list[Message]]:
+def load_messages(path: Path, fmt: str = "auto", include_attachments: bool = False) -> tuple[str, list[Message]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if fmt == "auto":
         fmt = detect_format(data)
     convs = data["conversations"] if isinstance(data, dict) else data
-    it = iter_chatgpt(convs) if fmt == "chatgpt" else iter_claude(convs)
-    return fmt, list(it)
+    it = iter_chatgpt if fmt == "chatgpt" else iter_claude
+    return fmt, list(it(convs, include_attachments))
 
 
 # ------------------------------------------------------------------ importación
-def run(file: Path, fmt: str = "auto", dry_run: bool = False) -> dict:
+def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachments: bool = False) -> dict:
     import db  # noqa: PLC0415 — después de fijar AUDITOR_DB_PATH
     import main as backend  # noqa: PLC0415
 
     logging.getLogger("auditor").setLevel(logging.WARNING)  # sin una línea de log por prompt
-    platform, messages = load_messages(file, fmt)
-    stats = Counter()
-    years = Counter()
+    platform, messages = load_messages(file, fmt, include_attachments)
+    stats: Counter = Counter()
+    years: Counter = Counter()
+    months: Counter = Counter()
+    lengths: list[int] = []
+    seen: set[str] = set()
     first = last = None
+    db_exists = db.db_path().exists()
     if not dry_run:
         db.init_db()  # aplica la migración de la columna `source` si hace falta
 
-    for text, ts in messages:
-        text = text.strip()
+    for m in messages:
+        text = m.text.strip()
         if not text:
-            stats["vacios"] += 1
+            # Vacío en el export: no hay nada que importar. Se separa si traía archivos.
+            stats["vacios_solo_archivos" if m.has_files else "vacios_sin_contenido_en_export"] += 1
             continue
         if len(text) > backend.MAX_TEXT_LEN:
             stats["demasiado_largos"] += 1
             continue
-        first = min(first, ts) if first else ts
-        last = max(last, ts) if last else ts
+        first = min(first, m.ts) if first else m.ts
+        last = max(last, m.ts) if last else m.ts
+        years[str(m.ts.year)] += 1
+        months[m.ts.strftime("%Y-%m")] += 1
+        lengths.append(len(text))
+
         if dry_run:
+            h = backend.sha256_of(text)
+            if h in seen or (db_exists and db.sha256_exists(h)):
+                stats["duplicados"] += 1
+                continue
+            seen.add(h)
             stats["por_importar"] += 1
+            found, _ = backend.analyze_text(text)  # mismos detectores; nada se guarda
+            sources = {f.source for f in found}
+            stats["con_secretos"] += "secret" in sources
+            stats["con_pii"] += "pii" in sources
             continue
-        req = backend.AnalyzeRequest(text=text, platform=platform, timestamp=ts)
-        res = backend.process(req, source="import", dedupe=True)
+
+        res = backend.process(backend.AnalyzeRequest(text=text, platform=platform, timestamp=m.ts),
+                              source="import", dedupe=True)
         if res is None:
             stats["duplicados"] += 1
         else:
             stats["insertados"] += 1
             stats[f"riesgo_{res.risk}"] += 1
-            years[ts.year] += 1
 
     return {
         "formato": platform,
+        "dry_run": dry_run,
+        "incluye_adjuntos": include_attachments,
         "mensajes_de_usuario": len(messages),
-        **dict(stats),
-        "por_anio": dict(sorted(years.items())),
+        **{k: stats[k] for k in sorted(stats)},
+        "longitud_mediana": int(statistics.median(lengths)) if lengths else 0,
         "desde": first.date().isoformat() if first else None,
         "hasta": last.date().isoformat() if last else None,
-        "dry_run": dry_run,
+        "por_anio": dict(sorted(years.items())),
+        "por_mes": dict(sorted(months.items())),
     }
 
 
@@ -160,6 +207,8 @@ def main(argv: list[str] | None = None) -> dict:
     ap.add_argument("--format", choices=["auto", "chatgpt", "claude"], default="auto")
     ap.add_argument("--db", help="ruta de la BD (por defecto AUDITOR_DB_PATH o C:\\auditor-data\\auditor.db)")
     ap.add_argument("--dry-run", action="store_true", help="solo cuenta; no escribe en la BD")
+    ap.add_argument("--include-attachments", action="store_true",
+                    help="agrega el texto extraído de los adjuntos (Claude); apagado por defecto")
     args = ap.parse_args(argv)
 
     file = Path(args.file).expanduser().resolve()
@@ -170,7 +219,7 @@ def main(argv: list[str] | None = None) -> dict:
     if args.db:
         os.environ["AUDITOR_DB_PATH"] = args.db
 
-    summary = run(file, args.format, args.dry_run)
+    summary = run(file, args.format, args.dry_run, args.include_attachments)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return summary
 
