@@ -1,7 +1,14 @@
-.venv/
-__pycache__/
-.pytest_cache/
+# BD y datos (nunca en el repo — SPEC §12 regla 8)
 *.db
 *.db-journal
-ml/data/*
-!ml/data/.gitkeep
+ml/data/raw/
+ml/models/*.joblib
+
+# Entornos y secretos locales
+venv/
+.venv/
+.env
+
+# Python
+__pycache__/
+.pytest_cache/

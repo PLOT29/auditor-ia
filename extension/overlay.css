@@ -1,0 +1,58 @@
+/* Estilos de la etiqueta flotante. Se cargan DENTRO del Shadow DOM, así que
+   la página no puede romperlos y estos estilos no afectan a la página. */
+
+:host {
+  all: initial;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+  font: 500 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.label {
+  pointer-events: auto;
+  cursor: pointer;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  color: #111827;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18), 0 1px 3px rgba(0, 0, 0, 0.12);
+  overflow-wrap: anywhere;
+  animation: enter 180ms ease-out;
+  transition: opacity 250ms ease, transform 250ms ease;
+}
+
+.label.bajo  { border-left-color: #16a34a; background: #f0fdf4; }
+.label.medio { border-left-color: #d97706; background: #fffbeb; }
+.label.alto  { border-left-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
+.label.gris  { border-left-color: #6b7280; background: #f3f4f6; color: #374151; }
+
+.label.leaving {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .label       { color: #f3f4f6; background: #1f2937; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); }
+  .label.bajo  { background: #052e16; }
+  .label.medio { background: #3b2603; }
+  .label.alto  { background: #450a0a; color: #fecaca; }
+  .label.gris  { background: #27272a; color: #d4d4d8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label { animation: none; transition: none; }
+}

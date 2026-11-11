@@ -78,6 +78,12 @@ El sistema opera **solo en el navegador de quien lo instala y con su consentimie
 
 ## 4. Estructura del repositorio
 
+**Entorno de desarrollo:**
+- El repo vive en `C:\dev\auditor-ia` (fuera de OneDrive u otras carpetas sincronizadas).
+- Entorno Python: conda `auditor` (Python 3.11) → `conda activate auditor`.
+- El servidor se levanta desde `backend/` con `python -m uvicorn main:app --reload`.
+- La BD vive fuera del repo (ver §5.5).
+
 ```
 auditor-ia/
 ├── SPEC.md
@@ -87,7 +93,9 @@ auditor-ia/
 │   ├── content.js
 │   ├── background.js
 │   ├── patterns.js        # regex de secretos (fuente única para la extensión)
-│   └── overlay.css
+│   ├── overlay.css
+│   ├── popup.html / popup.js  # interruptores ON/OFF (RF-08)
+│   └── test/test.html     # página de prueba local (solo desarrollo)
 ├── backend/
 │   ├── main.py
 │   ├── db.py
@@ -185,6 +193,8 @@ Respuesta:
 | blocked | INTEGER | 0/1 |
 | user_decision | TEXT | |
 | latency_ms | INTEGER | |
+
+**Ubicación:** la ruta de la BD se lee de la variable de entorno `AUDITOR_DB_PATH` (default: `C:\auditor-data\auditor.db`). Nunca dentro del repo; la carpeta se crea si no existe.
 
 **Regla de oro:** el texto original **nunca** se escribe en disco ni en logs.
 
@@ -314,3 +324,4 @@ Respuesta:
 5. Toda función de detección lleva tests en `backend/tests/`.
 6. Usa únicamente secretos **falsos** en tests y ejemplos.
 7. Al terminar, resume qué archivos cambiaste y cómo probarlo manualmente.
+8. La BD y el entorno nunca viven dentro del repo ni en carpetas sincronizadas con la nube.

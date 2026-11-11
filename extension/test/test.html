@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat de prueba · Auditor IA</title>
+  <!--
+    Página de prueba local (solo desarrollo). Imita un chat de IA:
+      - Composer A: <textarea>
+      - Composer B: <div contenteditable="true">
+    Enter (sin Shift) o clic en «Enviar» publican el mensaje y LIMPIAN el input
+    desde un listener en fase de burbuja, como hacen las páginas reales.
+    Servir con:  cd extension/test  &&  python -m http.server 5500
+  -->
+  <style>
+    :root { color-scheme: light dark; --line: color-mix(in srgb, CanvasText 15%, transparent); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif; background: Canvas; color: CanvasText; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p.sub { margin: 0 0 20px; opacity: .7; font-size: 13px; }
+    #log { border: 1px solid var(--line); border-radius: 12px; padding: 12px; min-height: 140px; margin-bottom: 8px; }
+    #log:empty::before { content: "Aún no hay mensajes"; opacity: .5; }
+    .msg { padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, #2563eb 12%, Canvas); margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .msg small { display: block; opacity: .6; font-size: 11px; }
+    .count { font-size: 13px; margin-bottom: 20px; }
+    section { margin-bottom: 20px; }
+    h2 { font-size: 14px; margin: 0 0 6px; }
+    .composer { display: flex; gap: 8px; align-items: flex-end; border: 1px solid var(--line); border-radius: 14px; padding: 8px; }
+    textarea, .ce { flex: 1; min-height: 44px; max-height: 200px; overflow: auto; border: 0; outline: 0; font: inherit; background: transparent; color: inherit; resize: vertical; padding: 6px; }
+    .ce:empty::before { content: attr(data-placeholder); opacity: .5; }
+    button { font: inherit; border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+    .send { background: #2563eb; color: #fff; }
+    .send:disabled { opacity: .4; cursor: default; }
+    .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .samples button { background: color-mix(in srgb, CanvasText 8%, Canvas); color: inherit; font-size: 12px; padding: 6px 10px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Chat de prueba</h1>
+  <p class="sub">Imita ChatGPT / Claude / Gemini para probar la extensión. Todos los datos de ejemplo son <strong>falsos</strong>.</p>
+
+  <div id="log" aria-live="polite"></div>
+  <div class="count">Mensajes enviados: <strong id="count">0</strong> (si sube de 2 en 2, hay duplicados)</div>
+
+  <div class="samples" aria-label="Ejemplos">
+    <button type="button" data-sample="normal">Prompt normal</button>
+    <button type="button" data-sample="email">Correo + CURP falsos</button>
+    <button type="button" data-sample="key">API key falsa</button>
+    <button type="button" id="new-chat">Nuevo chat (botón que no envía)</button>
+  </div>
+
+  <section>
+    <h2>A · textarea</h2>
+    <form class="composer" id="form-a">
+      <textarea id="input-a" rows="2" placeholder="Escribe un mensaje…"></textarea>
+      <button type="button" class="send" id="send-a" aria-label="Enviar mensaje">➤</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>B · contenteditable</h2>
+    <div class="composer">
+      <div class="ce" id="input-b" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribe un mensaje…"></div>
+      <button type="button" class="send" id="send-b" data-testid="send-button">Enviar</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  // Valores falsos, construidos por partes para que ningún escáner los marque.
+  const FAKE_KEY = "sk-" + "proj-" + "DEMO" + "FAKE".repeat(5) + "abcd";
+  const SAMPLES = {
+    normal: "Explícame qué es un firewall",
+    email: "Llena el formulario con demo.fake@gmail.com y CURP GOMJ800101HDFRRN09",
+    key: "Corrige este código: client = OpenAI(api_key='" + FAKE_KEY + "')",
+  };
+
+  const log = document.getElementById("log");
+  const count = document.getElementById("count");
+  let sent = 0;
+  let lastFocused = document.getElementById("input-a");
+
+  function read(el) { return el.tagName === "TEXTAREA" ? el.value : el.innerText; }
+  function clear(el) { if (el.tagName === "TEXTAREA") el.value = ""; else el.innerHTML = ""; }
+
+  function send(el, via) {
+    const text = read(el).trim();
+    if (!text) return;
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.textContent = text;
+    const meta = document.createElement("small");
+    meta.textContent = `#${++sent} · ${el.id} · ${via}`;
+    div.prepend(meta);
+    log.appendChild(div);
+    count.textContent = sent;
+    clear(el); // la página limpia el input justo al enviar
+  }
+
+  function wire(inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+    input.addEventListener("focus", () => { lastFocused = input; });
+    // Fase de burbuja (como React / ProseMirror): corre DESPUÉS del listener de captura de la extensión.
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        send(input, "enter");
+      }
+    });
+    button.addEventListener("click", () => send(input, "clic"));
+  }
+  wire("input-a", "send-a");
+  wire("input-b", "send-b");
+
+  document.querySelectorAll("[data-sample]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const el = lastFocused;
+      if (el.tagName === "TEXTAREA") el.value = SAMPLES[b.dataset.sample];
+      else el.innerText = SAMPLES[b.dataset.sample];
+      el.focus();
+    })
+  );
+  document.getElementById("new-chat").addEventListener("click", () => {
+    log.innerHTML = ""; sent = 0; count.textContent = "0";
+  });
+</script>
+</body>
+</html>

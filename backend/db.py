@@ -3,7 +3,8 @@
 Regla de oro: aquí solo llegan datos YA enmascarados. Esta capa nunca recibe
 el texto original; `text_sha256` se calcula antes, en main.py.
 
-Ruta de la BD: variable de entorno AUDITOR_DB_PATH (default: backend/auditor.db).
+Ruta de la BD: variable de entorno AUDITOR_DB_PATH
+(default: C:\\auditor-data\\auditor.db — NUNCA dentro del repo; SPEC §5.5, regla 8).
 """
 from __future__ import annotations
 
@@ -13,7 +14,7 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-DEFAULT_DB_PATH = Path(__file__).resolve().parent / "auditor.db"
+DEFAULT_DB_PATH = Path(r"C:\auditor-data\auditor.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS prompts (
@@ -38,12 +39,15 @@ CREATE INDEX IF NOT EXISTS idx_prompts_sha ON prompts(text_sha256);
 
 
 def db_path() -> Path:
-    return Path(os.environ.get("AUDITOR_DB_PATH", DEFAULT_DB_PATH))
+    env = os.environ.get("AUDITOR_DB_PATH", "").strip()
+    return Path(env) if env else DEFAULT_DB_PATH
 
 
 @contextmanager
 def connect():
-    conn = sqlite3.connect(db_path())
+    path = db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -53,7 +57,6 @@ def connect():
 
 
 def init_db() -> None:
-    db_path().parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
 

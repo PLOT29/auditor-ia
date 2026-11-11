@@ -40,7 +40,8 @@ class ClientFinding(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(max_length=MAX_TEXT_LEN)
-    platform: Literal["chatgpt", "claude", "gemini"]
+    # "test" = extension/test/test.html (solo desarrollo; el dashboard puede filtrarlo).
+    platform: Literal["chatgpt", "claude", "gemini", "test"]
     timestamp: datetime | None = None
     client_findings: list[ClientFinding] = Field(default_factory=list)
     blocked: bool = False
@@ -72,7 +73,23 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Auditor de Prompts", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Auditor de Prompts", version="0.2.0", lifespan=lifespan)
+
+# CORS: NO se habilita a propósito. La extensión llama desde su service worker
+# (background.js) con host_permissions sobre localhost:8000, y Chrome no aplica
+# CORS a esas peticiones. Sin CORSMiddleware, una página web cualquiera NO puede
+# leer /stats ni mandar JSON a /analyze (el preflight falla). Ver test_cors.py.
+
+
+@app.middleware("http")
+async def latency_log(request: Request, call_next):
+    """Loguea método, ruta, estado y latencia total. Nunca el cuerpo."""
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    ms = (time.perf_counter() - t0) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{ms:.1f}"
+    log.info("%s %s -> %s %.1fms", request.method, request.url.path, response.status_code, ms)
+    return response
 
 
 @app.exception_handler(RequestValidationError)
