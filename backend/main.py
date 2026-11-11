@@ -128,8 +128,20 @@ def analyze_text(text: str) -> tuple[list, str]:
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
+    return process(req)
+
+
+def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False) -> AnalyzeResponse | None:
+    """Pipeline completo: detección → enmascarado → riesgo → BD. Lo usan /analyze y
+    ml/import_history.py (source="import"), para que ambos pasen exactamente por la misma lógica.
+
+    Con `dedupe=True`, si ya existe un prompt con el mismo text_sha256 no se inserta y devuelve None.
+    """
     t0 = time.perf_counter()
     text = req.text
+    text_sha256 = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if dedupe and db.sha256_exists(text_sha256):
+        return None
 
     found, text_masked = analyze_text(text)
     public = [f.to_public() for f in found]
@@ -147,7 +159,7 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
             "ts": ts,
             "platform": req.platform,
             "text_masked": text_masked,
-            "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "text_sha256": text_sha256,
             "length": len(text),
             "category": category,
             "category_conf": category_conf,
@@ -157,12 +169,13 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
             "blocked": req.blocked,
             "user_decision": req.user_decision,
             "latency_ms": latency_ms,
+            "source": source,
         }
     )
     # Solo metadatos en el log — nunca el texto.
     client_ms = "-" if req.client_latency_ms is None else f"{req.client_latency_ms:.2f}ms"
-    log.info("prompt id=%s platform=%s risk=%s findings=%d blocked=%s decision=%s latency=%dms cliente=%s",
-             prompt_id, req.platform, level, len(public), req.blocked, req.user_decision,
+    log.info("prompt id=%s platform=%s source=%s risk=%s findings=%d blocked=%s decision=%s latency=%dms cliente=%s",
+             prompt_id, req.platform, source, level, len(public), req.blocked, req.user_decision,
              latency_ms, client_ms)
 
     return AnalyzeResponse(

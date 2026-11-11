@@ -54,7 +54,7 @@ def test_db_schema_unchanged(client):
     conn.close()
     assert cols == ["id", "ts", "platform", "text_masked", "text_sha256", "length", "category",
                     "category_conf", "injection_score", "risk", "findings_json", "blocked",
-                    "user_decision", "latency_ms"]
+                    "user_decision", "latency_ms", "source"]
 
 
 def test_queued_event_with_client_masked_text(client):

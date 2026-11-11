@@ -31,11 +31,19 @@ CREATE TABLE IF NOT EXISTS prompts (
     findings_json   TEXT    NOT NULL,
     blocked         INTEGER NOT NULL DEFAULT 0,
     user_decision   TEXT,
-    latency_ms      INTEGER
+    latency_ms      INTEGER,
+    source          TEXT    NOT NULL DEFAULT 'extension'
 );
 CREATE INDEX IF NOT EXISTS idx_prompts_ts ON prompts(ts);
 CREATE INDEX IF NOT EXISTS idx_prompts_sha ON prompts(text_sha256);
 """
+
+SOURCES = ("extension", "import")
+
+# Migraciones idempotentes: (columna, DDL). Se aplican solo si la columna no existe.
+MIGRATIONS = [
+    ("source", "ALTER TABLE prompts ADD COLUMN source TEXT NOT NULL DEFAULT 'extension'"),
+]
 
 
 def db_path() -> Path:
@@ -57,13 +65,30 @@ def connect():
 
 
 def init_db() -> None:
+    """Crea la tabla si no existe y aplica las migraciones pendientes (idempotente)."""
     with connect() as conn:
         conn.executescript(SCHEMA)
+        cols = {r["name"] for r in conn.execute("PRAGMA table_info(prompts)")}
+        for column, ddl in MIGRATIONS:
+            if column not in cols:
+                conn.execute(ddl)  # filas existentes quedan con el DEFAULT ('extension')
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_prompts_source ON prompts(source)")
+
+
+def sha256_exists(text_sha256: str) -> bool:
+    with connect() as conn:
+        return conn.execute("SELECT 1 FROM prompts WHERE text_sha256 = ? LIMIT 1", (text_sha256,)).fetchone() is not None
 
 
 def insert_prompt(row: dict) -> int:
-    """row: dict con las columnas de la tabla (excepto id). findings como lista."""
+    """row: dict con las columnas de la tabla (excepto id). findings como lista.
+
+    `source` es opcional ('extension' por defecto, 'import' para el historial importado).
+    """
     data = dict(row)
+    data.setdefault("source", "extension")
+    if data["source"] not in SOURCES:
+        raise ValueError(f"source inválido: {data['source']!r}")
     data["findings_json"] = json.dumps(data.pop("findings"), ensure_ascii=False)
     data["blocked"] = int(bool(data["blocked"]))
     cols = ", ".join(data)
@@ -89,6 +114,7 @@ def get_stats(recent_limit: int = 20) -> dict:
         by_category = _counts(conn, "category")
         by_risk = _counts(conn, "risk")
         by_decision = _counts(conn, "user_decision")
+        by_source = _counts(conn, "source")  # CE-11: lo importado se reporta aparte
 
         risk_by_platform: dict = {}
         for r in conn.execute(
@@ -131,6 +157,7 @@ def get_stats(recent_limit: int = 20) -> dict:
         "por_categoria": by_category,
         "por_riesgo": by_risk,
         "por_decision": by_decision,
+        "por_origen": by_source,
         "riesgo_por_plataforma": risk_by_platform,
         "latencia_p95_ms": p95,
         "alertas_recientes": recent,

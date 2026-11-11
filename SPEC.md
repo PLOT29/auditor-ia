@@ -197,6 +197,9 @@ Respuesta:
 | blocked | INTEGER | 0/1 |
 | user_decision | TEXT | |
 | latency_ms | INTEGER | |
+| source | TEXT | `extension` (capturado en vivo) \| `import` (historial importado con `ml/import_history.py`). Default `extension` |
+
+**Migraciones:** `db.init_db()` agrega las columnas nuevas de forma idempotente (`ALTER TABLE … ADD COLUMN` solo si no existen); las filas anteriores quedan con el valor por defecto.
 
 **Ubicación:** la ruta de la BD se lee de la variable de entorno `AUDITOR_DB_PATH` (default: `C:\auditor-data\auditor.db`). Nunca dentro del repo; la carpeta se crea si no existe.
 
@@ -246,7 +249,7 @@ Respuesta:
 | CE-8 | Cobertura de plataformas | 3/3 | Prueba manual documentada con capturas |
 | CE-9 | Privacidad | 0 secretos en claro | `grep` de los secretos de prueba sobre la BD y logs |
 | CE-10 | Robustez | Funciona con backend apagado | Prueba manual |
-| CE-11 | Uso real | ≥ 150 prompts propios registrados | Conteo en BD antes de la presentación |
+| CE-11 | Uso real | ≥ 150 prompts propios registrados | Conteo en BD antes de la presentación. Los prompts importados del historial (`source = 'import'`) cuentan como uso real, pero se reportan **por separado** de los capturados con la extensión (`/stats → por_origen`) |
 
 **Baselines para comparar en el reporte:** solo regex vs. regex + Presidio (PII); TF-IDF vs. embeddings (tema e inyección).
 

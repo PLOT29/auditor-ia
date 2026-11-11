@@ -4,18 +4,23 @@
 
 1. Genera 100 prompts sintéticos con PII FALSA etiquetada (tipo + posición) →
    ml/data/pii_synthetic.jsonl (seed fija). ~15 % no tienen PII (miden falsos positivos).
-2. "solo regex"      = backend/detectors/pii.py tal cual (email, phone_mx, curp, rfc).
-   "regex+Presidio"  = Presidio con spaCy es_core_news_md (PERSON, LOCATION) + Email +
-                       recognizers propios CURP, RFC y teléfono MX (mismas regex del backend).
+2. "solo regex"               = backend/detectors/pii.py tal cual (email, phone_mx, curp, rfc).
+   "regex+presidio" (base)     = Presidio con spaCy es_core_news_md (PERSON, LOCATION) + Email +
+                                 recognizers propios CURP, RFC y teléfono MX (ver ml/presidio_es.py).
+   "regex+presidio_ajustado"   = lo mismo + post-proceso de la Fase 4A.1: lista negra de falsos
+                                 LOCATION, score mínimo para direcciones y fusión de fragmentos.
+                                 `--min-location-score` cambia el score mínimo (default 0.5).
 3. Mide precision / recall / F1 por tipo y micro-promedio. Coincidencia por SOLAPE:
    una predicción es correcta si se solapa con una entidad real del mismo tipo.
    (La dirección completa rara vez coincide exacta con lo que marca el NER.)
+   Además, para direcciones: coincidencia EXACTA (la dirección completa como un solo span).
 4. Guarda ml/reports/metrics.json["pii_eval"] y ml/reports/pii_f1_por_tipo.png.
 
 Solo lee backend/ (no lo modifica).
 """
 from __future__ import annotations
 
+import argparse
 import json
 import random
 import re
@@ -29,6 +34,7 @@ sys.path.insert(0, str(ML.parent / "backend"))
 sys.stdout.reconfigure(encoding="utf-8")
 
 import mlutils as U  # noqa: E402
+import presidio_es  # noqa: E402
 from detectors import pii as backend_pii  # noqa: E402
 
 TYPES = ["email", "phone_mx", "curp", "rfc", "person", "address"]
@@ -175,51 +181,17 @@ def predict_regex(text: str) -> list[dict]:
     return [{"type": f.type, "start": f.start, "end": f.end} for f in backend_pii.detect(text)]
 
 
-def build_presidio():
-    from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerRegistry
-    from presidio_analyzer.nlp_engine import NlpEngineProvider
-    from presidio_analyzer.predefined_recognizers import EmailRecognizer, SpacyRecognizer
-
-    class PhoneMxRecognizer(PatternRecognizer):
-        def validate_result(self, pattern_text: str):  # mismo validador que el backend
-            return backend_pii._phone_ok(pattern_text)
-
-    nlp = NlpEngineProvider(nlp_configuration={
-        "nlp_engine_name": "spacy",
-        "models": [{"lang_code": "es", "model_name": "es_core_news_md"}],
-    }).create_engine()
-
-    registry = RecognizerRegistry(supported_languages=["es"])
-    registry.add_recognizer(SpacyRecognizer(supported_language="es", supported_entities=["PERSON", "LOCATION"]))
-    registry.add_recognizer(EmailRecognizer(supported_language="es"))
-    registry.add_recognizer(PatternRecognizer(
-        supported_entity="CURP", supported_language="es", context=["curp"],
-        patterns=[Pattern("curp", backend_pii.CURP_RE.pattern, 0.9)]))
-    registry.add_recognizer(PatternRecognizer(
-        supported_entity="RFC", supported_language="es", context=["rfc", "fiscal"],
-        patterns=[Pattern("rfc", backend_pii.RFC_RE.pattern, 0.8)]))
-    registry.add_recognizer(PhoneMxRecognizer(
-        supported_entity="PHONE_MX", supported_language="es", context=["tel", "teléfono", "cel", "celular", "márcame"],
-        patterns=[Pattern("phone_mx", backend_pii.PHONE_RE.pattern, 0.7)]))
-    return AnalyzerEngine(nlp_engine=nlp, registry=registry, supported_languages=["es"])
-
-
-PRESIDIO_MAP = {"EMAIL_ADDRESS": "email", "PHONE_MX": "phone_mx", "CURP": "curp", "RFC": "rfc",
-                "PERSON": "person", "LOCATION": "address"}
-
-
-def predict_presidio(analyzer, text: str) -> list[dict]:
-    res = analyzer.analyze(text=text, language="es", score_threshold=0.4)
-    out = []
-    for r in sorted(res, key=lambda r: (-r.score, r.start)):
-        t = PRESIDIO_MAP.get(r.entity_type)
-        if not t:
-            continue
-        # Las entidades de patrón ganan sobre el NER si se solapan (p. ej. "CURP" marcado como PERSON).
-        if any(o["start"] < r.end and r.start < o["end"] for o in out):
-            continue
-        out.append({"type": t, "start": r.start, "end": r.end})
-    return sorted(out, key=lambda e: e["start"])
+def address_exact(rows: list[dict], preds: list[list[dict]]) -> dict:
+    """Direcciones reales cubiertas por UN solo span predicho (ignora espacios/comas en los bordes)."""
+    strip = " ,."
+    hit = total = 0
+    for row, pred in zip(rows, preds):
+        spans = {row["text"][p["start"]:p["end"]].strip(strip) for p in pred if p["type"] == "address"}
+        for g in row["entities"]:
+            if g["type"] == "address":
+                total += 1
+                hit += row["text"][g["start"]:g["end"]].strip(strip) in spans
+    return {"exactas": hit, "total": total, "tasa": round(hit / total, 4) if total else 0.0}
 
 
 # ------------------------------------------------------------------ métrica
@@ -254,8 +226,11 @@ def score(rows: list[dict], preds: list[list[dict]]) -> dict:
     out["micro_tipos_regex"] = prf(regex_only)
     return out
 
-
 def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--min-location-score", type=float, default=0.5)
+    args = ap.parse_args()
+
     U.set_seeds()
     rows = generate()
     with OUT.open("w", encoding="utf-8") as f:
@@ -264,32 +239,40 @@ def main() -> None:
     n_ent = sum(len(r["entities"]) for r in rows)
     print(f"{len(rows)} prompts, {n_ent} entidades -> {OUT.name}")
 
-    regex_preds = [predict_regex(r["text"]) for r in rows]
-    analyzer = build_presidio()
-    predict_presidio(analyzer, "calentamiento")
-    t0 = time.perf_counter()
-    pres_preds = [predict_presidio(analyzer, r["text"]) for r in rows]
-    ms = (time.perf_counter() - t0) * 1000 / len(rows)
+    analyzer = presidio_es.build_analyzer()
+    presidio_es.detect(analyzer, "calentamiento")
+    configs = {"regex+presidio": presidio_es.PostConfig.base(),
+               "regex+presidio_ajustado": presidio_es.PostConfig(min_location_score=args.min_location_score)}
+    preds = {"regex": [predict_regex(r["text"]) for r in rows]}
+    ms = {}
+    for name, cfg in configs.items():
+        t0 = time.perf_counter()
+        preds[name] = [presidio_es.detect(analyzer, r["text"], cfg) for r in rows]
+        ms[name] = round((time.perf_counter() - t0) * 1000 / len(rows), 1)
 
-    res = {"regex": score(rows, regex_preds), "regex+presidio": score(rows, pres_preds)}
+    res = {name: score(rows, p) for name, p in preds.items()}
+    exact = {name: address_exact(rows, p) for name, p in preds.items()}
     support = {t: sum(e["type"] == t for r in rows for e in r["entities"]) for t in TYPES}
 
-    print(f"\n{'tipo':<24}{'n':>4}  {'regex P/R/F1':>22}  {'regex+Presidio P/R/F1':>24}")
+    names = list(res)
+    print(f"\n{'tipo':<24}{'n':>4}  " + "  ".join(f"{n:>24}" for n in names))
     for t in TYPES + ["micro_tipos_regex", "micro_todos_los_tipos"]:
-        a, b = res["regex"][t], res["regex+presidio"][t]
-        n = support.get(t, "")
-        print(f"{t:<24}{n!s:>4}  {a['precision']:.2f}/{a['recall']:.2f}/{a['f1']:.2f}{'':>8}"
-              f"{b['precision']:.2f}/{b['recall']:.2f}/{b['f1']:.2f}")
-    print(f"\nlatencia Presidio: {ms:.1f} ms/prompt")
+        cells = [f"{res[n][t]['precision']:.2f}/{res[n][t]['recall']:.2f}/{res[n][t]['f1']:.2f}" for n in names]
+        print(f"{t:<24}{support.get(t, '')!s:>4}  " + "  ".join(f"{c:>24}" for c in cells))
+    print("\ndirecciones completas en un solo span: " + " · ".join(f"{n}: {exact[n]['exactas']}/{exact[n]['total']}" for n in names))
+    print("latencia Presidio (ms/prompt): " + " · ".join(f"{n}: {v}" for n, v in ms.items()))
 
-    # errores de Presidio (para el análisis)
-    errors = []
-    for r, p in zip(rows, pres_preds):
-        gold = {(e["type"], r["text"][e["start"]:e["end"]]) for e in r["entities"]}
-        pred = {(e["type"], r["text"][e["start"]:e["end"]]) for e in p}
-        if gold != pred:
-            errors.append({"texto": U.mask_preview(r["text"], 160),
-                           "faltó": sorted(gold - pred), "sobró": sorted(pred - gold)})
+    def errors_of(name):
+        out = []
+        for r, p in zip(rows, preds[name]):
+            gold = {(e["type"], r["text"][e["start"]:e["end"]]) for e in r["entities"]}
+            pred = {(e["type"], r["text"][e["start"]:e["end"]]) for e in p}
+            if gold != pred:
+                out.append({"texto": U.mask_preview(r["text"], 160),
+                            "faltó": sorted(gold - pred), "sobró": sorted(pred - gold)})
+        return out
+
+    err_base, err_adj = errors_of("regex+presidio"), errors_of("regex+presidio_ajustado")
 
     import matplotlib
 
@@ -300,27 +283,33 @@ def main() -> None:
     labels = TYPES + ["micro (todos)"]
     keys = TYPES + ["micro_todos_los_tipos"]
     x = np.arange(len(labels))
-    fig, ax = plt.subplots(figsize=(10, 4.2))
-    ax.bar(x - 0.2, [res["regex"][k]["f1"] for k in keys], 0.4, label="solo regex")
-    ax.bar(x + 0.2, [res["regex+presidio"][k]["f1"] for k in keys], 0.4, label="regex + Presidio")
+    fig, ax = plt.subplots(figsize=(11, 4.4))
+    for i, (n, lab) in enumerate(zip(names, ["solo regex", "regex + Presidio", "regex + Presidio ajustado"])):
+        ax.bar(x + (i - 1) * 0.27, [res[n][k]["f1"] for k in keys], 0.27, label=lab)
     ax.axhline(0.85, ls="--", c="gray", lw=1, label="CE-3 (0.85)")
     ax.set_xticks(x, labels)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("F1")
     ax.set_title("PII en español · F1 por tipo (100 prompts sintéticos)")
-    ax.legend()
+    ax.legend(loc="lower left")
     fig.tight_layout()
     fig.savefig(U.REPORTS / "pii_f1_por_tipo.png", dpi=150)
 
     U.update_metrics("pii_eval", {
         "n_prompts": len(rows), "n_entidades": n_ent, "soporte": support, "coincidencia": "solape + mismo tipo",
-        "CE3_meta": 0.85, "resultados": res,
-        "CE3_cumple": {"regex": res["regex"]["micro_todos_los_tipos"]["f1"] >= 0.85,
-                       "regex+presidio": res["regex+presidio"]["micro_todos_los_tipos"]["f1"] >= 0.85},
-        "latencia_presidio_ms_por_prompt": round(ms, 1),
-        "errores_presidio_muestra": errors[:15], "n_prompts_con_error_presidio": len(errors),
+        "CE3_meta": 0.85, "resultados": res, "direccion_exacta": exact,
+        "config_ajustada": {"min_location_score": args.min_location_score,
+                            "lista_negra": sorted(presidio_es.LOCATION_BLACKLIST)},
+        "CE3_cumple": {n: res[n]["micro_todos_los_tipos"]["f1"] >= 0.85 for n in names},
+        "address_antes_despues": {
+            "antes": {k: res["regex+presidio"]["address"][k] for k in ("precision", "recall", "f1")},
+            "despues": {k: res["regex+presidio_ajustado"]["address"][k] for k in ("precision", "recall", "f1")},
+            "exacta_antes": exact["regex+presidio"], "exacta_despues": exact["regex+presidio_ajustado"]},
+        "latencia_presidio_ms_por_prompt": ms,
+        "errores_presidio_muestra": err_adj[:15],
+        "n_prompts_con_error_presidio": {"base": len(err_base), "ajustado": len(err_adj)},
     })
-    print(f"prompts con algún error (Presidio): {len(errors)}")
+    print(f"prompts con algún error · base: {len(err_base)} · ajustado: {len(err_adj)}")
 
 
 if __name__ == "__main__":

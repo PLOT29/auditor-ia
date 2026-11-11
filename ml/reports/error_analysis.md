@@ -28,10 +28,19 @@ Aquí están las hipótesis, agrupadas por patrón. Todos los textos son sintét
 
 **Por qué TF-IDF ≥ embeddings aquí:** el test está dominado por inglés (79 %), con jailbreaks largos llenos de pistas léxicas ("DAN", "developer mode", "stay in character"). TF-IDF las ve **todas**; MiniLM trunca a 128 tokens. En **español** pasa lo contrario: los embeddings tienen recall 0.95 y TF-IDF 0.75, porque MiniLM es multilingüe y generaliza desde los ejemplos en inglés.
 
+### Fase 4A.1 · qué cambió
+
+- **Ensamble (TF-IDF + embeddings):** combina lo mejor de cada uno. La precisión de TF-IDF en inglés se mantiene (1.00) y el recall en español sube a 0.95. Fue el elegido en CV.
+- **Ventanas deslizantes:** casi no ayudaron (F1 OOF 0.890 contra 0.889). La hipótesis de que "la orden está al final del jailbreak largo" explica pocos errores. Los jailbreaks largos del dataset suelen delatarse desde el inicio ("You are now DAN…"), y los falsos negativos que quedan son de **roleplay sin palabras clave** y de **etiquetas discutibles**, que no dependen de la longitud.
+- **TF-IDF quedó fuera por la guarda de español:** tiene el mejor F1 OOF (0.931), pero solo 0.81 de recall en español dentro de la CV.
+- **Persisten:** los negativos difíciles en español con "instrucciones"/"ignora" (la precisión en español es 0.83: 4 falsos positivos de 24 predicciones) y el ruido de etiquetas de deepset.
+
 ## PII (Presidio)
 
-| Patrón | Hipótesis |
-|---|---|
-| **La dirección sale partida** ("Calle Zaragoza" + "Puebla" en lugar de toda la dirección) | El NER de spaCy marca lugares (LOC), no direcciones. Con coincidencia por solape cuenta como acierto, pero para enmascarar conviene unir los fragmentos contiguos o agregar un recognizer de "Calle/Av. … número, Col. …, C.P.". |
-| **Falsos LOC/PER** ("Col", "cel", "B", "Av. Juárez" como persona, "Querétaro" como persona) | Palabras con mayúscula o abreviaturas sin contexto. Bajan la precisión de `address` (0.69) y `person` (0.83). Se podría filtrar por longitud mínima y con una lista de abreviaturas. |
-| **Regex 1.00 en email/teléfono/CURP/RFC** | **Optimista por construcción**: el generador produce los mismos formatos que reconocen las regex. Con texto real habrá variantes no cubiertas (teléfonos con extensión, CURP con espacios). |
+| Patrón | Hipótesis | 4A.1 |
+|---|---|---|
+| **La dirección sale partida** ("Calle Zaragoza" + "Puebla" en lugar de toda la dirección) | El NER de spaCy marca lugares (LOC), no direcciones. | ✅ Fusión de fragmentos contiguos: direcciones completas en un solo span **0/22 → 17/22**. Las 5 restantes se cortan porque el NER etiqueta la ciudad final como PERSON ("Querétaro") o no ve la calle. |
+| **Falsos LOC/PER** ("Col", "cel", "B", "Av. Juárez" como persona) | Abreviaturas o palabras con mayúscula sin contexto. | ✅ Lista negra + mínimo de 3 letras + "Av./Calle…" reclasificado como dirección. Precisión de `address` **0.69 → 0.79**; prompts con algún error **35 → 14**. |
+| **Ciudades sueltas** ("Guadalajara", "Monterrey", "Ciudad de México" en prompts sin PII) | El NER tiene razón (son lugares), pero una ciudad sola no identifica a una persona y no está etiquetada como dirección. Es una **decisión de criterio**, no un error del modelo. | Pendiente: decidir en la 4B si una ciudad sola se enmascara. Si no, se puede exigir que la dirección tenga calle o número. |
+| **Ruido de spaCy en PERSON** ("avisa", "Benito Juárez" en una pregunta de historia) | Verbos en imperativo con mayúscula al inicio; personajes históricos. | Sin cambio: precisión de `person` 0.84. |
+| **Regex 1.00 en email/teléfono/CURP/RFC** | **Optimista por construcción**: el generador produce los mismos formatos que reconocen las regex. Con texto real habrá variantes no cubiertas (teléfonos con extensión, CURP con espacios). | Sin cambio. |
