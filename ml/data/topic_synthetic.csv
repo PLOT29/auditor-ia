@@ -1,0 +1,481 @@
+text,label,source
+¿Qué documentos piden para abrir una cuennta de banco?,consulta_general,synthetic:consulta_general-26:typo
+Mi mejor amigo se enojó conmigo y no sé por qué,personal,synthetic:personal-06:original
+"buenas, redacta un mensaje para cancelar una reunión de forma amable es urgente",redaccion,synthetic:redaccion-14:relleno
+Ayúame a optimizar este query de Postgres que tarda 10 segundos,programacion,synthetic:programacion-07:typo
+¿Cuáles son las partes de un ensayo académico y cómo se estructura un marco teórico?,academico,synthetic:academico-22:original
+Explica qué hace async/await en JavaScript con un ejemplo,programacion,synthetic:programacion-15:original
+"hola, que es un gestor de contrassenas y es seeguro usarlo?",ciberseguridad,synthetic:ciberseguridad-28:informal_typo
+Buenas tardes. como puedo ahorrar si gano 12 mil peos al mes? gracais,personal,synthetic:personal-07:informal_typo
+Esrcíbeme un poema corto sobre el otoñño,redaccion,synthetic:redaccion-07:typo
+ayudame con algo: explica el ciclo de krebs paso a paso es urgente,academico,synthetic:academico-33:informal
+Buenas tardes. que fue la ilustracion y que filosofos la representan? porfa,academico,synthetic:academico-16:informal
+Hamze un resumen de la Segunda Guerra Mundial para esttudiar,academico,synthetic:academico-06:typo
+Hoy fue un día muy malo y solo quiero desahogarme,personal,synthetic:personal-34:original
+¿Dónde puedo reciclar pilas en la CDMX?,consulta_general,synthetic:consulta_general-30:original
+"hola, ¿Cómo quito una mancha de café de una camisa blanca? es urgente",consulta_general,synthetic:consulta_general-06:relleno
+¿Qué fue la Guerra Fría?,academico,synthetic:academico-30:original
+No tengo motivación para nada últimamente,personal,synthetic:personal-17:original
+Escribe una carta de presentación para un puesto de practicante en marketing,redaccion,synthetic:redaccion-03:original
+Aúydame a entender la ley de la oferta y la demanda para mi xeamen de economía,academico,synthetic:academico-04:typo
+duda rápida: como pongo limites con un amigo que siempre me pide dinero? es urgente,personal,synthetic:personal-35:informal
+Mis compañeros de cuarto no limpian y ya me cansé,personal,synthetic:personal-20:original
+¿Cuánto tiempo se hierve un huevo para que quede tibio?,consulta_general,synthetic:consulta_general-02:original
+Hazme una publicacion para LinkedIn anunciando mi nuevo trabajo,redaccion,synthetic:redaccion-10:sin_acentos
+"oye, ¿Cuál es la mejor época para visitar Chiapas? xfa",consulta_general,synthetic:consulta_general-33:relleno
+¿Qué es un análisis de vulnerabilidades y en qué se diferencia de un pentest?,ciberseguridad,synthetic:ciberseguridad-22:original
+Tengo un error 'ModuleNotFoundError: No module named pandas' aunque ya lo instalé,programacion,synthetic:programacion-14:original
+"oye, que es el adn y como se replica?",academico,synthetic:academico-20:informal
+Hola! ¿Qué es un keylogger y cómo lo detecto en mi computadora? es urgente,ciberseguridad,synthetic:ciberseguridad-24:relleno
+Buenas tardes. como pongo limites con un maigo que isempre me pide dinero?,personal,synthetic:personal-35:informal_typo
+Me siento presionado por mi familia para casarme,personal,synthetic:personal-31:original
+Explícame qué es un firewall y para qué sirve,ciberseguridad,synthetic:ciberseguridad-05:original
+¿Cómo se dice 'gracias' en japonés?,consulta_general,synthetic:consulta_general-29:original
+"Hazme más formal este mensaje: oye, ¿me pasas el reporte cuando puedas?",redaccion,synthetic:redaccion-02:original
+Diferencia entre clase abstracta e interfaz en programación orientada a objetos,programacion,synthetic:programacion-18:original
+"oye, ¿Qué significa la expresión 'estar en la luna'? please",consulta_general,synthetic:consulta_general-14:relleno
+¿Cómo limpio la pantalla de mi televisión sin rayarla?,consulta_general,synthetic:consulta_general-25:original
+¿Qué es el cross-site request forgery?,ciberseguridad,synthetic:ciberseguridad-35:original
+Ayudame a escribir mi biografia para la pagina de la empresa,redaccion,synthetic:redaccion-33:sin_acentos
+¿Cual es la diferencia entre un cafe americano y un espresso?,consulta_general,synthetic:consulta_general-16:sin_acentos
+¿Qué pelíículas de ciencia ficción me recomiendas?,consulta_general,synthetic:consulta_general-07:typo
+¿Qué diferencia hay entre cifrado simétrico y asimétrico?,ciberseguridad,synthetic:ciberseguridad-02:original
+¿Cómo fnciona el protocolo TLS y qué es un certfiicado digital?,ciberseguridad,synthetic:ciberseguridad-14:typo
+¿Cómo hago un JOIN entre dos tablaas en SQL para traeer clientes con sus pedidos?,programacion,synthetic:programacion-04:typo
+"buenas, como hago un nedpoint post en fastapi que reciba un json? porfa",programacion,synthetic:programacion-23:informal_typo
+¿Qué es el principio de mínimo privilegio?,ciberseguridad,synthetic:ciberseguridad-11:original
+"porfa, cuales fueron las causas de la revolucion mexicana? xfa",academico,synthetic:academico-01:informal
+Hola! cual es la diferencia entre un cafe americano y un espresso? es urgente,consulta_general,synthetic:consulta_general-16:informal
+¿Cómo puedo ahorrar si gano 12 mil pesos al mes?,personal,synthetic:personal-07:original
+Explíacme qué es el big O de un algoritmo de ordenamiento por burbua,programacion,synthetic:programacion-32:typo
+¿Cómo cito un artíulo científico en formato APA 7?,academico,synthetic:academico-09:typo
+Hola! me siento solo desde que me mudé de ciudad please,personal,synthetic:personal-08:relleno
+¿Cómo saco mi pasaporte mexicano por priemra vez?,consulta_general,synthetic:consulta_general-04:typo
+Necesito una expresión regular que valide correos electrónicos,programacion,synthetic:programacion-27:original
+¿Qué es un hash y por qué se usa sal (salt) al guardar contraseñas?,ciberseguridad,synthetic:ciberseguridad-17:original
+"oye, redacta el agradecimiento de mi tesis?",redaccion,synthetic:redaccion-27:relleno
+Convierte estas notas en un párrafo bien redactado,redaccion,synthetic:redaccion-17:original
+Escribe un ensayo de opinión de una cuartilla sobre el uso de celulares en clase,redaccion,synthetic:redaccion-29:original
+¿Qué necesito para rentar un coche en Estados Unidos?,consulta_general,synthetic:consulta_general-19:original
+Dame ideas de regalo para el día del padre,consulta_general,synthetic:consulta_general-11:original
+¿Cuál es la complejjidad de búsqueda bnaria y cómo la implemento?,programacion,synthetic:programacion-12:typo
+ayudame con algo: mi mejor amio se enojo conmigo y no se por que please,personal,synthetic:personal-06:informal_typo
+¿Qué es el OWASP Top 10?,ciberseguridad,synthetic:ciberseguridad-06:original
+Buenas tardes. ayúdame a entender la ley de la oferta y la demanda para mi examen de economía,academico,synthetic:academico-04:relleno
+"Terminé con mi pareja y no puedo dejar de pensar en ella, ¿qué hago?",personal,synthetic:personal-01:original
+"Mejroa la redacción de mi introducción, se lee muy repetitiva",redaccion,synthetic:redaccion-05:typo
+El build de mi proyecto de Android Studio falla por una versión de Gradle,programacion,synthetic:programacion-24:original
+¿Cuántas calorías tiene un plátano?,consulta_general,synthetic:consulta_general-20:original
+Buenas tardes. como funciona una vpn y realmente me protege en un wifi publico? plis,ciberseguridad,synthetic:ciberseguridad-10:informal
+Hola! ¿Cómo funciona el sistema inmunológico? :),academico,synthetic:academico-26:relleno
+Dame ejercicios de derivadas para practicar con sus respuestas,academico,synthetic:academico-11:original
+duda rápida: quiero centrar un div vertical y horizontalmente con css xfa,programacion,synthetic:programacion-17:informal
+Buenas tardes. me da miedo no encontrar trabajo cuando me gradue es urgente,personal,synthetic:personal-22:informal
+¿Qué es el prompt injection en modelos de lenguaje?,ciberseguridad,synthetic:ciberseguridad-26:original
+"Estoy pensando en adoptar un gato, pero no sé si tengo tiempo",personal,synthetic:personal-14:original
+Dame ideaas de regalo para el día del padre,consulta_general,synthetic:consulta_general-11:typo
+una pregunta: que fue la ilustracion y que filosofos la representan?,academico,synthetic:academico-16:informal
+Dame un resumen del libro Pedro Páramo para mi clase de literatura,academico,synthetic:academico-23:original
+"No puedo dormir bien desde hace semanas, ¿qué me recomiendas?",personal,synthetic:personal-03:original
+Me siento muy estresado con la escuela y no sé cómo organizarme,personal,synthetic:personal-00:original
+"Explica la tríaada CIA: confidencialidad, integriidad y disponibilidad",ciberseguridad,synthetic:ciberseguridad-25:typo
+¿Cómo le digo a mis papás que quiero cambiarme de carrera?,personal,synthetic:personal-02:original
+duda rápida: resuelve la inegral de x por e a la x,academico,synthetic:academico-02:informal_typo
+"necesito ayuda: revisa la puntuación de este texto, creo que abuso de las comas please",redaccion,synthetic:redaccion-13:relleno
+¿Qué documentos piden para abrir una cuenta de banco?,consulta_general,synthetic:consulta_general-26:original
+"buenas, que hace un analista de un soc??",ciberseguridad,synthetic:ciberseguridad-12:informal
+"hola, mis companeros de cuarto no limpian y ya me canse es urgente",personal,synthetic:personal-20:informal
+Corrige la ortografia y la gramatica de este parrafo: haber si nos vemos manana para ablar del proyecto,redaccion,synthetic:redaccion-00:sin_acentos
+Quiero hablar con mi papá de algo que me molesta pero siempre terminamos peleando,personal,synthetic:personal-29:original
+¿Qué es la recursión? Dame un ejemplo con factorial en C,programacion,synthetic:programacion-22:original
+Resuelve la integral de x por e a la x,academico,synthetic:academico-02:original
+duda rápida: ¿Cómo hago un pastel de chocolate sin horno? xfa,consulta_general,synthetic:consulta_general-15:relleno
+"Quiero empezar a meditar, ¿por dónde empiezo?",personal,synthetic:personal-19:original
+"ayuame con algo: hazme mas formal este mensaje: oye, me pasas el reporrte cuando puedas??",redaccion,synthetic:redaccion-02:informal_typo
+una pregunta: como proteejo mi red wifi de casa? xfa,ciberseguridad,synthetic:ciberseguridad-21:informal_typo
+¿Como funciona el sistema inmunologico?,academico,synthetic:academico-26:sin_acentos
+"hola, escrbe pruebas unitarias con pytest para una funcion que suma dos numeeros :)",programacion,synthetic:programacion-21:informal_typo
+¿Qué significa la expresión 'estar en la luna'?,consulta_general,synthetic:consulta_general-14:original
+necesiito ayuda: como tramito la credencial del ine si la perdi??,consulta_general,synthetic:consulta_general-18:informal_typo
+"oye, corrige este teexto y explicame los erroores que tenia plis",redaccion,synthetic:redaccion-24:informal_typo
+Mi abuela esta enferma y me siento muy triste,personal,synthetic:personal-23:sin_acentos
+Dame una lista de compras para la semana para dos personas,consulta_general,synthetic:consulta_general-24:original
+Explícame el teorema de Pitágoras con un ejemplo,academico,synthetic:academico-00:original
+¿Qué es la ingeniería social?,ciberseguridad,synthetic:ciberseguridad-15:original
+¿Cómo funciona una VPN y realmente me protege en un wifi público?,ciberseguridad,synthetic:ciberseguridad-10:original
+Mi programa en Python se queda sin memoria al leer un archivo de 5 GB,programacion,synthetic:programacion-30:original
+una pregunta: ayúdame a optimizar este query de Postgres que tarda 10 segundos,programacion,synthetic:programacion-07:relleno
+¿Cómo resuelvo un conflicto de merge en git?,programacion,synthetic:programacion-08:original
+necesito ayuda: como limpio la pantalla de mi television sin rayarla?,consulta_general,synthetic:consulta_general-25:informal
+Me da miedo no encontrar trabajo cuando me gradúe,personal,synthetic:personal-22:original
+ayudame con algo: ¿Cómo se hace una tabla de frecuencias en estadística? plis,academico,synthetic:academico-18:relleno
+"oye, como tramtio la credenciaal del ine si la perdi??",consulta_general,synthetic:consulta_general-18:informal_typo
+Explícame qué es el big O de un algoritmo de ordenamiento por burbuja,programacion,synthetic:programacion-32:original
+"hola, quiero aprender a cocinar para comer mas sano porfa",personal,synthetic:personal-25:informal
+Buenas tardes. ¿Dónde puedo reciclar pilas en la CDMX? xfa,consulta_general,synthetic:consulta_general-30:relleno
+Escribe la descripción de un producto para mi tienda en línea de velas aromáticas,redaccion,synthetic:redaccion-16:original
+"Mi código de C++ da segmentation fault al recorrer un vector, aquí está: for(int i=0;i<=v.size();i++)",programacion,synthetic:programacion-05:original
+"Explica la tríada CIA: confidencialidad, integridad y disponibilidad",ciberseguridad,synthetic:ciberseguridad-25:original
+Ayúdame a escribir mi biografía para la página de la empresa,redaccion,synthetic:redaccion-33:original
+¿Cómo quito una mancha de café de una camisa blanca?,consulta_general,synthetic:consulta_general-06:original
+"Explícame la diferencia entre let, const y var en JavaScript",programacion,synthetic:programacion-02:original
+"Gasto demasiado en comida a domicilio, ¿cómo lo controlo?",personal,synthetic:personal-27:original
+Buenas tardes. revisa si este párrafo tiene coherencia y cohesión porfa,redaccion,synthetic:redaccion-34:relleno
+¿Qué es el ADN y cómo se replica?,academico,synthetic:academico-20:original
+"oye, corrige este texto y explícame los errores que tenía please",redaccion,synthetic:redaccion-24:relleno
+"oye, que es una botnet? :)",ciberseguridad,synthetic:ciberseguridad-30:informal_typo
+"porfa, explica que es una inyeccion sql y como se previene :)",ciberseguridad,synthetic:ciberseguridad-01:informal
+¿Que fue la Guerra Fria?,academico,synthetic:academico-30:sin_acentos
+Quiero centrar un div vertical y horizontalmente con CSS,programacion,synthetic:programacion-17:original
+¿Cómo tramito la cerdencial del INE si la perdí?,consulta_general,synthetic:consulta_general-18:typo
+"hola, ayúdame a escribir el discurso de graduación, que dure dos minutos",redaccion,synthetic:redaccion-09:relleno
+"porfa, para que sire wireshark en el analisis de trafico? es urgente",ciberseguridad,synthetic:ciberseguridad-29:informal_typo
+Redacta el agradecimiento de mi tesis,redaccion,synthetic:redaccion-27:original
+¿Qué fue la Ilsutración y qué flósofos la representan?,academico,synthetic:academico-16:typo
+"oye, me da miedo no encontrar trabajo cuando me gradúe es urgente",personal,synthetic:personal-22:relleno
+¿Cómo invierto una lista en Python sin usar reverse()?,programacion,synthetic:programacion-00:original
+¿Qué es el DLP o prevención de pérdida de datos?,ciberseguridad,synthetic:ciberseguridad-33:original
+¿Qué documentos pideen para abrir una cuenta de banco?,consulta_general,synthetic:consulta_general-26:typo
+"No pueedo dormir bien dese hace semanas, ¿qué me recomiendas?",personal,synthetic:personal-03:typo
+"porfa, explica la teoria de la relatividad de forma sencilla please",academico,synthetic:academico-17:informal
+Buenas tardes. corrige este texto y xeplicame los errores que tenia es urgente,redaccion,synthetic:redaccion-24:informal_typo
+Hola! por que el cielo es azul? gracias,consulta_general,synthetic:consulta_general-21:informal
+necesito ayuda: resuelve la integral de x por e a la x xfa,academico,synthetic:academico-02:informal
+"porfa, explca el cilco de krebs paso a paso :)",academico,synthetic:academico-33:informal_typo
+Buenas tardes. quien fue sor ujana ines de la cruz y por que es importante? grcaias,academico,synthetic:academico-12:informal_typo
+¿Cómo creo un Dockerfile para una app de Node?,programacion,synthetic:programacion-16:original
+Mis companeros de cuarto no limpian y ya me canse,personal,synthetic:personal-20:sin_acentos
+Buenas tardes. revisa si este parrafo tiene coherencia y cohesion,redaccion,synthetic:redaccion-34:informal
+"hola, hoy fue un dia muy malo y solo quuiero desahogarme gracias",personal,synthetic:personal-34:informal_typo
+¿Cuál es la complejidad de búsqueda binaria y cómo la implemento?,programacion,synthetic:programacion-12:original
+"Me cuesta mucho hablar con gente nueva, ¿cómo hago amigos?",personal,synthetic:personal-13:original
+¿Cuántos kilómetros hay de la Ciudad de México a Guadalajara?,consulta_general,synthetic:consulta_general-08:original
+Hazzme un resumen ejecutivo de este infrme para el director,redaccion,synthetic:redaccion-31:typo
+"Ayúdame a escribir el discurso de graduación, que dure dos minutos",redaccion,synthetic:redaccion-09:original
+Hola! recomiéndame un libro para leer en vacaciones plis,consulta_general,synthetic:consulta_general-17:relleno
+"No puedo dormir bien edsde hace semanas, ¿qué me recomiendas?",personal,synthetic:personal-03:typo
+"oye, mi novia quiere que vivamos junts y no se si estoy listo please",personal,synthetic:personal-26:informal_typo
+¿Por que el cielo es azul?,consulta_general,synthetic:consulta_general-21:sin_acentos
+"hola, quiero dejar de procrastinar, siempre dejo todo para el final es urgente",personal,synthetic:personal-09:informal
+¿Qué necesiito para rentar un coche en Esttados Unidos?,consulta_general,synthetic:consulta_general-19:typo
+"oye, como despliego mi app de next.js en vercel? gracias",programacion,synthetic:programacion-31:informal
+¿Cómo tramito la credencial del INE si la perdí?,consulta_general,synthetic:consulta_general-18:original
+¿Cómo hago un JOIN entre dos tablas en SQL para traer clientes con sus pedidos?,programacion,synthetic:programacion-04:original
+"porfa, ¿Cómo cuido una planta de suculenta?",consulta_general,synthetic:consulta_general-09:relleno
+"Me sale 'TypeError: cannot read properties of undefined' en React cuando hago map, ¿por qué?",programacion,synthetic:programacion-01:original
+¿Qué fue la Guera Fría?,academico,synthetic:academico-30:typo
+"buenas, como se dice 'gracias' en japones? :)",consulta_general,synthetic:consulta_general-29:informal_typo
+¿Que es el DLP o prevencion de perdida de datos?,ciberseguridad,synthetic:ciberseguridad-33:sin_acentos
+"¿Qué es mejor, una freidora de aire o un horno eléctrico?",consulta_general,synthetic:consulta_general-23:original
+necesito ayuda: parafrasea este párrafo para que no parezca copiado plis,redaccion,synthetic:redaccion-06:relleno
+Hola! necesito una expresión regular que valide correos electrónicos porfa,programacion,synthetic:programacion-27:relleno
+¿Como funciona la firma digital?,ciberseguridad,synthetic:ciberseguridad-31:sin_acentos
+Buenas tardes. ¿Está bien escrito 'a ver' o 'haber' en esta oración?,redaccion,synthetic:redaccion-19:relleno
+¿Cómo ponngo límites con un amigo que siemppre me pide dinero?,personal,synthetic:personal-35:typo
+¿Cómo se calcula la desviación estándar de una muestra?,academico,synthetic:academico-05:original
+¿Cómo dejo de revisar el celular a cada rato?,personal,synthetic:personal-30:original
+Refactoriza este código para que no tenga tantos if anidados,programacion,synthetic:programacion-25:original
+una pregunta: ¿Qué diferencia hay entre cifrado simétrico y asimétrico? please,ciberseguridad,synthetic:ciberseguridad-02:relleno
+Ayúdame a optimizar este query de Postgres que tarda 10 segundos,programacion,synthetic:programacion-07:original
+¿Como creo un Dockerfile para una app de Node?,programacion,synthetic:programacion-16:sin_acentos
+Escribe un guion de 30 segundos para un video de Instagram,redaccion,synthetic:redaccion-23:original
+¿Cuál es la receta de unos chilaquiles verdes?,consulta_general,synthetic:consulta_general-00:original
+¿Qué es una botnet?,ciberseguridad,synthetic:ciberseguridad-30:original
+¿Cómo sé si mi contraseña fue filtrada en una brecha de datos?,ciberseguridad,synthetic:ciberseguridad-07:original
+"oye, quiero empezar a meditar, ¿por dónde empiezo? porfa",personal,synthetic:personal-19:relleno
+Mi abuela está enferma y me siiento muy triste,personal,synthetic:personal-23:typo
+duda rápida: cual es el animal mas rapido del mundo? please,consulta_general,synthetic:consulta_general-28:informal
+Redacta un correo formal para pedirle una prorroga a mi profesor,redaccion,synthetic:redaccion-01:sin_acentos
+¿Cómo funciona el sistema inmunológico?,academico,synthetic:academico-26:original
+¿Qué es una API REST y cómo la consumo con fetch?,programacion,synthetic:programacion-06:original
+ncesito ayuda: mis companeros de cuarto no limpian y ya me case xfa,personal,synthetic:personal-20:informal_typo
+"oye, ¿Cómo funciona la firma digital? :)",ciberseguridad,synthetic:ciberseguridad-31:relleno
+Coniverte este bcule for en una list comprehension: for x in datos: if x>0: res.append(x*2),programacion,synthetic:programacion-09:typo
+¿Cómo hago un endpoint POST en FastAPI que reciba un JSON?,programacion,synthetic:programacion-23:original
+"Ayúdame con mi tarea de probabilidad: lanzo dos dados, ¿probabilidad de que sumen 7?",academico,synthetic:academico-31:original
+¿Qué raza de perro es buena para un departamento pequeño?,consulta_general,synthetic:consulta_general-35:original
+"porfa, cuantos kilometros hay de la ciudad de mexico a guadalajara? please",consulta_general,synthetic:consulta_general-08:informal
+ayudame con algo: que es mitre att&ck y para que sirve? xfa,ciberseguridad,synthetic:ciberseguridad-20:informal
+"uQiero aprender TypeScript, ¿qué tipos básicos debo conocer?",programacion,synthetic:programacion-35:typo
+Traduce al ingles este correo para un cliente,redaccion,synthetic:redaccion-08:sin_acentos
+Redacta una invitación para la fiesta de fin de año de la oficina,redaccion,synthetic:redaccion-35:original
+Recomiéndame un libro para leer en vacaciones,consulta_general,synthetic:consulta_general-17:original
+¿Cómo manejo los celos en mi relación?,personal,synthetic:personal-18:original
+"buenas, como puedo ahorrar si gano 12 mil pesos al mes?",personal,synthetic:personal-07:informal
+ayudame con algo: ¿Qué es el método científico y cuáles son sus pasos? es urgente,academico,synthetic:academico-10:relleno
+Acorta este párrafo a la mitad sin perder la idea principal,redaccion,synthetic:redaccion-22:original
+"porfa, explica el modelo de confianza cero (zero trust)",ciberseguridad,synthetic:ciberseguridad-19:relleno
+¿Cuales son las partes de un ensayo academico y como se estructura un marco teorico?,academico,synthetic:academico-22:sin_acentos
+"Tengo examen de química mañana, explícame cómo balancear ecuaciones",academico,synthetic:academico-15:original
+Explica el ciclo de Kebs paso a paso,academico,synthetic:academico-33:typo
+¿Cómo se juega el dominó?,consulta_general,synthetic:consulta_general-12:original
+Cómo conecto mi app de Flask a una base de datos MySQL,programacion,synthetic:programacion-13:original
+ayudame con algo: como despliego mi app de next.js en vercel? xfa,programacion,synthetic:programacion-31:informal
+"Quiero aprender TypeScript, ¿qué tipos básicos debo conocer?",programacion,synthetic:programacion-35:original
+"Hola! tengo asniedad anttes de mis presentaciones, como la controlo??",personal,synthetic:personal-05:informal_typo
+"Me duele la cabeza todas las tardes, ¿puede ser por el estrés?",personal,synthetic:personal-16:original
+¿Qué es un keylogger y cómo lo detecto en mi computadora?,ciberseguridad,synthetic:ciberseguridad-24:original
+¿Cómo organizo una fiesta inafntil con poco presupuesto?,consulta_general,synthetic:consulta_general-22:typo
+Hola! ayudame a planear mis metas para el proximo ano gracias,personal,synthetic:personal-12:informal
+"Resuelve este sistema de ecuaciones: 2x + y = 7, x - y = 2",academico,synthetic:academico-27:original
+¿Como se hace una tabla de frecuencias en estadistica?,academico,synthetic:academico-18:sin_acentos
+necesito ayuda: diferencia entre PIB nominal y PIB real gracias,academico,synthetic:academico-19:relleno
+Explica la teoría de la relatividad de forma sencilla,academico,synthetic:academico-17:original
+ayudame con algo: escribe un ensayo de opinion de una cuartilla sobre el uso de celulares en clase :),redaccion,synthetic:redaccion-29:informal
+¿Qué es el ransomware y qué hago si mi empresa es infectada?,ciberseguridad,synthetic:ciberseguridad-04:original
+¿Por qué el cielo es azul?,consulta_general,synthetic:consulta_general-21:original
+"porfa, explícame el teorema de Pitágoras con un ejemplo plis",academico,synthetic:academico-00:relleno
+Diferencia entre IDS e IPS,ciberseguridad,synthetic:ciberseguridad-13:original
+necesito ayuda: que lugares me recomiendas visitar en oaxaca en tres dias? porfa,consulta_general,synthetic:consulta_general-01:informal
+Explica qué es XSS y cómo protejo mi formulario web,ciberseguridad,synthetic:ciberseguridad-09:original
+¿Cuál es la estructura de una célula eucariota?,academico,synthetic:academico-14:original
+Hola! el build de mi proyecto de android studio falla por una verion de gradle please,programacion,synthetic:programacion-24:informal_typo
+¿Cómo pongo límites con un amigo que siempre me pide dinero?,personal,synthetic:personal-35:original
+¿Cómo calculo la propina en un restaurante?,consulta_general,synthetic:consulta_general-32:original
+¿Cómo organizo mi día para estudiar y trbaajar al miso tiempo?,personal,synthetic:personal-21:typo
+Explica qué es una inyección SQL y cómo se previene,ciberseguridad,synthetic:ciberseguridad-01:original
+¿Qué hago si mi roomie no me paga su parte de la renta?,personal,synthetic:personal-32:original
+"buenas, que es el prompt injection en modelos de lenguaje?",ciberseguridad,synthetic:ciberseguridad-26:informal
+"Gasto demasiado en comida a domicilio, ¿como lo controlo?",personal,synthetic:personal-27:sin_acentos
+"buenas, expliicame que es un numero rpimo y como saber si 97 lo es es urgente",academico,synthetic:academico-13:informal_typo
+"porfa, escribe pruebas unitarias con pytest para una funcion que suma dos numeros?",programacion,synthetic:programacion-21:informal
+¿Cómo planteo la hipótesis de mi tesis de licenciatura?,academico,synthetic:academico-34:original
+¿Cómo protjo mi red wifi de casa?,ciberseguridad,synthetic:ciberseguridad-21:typo
+Hazme un resumen ejecutivo de este informe para el director,redaccion,synthetic:redaccion-31:original
+¿Qué datos personales protege la LFPDPPP en México?,ciberseguridad,synthetic:ciberseguridad-23:original
+Hola! mi novia quiere que vivamos juntos y no se si estoy listo,personal,synthetic:personal-26:informal
+"buenas, diferencia etnre pib nmoinal y pib real?",academico,synthetic:academico-19:informal_typo
+"Quiero dejar de procrastinar, siempre dejo todo para el final",personal,synthetic:personal-09:original
+"oye, ¿Para qué sirve el decorador @staticmethod en Python? es urgente",programacion,synthetic:programacion-10:relleno
+"una pregunta: quieo empezar a meditar, por donde empiezo?",personal,synthetic:personal-19:informal_typo
+necesito ayuda: ¿Qué diferencia hay entre cifrado simétrico y asimétrico?,ciberseguridad,synthetic:ciberseguridad-02:relleno
+Explícame qué es un número primo y cómo saber si 97 lo es,academico,synthetic:academico-13:original
+Explica la diferencia entre correlación y causalidad,academico,synthetic:academico-25:original
+Hazme un script en bash que renombre todos los .jpg de una carpeta,programacion,synthetic:programacion-11:original
+¿Qué son los enlaces covalentes e iónicos?,academico,synthetic:academico-32:original
+Corrige este texto y explícame los errores que tenía,redaccion,synthetic:redaccion-24:original
+Ayúdame a entender la ley de la oferta y la demanda para mi examen de economía,academico,synthetic:academico-04:original
+"Me llegó un SMS del banco con un link raro, ¿es fraude?",ciberseguridad,synthetic:ciberseguridad-34:original
+¿Qué es la fotosíntesis y qué productos genera?,academico,synthetic:academico-03:original
+¿Que significa la expresion 'estar en la luna'?,consulta_general,synthetic:consulta_general-14:sin_acentos
+una pregunta: ¿Qué es una vulnerabilidad de día cero? :),ciberseguridad,synthetic:ciberseguridad-18:relleno
+ayudame con algo: ¿Cómo hago un endpoint POST en FastAPI que reciba un JSON? plis,programacion,synthetic:programacion-23:relleno
+Escribe una reseña de 150 palabras de la película que vi ayer,redaccion,synthetic:redaccion-12:original
+¿Qué ropa llevo para ir a la playa en diciembre?,consulta_general,synthetic:consulta_general-31:original
+¿Como le digo a mis papas que quiero cambiarme de carrera?,personal,synthetic:personal-02:sin_acentos
+¿Por qué mi variable de entorrno no se lee en el contenedor de Docker?,programacion,synthetic:programacion-34:typo
+"necesito ayuda: resueve este sistema de ecuaciones: 2x + y = 7, x - y = 2?",academico,synthetic:academico-27:informal_typo
+¿Qué series están de moda en Netflix?,consulta_general,synthetic:consulta_general-27:original
+"buenas, como invierto una lista en python sin usar reverse()? xfa",programacion,synthetic:programacion-00:informal
+"Buenas tardes. me cuesta mucho hablar con gente nueva, ¿cómo hago amigos? plis",personal,synthetic:personal-13:relleno
+¿Qué es la inflación y cómo la mide el Banco de México?,academico,synthetic:academico-35:original
+¿Cómo se hace una tabla de frecuencias en estadística?,academico,synthetic:academico-18:original
+¿Qué es un ataque de denegación de servicio distribuido?,ciberseguridad,synthetic:ciberseguridad-08:original
+Redacta un mensaje para cancelar una reunión de forma amable,redaccion,synthetic:redaccion-14:original
+Explícame qué es una matriz inversa y cómo se calcula,academico,synthetic:academico-29:original
+¿Quién fue Sor Juana Inés de la Cruz y por qué es importante?,academico,synthetic:academico-12:original
+¿Como configuro la autenticacion de dos factores en mi correo?,ciberseguridad,synthetic:ciberseguridad-03:sin_acentos
+Hola! ¿Qué es la ingeniería social? plis,ciberseguridad,synthetic:ciberseguridad-15:relleno
+Me siento solo desde que me mude de ciudad,personal,synthetic:personal-08:sin_acentos
+Mi abuela está enferma y me siento muy triste,personal,synthetic:personal-23:original
+¿Qué es MITRE ATT&CK y para qué sirve?,ciberseguridad,synthetic:ciberseguridad-20:original
+"hola, redacta una queja formal a la aerolínea por pérdida de equipaje plis",redaccion,synthetic:redaccion-21:relleno
+"oye, cual es la complejidad de busqueda binaria y como la implemento? :)",programacion,synthetic:programacion-12:informal
+¿Para qué sirve Wireshark en el análisis de tráfico?,ciberseguridad,synthetic:ciberseguridad-29:original
+ayudame con algo: ¿Cómo resuelvo un conflicto de merge en git? xfa,programacion,synthetic:programacion-08:relleno
+ayudame con algo: ¿Cómo hago un pastel de chocolate sin horno? xfa,consulta_general,synthetic:consulta_general-15:relleno
+Escribe un mensaje de bienvenida para el grupo de WhatsApp del curso,redaccion,synthetic:redaccion-32:original
+Buenas tardes. ¿Cómo dejo de revisar el celular a cada rato? gracias,personal,synthetic:personal-30:relleno
+Hola! ¿Qué es el ransomware y qué hago si mi empresa es infectada? gracias,ciberseguridad,synthetic:ciberseguridad-04:relleno
+"porfa, recomiendame un libro para leer en vacaciones es urgente",consulta_general,synthetic:consulta_general-17:informal
+necesito ayuda: mi novia quiere que vivamos juntos y no se si estoy listo?,personal,synthetic:personal-26:informal
+"hola, escríbeme un poema corto sobre el otoño plis",redaccion,synthetic:redaccion-07:relleno
+¿Cómo armo un mueble de IKEA si perdí el instructivo?,consulta_general,synthetic:consulta_general-34:original
+necesito ayuda: ¿Qué películas de ciencia ficción me recomiendas? es urgente,consulta_general,synthetic:consulta_general-07:relleno
+Mi programa en Pythoon se queda sin mmoria al leer un archivo de 5 GB,programacion,synthetic:programacion-30:typo
+"hola, quiero centrar un div vertical y horizontalmente con css?",programacion,synthetic:programacion-17:informal
+Me siento solo desde que me mudé de ciudad,personal,synthetic:personal-08:original
+"hola, ¿Cómo resuelvo un conflicto de merge en git? es urgente",programacion,synthetic:programacion-08:relleno
+duda rápida: explícame el teorema de Pitágoras con un ejemplo,academico,synthetic:academico-00:relleno
+necesito ayuda: ¿Quién fue Sor Juana Inés de la Cruz y por qué es importante? es urgente,academico,synthetic:academico-12:relleno
+Haz un cueno infantil de un perro que aprende a nadar,redaccion,synthetic:redaccion-15:typo
+"buenas, que es una vulnerabilidad de dia cero? es urgente",ciberseguridad,synthetic:ciberseguridad-18:informal
+"buenas, diferencia entre clase abstracta e interfaz en programacion orientada a objetos gracias",programacion,synthetic:programacion-18:informal
+Traduce al inglés este correo para un cliente,redaccion,synthetic:redaccion-08:original
+"Haz una clase Carro en Python con atributos marca, modelo y un método arrancar",programacion,synthetic:programacion-33:original
+¿Cómo puedo hacer que esta conclusión suene más contundente?,redaccion,synthetic:redaccion-11:original
+¿Cómo uso useEffect para llamar una API solo una vez?,programacion,synthetic:programacion-26:original
+"Hola! me llegó un SMS del banco con un link raro, ¿es fraude? gracias",ciberseguridad,synthetic:ciberseguridad-34:relleno
+¿Es normal sentirme agotado aunque duerma ocho horas?,personal,synthetic:personal-28:original
+"Buenas tardes. revisa la puntuación de este texto, creo que abuso de las comas",redaccion,synthetic:redaccion-13:relleno
+¿Como puedo hacer que esta conclusion suene mas contundente?,redaccion,synthetic:redaccion-11:sin_acentos
+Buens tardes. dame ejercicos de derivadas para practicar con sus respuestas :),academico,synthetic:academico-11:informal_typo
+"Mejora el tono de este correo, suena muy agresivo",redaccion,synthetic:redaccion-30:original
+Dame tres versiones distintas del asunto de este correo,redaccion,synthetic:redaccion-26:original
+¿Cuáles fueron las causas de la Revolución Mexicana?,academico,synthetic:academico-01:original
+"Explica la triada CIA: confidencialidad, integridad y disponibilidad",ciberseguridad,synthetic:ciberseguridad-25:sin_acentos
+¿Cómo respondo ante un incidente de seguridad en una pyme?,ciberseguridad,synthetic:ciberseguridad-27:original
+¿Cómo le pido perdón a mi hermana después de una pelea fuerte?,personal,synthetic:personal-15:original
+¿Que es un hash y por que se usa sal (salt) al guardar contrasenas?,ciberseguridad,synthetic:ciberseguridad-17:sin_acentos
+"oye, resume este texto en tres lineas :)",redaccion,synthetic:redaccion-04:informal
+duda rápida: ¿Cómo se calcula la desviación estándar de una muestra?,academico,synthetic:academico-05:relleno
+Mi página en Django no carga los archivos estáticos en producción,programacion,synthetic:programacion-20:original
+"oye, cuantos kilometros hay de la ciudad de mexico a guadalajara? es urgente",consulta_general,synthetic:consulta_general-08:informal
+¿Qué es una vulnerabilidad de día cero?,ciberseguridad,synthetic:ciberseguridad-18:original
+Hola! como creo un dockerfile para una app de node?,programacion,synthetic:programacion-16:informal
+Haz un cuento infantil de un perro que aprende a nadar,redaccion,synthetic:redaccion-15:original
+"Tengo ansiedad antes de mis presentaciones, ¿como la controlo?",personal,synthetic:personal-05:sin_acentos
+¿Cuál es la diferencia entre un café americano y un espresso?,consulta_general,synthetic:consulta_general-16:original
+¿Cómo despliego mi app de Next.js en Vercel?,programacion,synthetic:programacion-31:original
+"hola, que ropa llevo para ir a la playa en diciembre?",consulta_general,synthetic:consulta_general-31:informal
+una pregunta: me siento presionado por mi familia para casarme gracias,personal,synthetic:personal-31:relleno
+¿Cómo configuro la autenticación de dos factores en mi correo?,ciberseguridad,synthetic:ciberseguridad-03:original
+duda rápida: explica que es una inyeccion sql y como se previene pofra,ciberseguridad,synthetic:ciberseguridad-01:informal_typo
+Resume este texto en tres líneas,redaccion,synthetic:redaccion-04:original
+¿Qué fue la Ilustración y qué filósofos la representan?,academico,synthetic:academico-16:original
+¿A qué hora es el partido de la selección hoy?,consulta_general,synthetic:consulta_general-13:original
+¿Cómo configuro la autenticación de dos facores en mi correo?,ciberseguridad,synthetic:ciberseguridad-03:typo
+"porfa, haz un cuento infantil de un perro que aprende a nadar",redaccion,synthetic:redaccion-15:informal
+"Me cuesta muucho halar con gente nueva, ¿cómo hago amigos?",personal,synthetic:personal-13:typo
+¿Qué hace un analitsa de un SOC?,ciberseguridad,synthetic:ciberseguridad-12:typo
+Difeencia ente IDS e IPS,ciberseguridad,synthetic:ciberseguridad-13:typo
+¿Cómo puedo mejorar mi autoestima?,personal,synthetic:personal-24:original
+Hola! escribe una reseña de 150 palabras de la película que vi ayer?,redaccion,synthetic:redaccion-12:relleno
+"ayyudame con algo: que es emjor para viajar a europa, euros en efectivo o tarjeta? porfa",consulta_general,synthetic:consulta_general-10:informal_typo
+una pregunta: ¿Qué es una vulnerabilidad de día cero? plis,ciberseguridad,synthetic:ciberseguridad-18:relleno
+una pregunta: como creo una contrasena segura que puedda recordar??,ciberseguridad,synthetic:ciberseguridad-16:informal_typo
+¿Como hago un endpoint POST en FastAPI que reciba un JSON?,programacion,synthetic:programacion-23:sin_acentos
+"Buenas tardes. que es mejor, una freidora de aire o un horno electrico? porfa",consulta_general,synthetic:consulta_general-23:informal
+"Tengo ansiedad antes de mis presentaciones, ¿cómo la controlo?",personal,synthetic:personal-05:original
+¿Cuál es la estructuura de una célula eucariota?,academico,synthetic:academico-14:typo
+Pasa este texto de primera a tercera persona,redaccion,synthetic:redaccion-28:original
+Cómo paso de una lista de diccionarios a un DataFrame,programacion,synthetic:programacion-29:original
+¿Cómo leo un archivo CSV con pandas y saco el promedio de una columna?,programacion,synthetic:programacion-19:original
+Escribeme un poema corto sobre el otono,redaccion,synthetic:redaccion-07:sin_acentos
+Hola! revisa si este párrafo tiene coherencia y cohesión?,redaccion,synthetic:redaccion-34:relleno
+ayudame con algo: mi mejor amigo se enojó conmigo y no sé por qué :),personal,synthetic:personal-06:relleno
+Tengo un error 'ModuleNotFoundError: No module named pandas' aunque ya lo instaé,programacion,synthetic:programacion-14:typo
+Explica el modelo de confianza cero (zero trust),ciberseguridad,synthetic:ciberseguridad-19:original
+Haz que este texto suene más profesional para un reporte de la empresa,redaccion,synthetic:redaccion-20:original
+¿Qué patrón de diseño uso para crear objetos de distintos tipos según un parámetro?,programacion,synthetic:programacion-28:original
+una pregunta: ¿Qué hace un analista de un SOC?,ciberseguridad,synthetic:ciberseguridad-12:relleno
+"oye, diferencia ente pib nominal y pib real please",academico,synthetic:academico-19:informal_typo
+Explica la seguna ley de Newton con ejerciicios resueltos,academico,synthetic:academico-08:typo
+¿Qué celular de gama media me recomiendas comprar este año?,consulta_general,synthetic:consulta_general-03:original
+Haz un cuetno infaantil de un perro que aprende a nadar,redaccion,synthetic:redaccion-15:typo
+¿Qué es un ataque de phishing y cómo lo detecto?,ciberseguridad,synthetic:ciberseguridad-00:original
+¿Por qué mi variable de entorno no se lee en el contenedor de Docker?,programacion,synthetic:programacion-34:original
+duda rápida: escribe una resena de 150 palabras de la pelicula que vi ayer xfa,redaccion,synthetic:redaccion-12:informal
+Cómo paso de una lista de diccionaros a un DataFrame,programacion,synthetic:programacion-29:typo
+Redacta un correo formal para pedirle una prórroga a mi profesor,redaccion,synthetic:redaccion-01:original
+Mi jefe me trata mal y ya no sé si renunciar,personal,synthetic:personal-11:original
+"Mejora la redacción de mi introducción, se lee muy repetitiva",redaccion,synthetic:redaccion-05:original
+Hola! que es un aatque de denegacion de servicio distribuido? plis,ciberseguridad,synthetic:ciberseguridad-08:informal_typo
+¿Cuál es la capital de Australia?,consulta_general,synthetic:consulta_general-05:original
+¿Cómo cuido una planta de suculenta?,consulta_general,synthetic:consulta_general-09:original
+Hola! ¿Qué es una vulnerabilidad de día cero? plis,ciberseguridad,synthetic:ciberseguridad-18:relleno
+¿Cuál es el animal más rápido del mundo?,consulta_general,synthetic:consulta_general-28:original
+Escribe un titular llamativo para un artículo sorbe ahorro,redaccion,synthetic:redaccion-25:typo
+duda rápida: como respondo ante un incidente de seguriad en una pyme?,ciberseguridad,synthetic:ciberseguridad-27:informal_typo
+¿Qué es una uvlnerabilidad de día cero?,ciberseguridad,synthetic:ciberseguridad-18:typo
+"buenas, convierte esats notas en un pararfo bien redactado gracias",redaccion,synthetic:redaccion-17:informal_typo
+¿Qué hace un analista de un SOC?,ciberseguridad,synthetic:ciberseguridad-12:original
+¿Qué lugares me recomiendas visitar en Oaxaca en tres días?,consulta_general,synthetic:consulta_general-01:original
+¿Qué es el método científico y cuáles son sus pasos?,academico,synthetic:academico-10:original
+"oye, necesito una expresion regular que valide correos electronicos gracias",programacion,synthetic:programacion-27:informal
+¿Cómo hago un pastel de chocolate sin horno?,consulta_general,synthetic:consulta_general-15:original
+Escribe una funcion en Java que valide si una cadena es palindromo,programacion,synthetic:programacion-03:sin_acentos
+una pregunta: como creo una contrasena segura que pueda recordar? :),ciberseguridad,synthetic:ciberseguridad-16:informal
+Explica la segunda ley de Newton con ejercicios resueltos,academico,synthetic:academico-08:original
+Explícame el concepto de límite en cálculo,academico,synthetic:academico-21:original
+"hola, que son los enlaaces covalentes e ionicos? please",academico,synthetic:academico-32:informal_typo
+Buenas tardes. que es una api rest y como la consumo con fetch? please,programacion,synthetic:programacion-06:informal
+"Quuiero aprender TypeScript, ¿qué tipos básiccos debo conocer?",programacion,synthetic:programacion-35:typo
+¿Cómo cito un artíuclo científico en formao APA 7?,academico,synthetic:academico-09:typo
+¿Qué es una API REST y cómo la consummo con fetch?,programacion,synthetic:programacion-06:typo
+"¿Qué es mejor para viajar a Europa, euros en efectivo o tarjeta?",consulta_general,synthetic:consulta_general-10:original
+Hola! dame una ilsta de compras para la semana para dos personas,consulta_general,synthetic:consulta_general-24:informal_typo
+¿Está bien escrito 'a ver' o 'haber' en esta oración?,redaccion,synthetic:redaccion-19:original
+Escríbeme un mensaje de felicitación de cumpleaños para mi jefa,redaccion,synthetic:redaccion-18:original
+una pregunta: dame una listta de compras para la smeana para dos personas :),consulta_general,synthetic:consulta_general-24:informal_typo
+Diferencia entre PIB nominal y PIB real,academico,synthetic:academico-19:original
+"Quiero bajar de peso, ayúdame a armar una rutina de ejercicio para mí",personal,synthetic:personal-04:original
+¿Cómo funciona la firma digital?,ciberseguridad,synthetic:ciberseguridad-31:original
+"Quiero empezar a correr, pero me canso muy rápido",personal,synthetic:personal-33:original
+¿Cómo saco mi pasaporte mexicano por primera vez?,consulta_general,synthetic:consulta_general-04:original
+¿Cómo protejo mi red wifi de casa?,ciberseguridad,synthetic:ciberseguridad-21:original
+"Me cuesta mucho hablar con gente nueva, ¿como hago amigos?",personal,synthetic:personal-13:sin_acentos
+Hazme un resumen de la Segunda Guerra Mundial para estudiar,academico,synthetic:academico-06:original
+"porfa, ¿Cómo saco mi pasaporte mexicano por primera vez??",consulta_general,synthetic:consulta_general-04:relleno
+Hazme una publicación para LinkedIn anunciando mi nuevo trabajo,redaccion,synthetic:redaccion-10:original
+Explica el ciclo de Krebs paso a paso,academico,synthetic:academico-33:original
+"Revisa la puntuación de este texto, creo que abuso de las comas",redaccion,synthetic:redaccion-13:original
+¿Cómo armo un mueble de IKEA si predí el instructivo?,consulta_general,synthetic:consulta_general-34:typo
+"buenas, tngo examen de quimica manana, explicame como balancear ecuaciones :)",academico,synthetic:academico-15:informal_typo
+duda rápida: haz que este texto suene más profesional para un reporte de la empresa,redaccion,synthetic:redaccion-20:relleno
+"buenas, ¿Por qué mi variable de entorno no se lee en el contenedor de Docker? plis",programacion,synthetic:programacion-34:relleno
+¿Qué es un gestor de contraseñas y es seguro usarlo?,ciberseguridad,synthetic:ciberseguridad-28:original
+Haz que este texto suene mas profesional para un reporte de la empresa,redaccion,synthetic:redaccion-20:sin_acentos
+¿Como creo una contrasena segura que pueda recordar?,ciberseguridad,synthetic:ciberseguridad-16:sin_acentos
+¿Cómo organizo mi día para estudiar y trabajar al mismo tiempo?,personal,synthetic:personal-21:original
+Ayudame a entender la ley de la oferta y la demanda para mi examen de economia,academico,synthetic:academico-04:sin_acentos
+"hola, cnovierte este bule for en una list comprehension: for x in datos: if x>0: res.append(x*2) :)",programacion,synthetic:programacion-09:informal_typo
+"ayudame con algo: me cuesta mucho hablar con gente nueva, como hago amigos? :)",personal,synthetic:personal-13:informal
+Diferencia entre clase abstracta e interfaz en programacion orientada a objetos,programacion,synthetic:programacion-18:sin_acentos
+Escribe un titular llamativo para un artículo sobre ahorro,redaccion,synthetic:redaccion-25:original
+¿Cuál es la mejor época para visitar Chiapas?,consulta_general,synthetic:consulta_general-33:original
+Quiero aprender a cocinar para comer más sano,personal,synthetic:personal-25:original
+"necesito ayuda: termine con mi pareja y no puedo dejar de pensar en ella, que hago? :)",personal,synthetic:personal-01:informal
+¿Que datos personales protege la LFPDPPP en Mexico?,ciberseguridad,synthetic:ciberseguridad-23:sin_acentos
+¿Debería aceptar una oferta de trabajo que paga más pero está lejos de mi casa?,personal,synthetic:personal-10:original
+¿Qué diferencia hay entre mitosis y meiosis?,academico,synthetic:academico-07:original
+Parafrasea este párrafo para que no parezca copiado,redaccion,synthetic:redaccion-06:original
+¿Para qué sirve el decorador @staticmethod en Python?,programacion,synthetic:programacion-10:original
+duda rápida: hoy fue un día muy malo y solo quiero desahogarme xfa,personal,synthetic:personal-34:relleno
+ayudame con algo: como invierto una lista en python sin usar reverse()? es urgente,programacion,synthetic:programacion-00:informal
+"Terminé con mi pareja y no pudo dejar de pesar en ella, ¿qué hago?",personal,synthetic:personal-01:typo
+Revisa si este parrafo tiene coherencia y cohesion,redaccion,synthetic:redaccion-34:sin_acentos
+¿Qué películas de ciencia ficción me recomiendas?,consulta_general,synthetic:consulta_general-07:original
+¿Qué ropa llevvo para ir a la palya en diciembre?,consulta_general,synthetic:consulta_general-31:typo
+"Ayúdame a escribir el discurso de graduación, que dure dos minuttos",redaccion,synthetic:redaccion-09:typo
+ayudame con algo: que es la ingenieria social??,ciberseguridad,synthetic:ciberseguridad-15:informal
+Buenas tardes. redacta un correo formal para pedirle una prorroga a mi profesor xfa,redaccion,synthetic:redaccion-01:informal
+¿Como funciona el protocolo TLS y que es un certificado digital?,ciberseguridad,synthetic:ciberseguridad-14:sin_acentos
+Corrige la ortografía y la gramática de este párrafo: haber si nos vemos mañana para ablar del proyecto,redaccion,synthetic:redaccion-00:original
+¿Como le pido perdon a mi hermana despues de una pelea fuerte?,personal,synthetic:personal-15:sin_acentos
+Cómo conecto mi app de Flsak a una base de datos MySQL,programacion,synthetic:programacion-13:typo
+Convierte estas notas en un parrafo bien redactado,redaccion,synthetic:redaccion-17:sin_acentos
+Convierte este bucle for en una list comprehension: for x in datos: if x>0: res.append(x*2),programacion,synthetic:programacion-09:original
+necesito ayuda: revisa si este parrafo tiene coherencia y cohesion :),redaccion,synthetic:redaccion-34:informal
+Escribe pruebas unitarias con pytest para una función que suma dos números,programacion,synthetic:programacion-21:original
+"porfa, ¿Qué significa la expresión 'estar en la luna'? plis",consulta_general,synthetic:consulta_general-14:relleno
+necesito ayuda: mi abuela esta enferma y me siento muy triste,personal,synthetic:personal-23:informal
+Pasa este texto de prmiera a tercera presona,redaccion,synthetic:redaccion-28:typo
+"porfa, ayudame a optimizar este query de postgres que tarda 10 segundos :)",programacion,synthetic:programacion-07:informal
+Redacta una queja formal a la aerolínea por pérdida de equipaje,redaccion,synthetic:redaccion-21:original
+Ayúdame a planear mis metas para el próximo año,personal,synthetic:personal-12:original
+¿Cómo organizo una fiesta infantil con poco presupuesto?,consulta_general,synthetic:consulta_general-22:original
+Mi novia quiere que vivamos juntos y no sé si estoy listo,personal,synthetic:personal-26:original
+"hola, como funciona el proocolo tls y que es un certificado digital? es urgente",ciberseguridad,synthetic:ciberseguridad-14:informal_typo
+¿Cómo creo una contraseña segura que pueda recordar?,ciberseguridad,synthetic:ciberseguridad-16:original
+"hola, explica la diferencia entre correlacion y causalidad?",academico,synthetic:academico-25:informal
+Dame una lissta de compras para la semana para dos personas,consulta_general,synthetic:consulta_general-24:typo
+¿Qué controles recomienda la ISO 27001?,ciberseguridad,synthetic:ciberseguridad-32:original
+Revisa si este párrafo tiene coherencia y cohesión,redaccion,synthetic:redaccion-34:original
+Necesito una expresión regular que valide correos electrrónicos,programacion,synthetic:programacion-27:typo
+¿Cómo cito un artículo científico en formato APA 7?,academico,synthetic:academico-09:original
+Escribe un ensayo de opiniión de una cuartilla sobre el uso de celulares en clase,redaccion,synthetic:redaccion-29:typo
+"porfa, ¿Qué necesito para rentar un coche en Estados Unidos? plis",consulta_general,synthetic:consulta_general-19:relleno
+¿Cómo funciona el protocolo TLS y qué es un certificado digital?,ciberseguridad,synthetic:ciberseguridad-14:original
+"duda rápida: estoy pensando en adoptar un gato, pero no sé si tengo tiempo porfa",personal,synthetic:personal-14:relleno
+Explícame qué es el big O de un algoritmo de ordenamineto por burbuja,programacion,synthetic:programacion-32:typo
+Escríbeme un poema corto sobre el otoño,redaccion,synthetic:redaccion-07:original
+ayudame con algo: ¿Qué son los enlaces covalentes e iónicos? please,academico,synthetic:academico-32:relleno
+ayudame con algo: hazme un resumen de la segunda guerra mundial para estudiar :),academico,synthetic:academico-06:informal
+¿Cual es la mejor epoca para visitar Chiapas?,consulta_general,synthetic:consulta_general-33:sin_acentos
+Escibe una función en Java que valide si una cadena es palíndromo,programacion,synthetic:programacion-03:typo
+Recomiéndame un librro para leer en vaccaciones,consulta_general,synthetic:consulta_general-17:typo
+¿Cuáles son los tipos de investigación cualitativa?,academico,synthetic:academico-28:original
+necesito ayuda: diferencia entre PIB nominal y PIB real?,academico,synthetic:academico-19:relleno
+¿Qué es la entropía en termodinámica?,academico,synthetic:academico-24:original
+Escribe una función en Java que valide si una cadena es palíndromo,programacion,synthetic:programacion-03:original

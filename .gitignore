@@ -4,6 +4,15 @@
 ml/data/raw/
 ml/models/*.joblib
 
+# Prompts REALES (aunque estén enmascarados) — nunca al repo
+ml/data/topic_to_label.csv
+ml/data/topic_test_real.csv
+# Derivado de datasets de Hugging Face: se regenera con ml/build_injection_dataset.py
+ml/data/injection.csv
+# Caché de embeddings y predicciones intermedias
+ml/cache/
+.ipynb_checkpoints/
+
 # Entornos y secretos locales
 venv/
 .venv/

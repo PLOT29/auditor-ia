@@ -1,0 +1,100 @@
+{"text": "Hola, soy Ana Sofía Castillo, mi correo es alejandro_lopez.fake@correo.ibero.mx por si me quieren contactar", "entities": [{"type": "person", "start": 10, "end": 28}, {"type": "email", "start": 43, "end": 79}]}
+{"text": "Registra a Valeria Ortiz Cruz con CURP SOJS990120HPLJLDK3 en la lista del curso", "entities": [{"type": "person", "start": 11, "end": 29}, {"type": "curp", "start": 39, "end": 57}]}
+{"text": "Corrige este texto: 'atentamente, Juan Gómez, guadalupe_gomez.fake@correo.ibero.mx'", "entities": [{"type": "person", "start": 34, "end": 44}, {"type": "email", "start": 46, "end": 82}]}
+{"text": "Registra a Fernanda Castillo con CURP MIUW950422MDFKCNZ4 en la lista del curso", "entities": [{"type": "person", "start": 11, "end": 28}, {"type": "curp", "start": 38, "end": 56}]}
+{"text": "Envíale la factura a valeria.perez.fake@hotmail.com con el RFC XKZN750506Z15", "entities": [{"type": "email", "start": 21, "end": 51}, {"type": "rfc", "start": 63, "end": 76}]}
+{"text": "Ayúdame a responderle a María Flores Morales, que me escribió desde emilio.perez.fake@hotmail.com", "entities": [{"type": "person", "start": 24, "end": 44}, {"type": "email", "start": 68, "end": 97}]}
+{"text": "Necesito una constancia de situación fiscal, mi RFC es SJUN760828J35", "entities": [{"type": "rfc", "start": 55, "end": 68}]}
+{"text": "Envíale la factura a jose_ramirez44.fake@gmail.com con el RFC JXJS971116E77", "entities": [{"type": "email", "start": 21, "end": 50}, {"type": "rfc", "start": 62, "end": 75}]}
+{"text": "Envíale la factura a valeriacruz33.fake@outlook.com con el RFC VAZO781118F16", "entities": [{"type": "email", "start": 21, "end": 51}, {"type": "rfc", "start": 63, "end": 76}]}
+{"text": "Manda el paquete a Calle Zaragoza 3068, Puebla a nombre de Guadalupe Gómez", "entities": [{"type": "address", "start": 19, "end": 46}, {"type": "person", "start": 59, "end": 74}]}
+{"text": "Mi teléfono es (44) 2113-4853, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 29}]}
+{"text": "Manda el paquete a Calle Zaragoza 3627, C.P. 93349, Mérida, Yucatán a nombre de Valeria Torres", "entities": [{"type": "address", "start": 19, "end": 67}, {"type": "person", "start": 80, "end": 94}]}
+{"text": "Vivo en Av. Vallarta 308, Col. Coyoacán, C.P. 78832, Ciudad de México, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 69}]}
+{"text": "Vivo en Calle Zaragoza 1786, Col. Providencia, Puebla, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 53}]}
+{"text": "Manda el paquete a Calle Reforma 2371, Col. Narvarte, C.P. 50192, Mérida, Yucatán a nombre de Diego Martínez", "entities": [{"type": "address", "start": 19, "end": 81}, {"type": "person", "start": 94, "end": 108}]}
+{"text": "Mi dirección fiscal es Av. Juárez 1256, Col. Del Valle, Mérida, Yucatán y mi RFC RYWF720424P48", "entities": [{"type": "address", "start": 23, "end": 71}, {"type": "rfc", "start": 81, "end": 94}]}
+{"text": "Envíale la factura a ricardoperez57.fake@empresa.com.mx con el RFC ADCW690902L97", "entities": [{"type": "email", "start": 21, "end": 55}, {"type": "rfc", "start": 67, "end": 80}]}
+{"text": "Envíale la factura a daniela.gonzalez40.fake@gmail.com con el RFC LGVH660625R68", "entities": [{"type": "email", "start": 21, "end": 54}, {"type": "rfc", "start": 66, "end": 79}]}
+{"text": "Mis datos: Ana Sofía Torres, CURP DUZB820914MJCVNB07, tel. (55) 8102-6934", "entities": [{"type": "person", "start": 11, "end": 27}, {"type": "curp", "start": 34, "end": 52}, {"type": "phone_mx", "start": 59, "end": 73}]}
+{"text": "Escribe una carta de recomendación para Juan Ramírez González", "entities": [{"type": "person", "start": 40, "end": 61}]}
+{"text": "Llena el formulario con mi CURP PEGO820527HPLBJQV4 y mi RFC CYIL920722R5A", "entities": [{"type": "curp", "start": 32, "end": 50}, {"type": "rfc", "start": 60, "end": 73}]}
+{"text": "mi correo es guadalupe.lopez.fake@outlook.com y mi cel 33-5952-1231 porfa guardalo", "entities": [{"type": "email", "start": 13, "end": 45}, {"type": "phone_mx", "start": 55, "end": 67}]}
+{"text": "¿Cuál es el código postal más común en la Ciudad de México?", "entities": []}
+{"text": "Mis datos: Diego González Sánchez, CURP TAON960423MGTQKGA1, tel. 22-4585-3881", "entities": [{"type": "person", "start": 11, "end": 33}, {"type": "curp", "start": 40, "end": 58}, {"type": "phone_mx", "start": 65, "end": 77}]}
+{"text": "Escribe una carta de recomendación para Miguel Ángel Ramírez", "entities": [{"type": "person", "start": 40, "end": 60}]}
+{"text": "Registra a Alejandro Cruz con CURP QOZZ701103MVZZNDP4 en la lista del curso", "entities": [{"type": "person", "start": 11, "end": 25}, {"type": "curp", "start": 35, "end": 53}]}
+{"text": "Manda el paquete a Av. Insurgentes Sur 189, Col. Santa Fe, C.P. 50131, Guadalajara, Jalisco a nombre de Emilio Díaz", "entities": [{"type": "address", "start": 19, "end": 91}, {"type": "person", "start": 104, "end": 115}]}
+{"text": "Envíale la factura a diegodiaz.fake@empresa.com.mx con el RFC SJMR600510G68", "entities": [{"type": "email", "start": 21, "end": 50}, {"type": "rfc", "start": 62, "end": 75}]}
+{"text": "Envíale la factura a ricardotorres27.fake@hotmail.com con el RFC VUIQ910528B19", "entities": [{"type": "email", "start": 21, "end": 53}, {"type": "rfc", "start": 65, "end": 78}]}
+{"text": "Mi teléfono es 55-8962-2133, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 27}]}
+{"text": "Ayúdame a responderle a María Rivera Martínez, que me escribió desde maria.hernandez.fake@empresa.com.mx", "entities": [{"type": "person", "start": 24, "end": 45}, {"type": "email", "start": 69, "end": 104}]}
+{"text": "Corrige este texto: 'atentamente, Alejandro López Rodríguez, carlos.diaz36.fake@hotmail.com'", "entities": [{"type": "person", "start": 34, "end": 59}, {"type": "email", "start": 61, "end": 91}]}
+{"text": "Escribe una carta de recomendación para Valeria García", "entities": [{"type": "person", "start": 40, "end": 54}]}
+{"text": "Mi dirección fiscal es Calle Hidalgo 756, C.P. 63616, Ciudad de México y mi RFC MPCS630305Z93", "entities": [{"type": "address", "start": 23, "end": 70}, {"type": "rfc", "start": 80, "end": 93}]}
+{"text": "El contacto del proveedor es Ana Sofía Torres, cel 81-7592-5844", "entities": [{"type": "person", "start": 29, "end": 45}, {"type": "phone_mx", "start": 51, "end": 63}]}
+{"text": "Explícame qué es un firewall", "entities": []}
+{"text": "Hola, soy José Luis Sánchez Morales, mi correo es miguel.garcia.fake@correo.ibero.mx por si me quieren contactar", "entities": [{"type": "person", "start": 10, "end": 35}, {"type": "email", "start": 50, "end": 84}]}
+{"text": "Envíale la factura a danielaperez67.fake@empresa.com.mx con el RFC ZRYP890727X93", "entities": [{"type": "email", "start": 21, "end": 55}, {"type": "rfc", "start": 67, "end": 80}]}
+{"text": "Escribe una carta de recomendación para Ricardo Pérez", "entities": [{"type": "person", "start": 40, "end": 53}]}
+{"text": "El contacto del proveedor es Alejandro López, cel 22-5722-7561", "entities": [{"type": "person", "start": 29, "end": 44}, {"type": "phone_mx", "start": 50, "end": 62}]}
+{"text": "Corrige este texto: 'atentamente, ximena sánchez, paola.martinez.fake@yahoo.com.mx'", "entities": [{"type": "person", "start": 34, "end": 48}, {"type": "email", "start": 50, "end": 82}]}
+{"text": "El examen vale 30 % y la tarea 20 %", "entities": []}
+{"text": "¿Cómo se calcula el RFC de una persona moral?", "entities": []}
+{"text": "Envíale la factura a valeria_gonzalez.fake@empresa.com.mx con el RFC GOWI830320T11", "entities": [{"type": "email", "start": 21, "end": 57}, {"type": "rfc", "start": 69, "end": 82}]}
+{"text": "Mi teléfono es 33-2940-7818, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 27}]}
+{"text": "La reunión es el 15 de marzo a las 10:30 en la sala B", "entities": []}
+{"text": "Vivo en Calle Hidalgo 1456, Col. Narvarte, Ciudad de México, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 59}]}
+{"text": "Vivo en Calle 5 de Mayo 1844, Col. Roma Norte, Querétaro, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 56}]}
+{"text": "Necesito una constancia de situación fiscal, mi RFC es TIZB890904M17", "entities": [{"type": "rfc", "start": 55, "end": 68}]}
+{"text": "Vivo en Av. Universidad 324, Col. Coyoacán, Querétaro, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 53}]}
+{"text": "¿Puedes revisar si este CURP está bien escrito? MIGO800625MQTRLD40", "entities": [{"type": "curp", "start": 48, "end": 66}]}
+{"text": "Dame una receta de pozole para 12 personas", "entities": []}
+{"text": "Envíale la factura a paola.garcia65.fake@gmail.com con el RFC ODQO601205N20", "entities": [{"type": "email", "start": 21, "end": 50}, {"type": "rfc", "start": 62, "end": 75}]}
+{"text": "Mi dirección fiscal es Av. Insurgentes Sur 382, Col. Coyoacán, Querétaro y mi RFC LPRQ820724R54", "entities": [{"type": "address", "start": 23, "end": 72}, {"type": "rfc", "start": 82, "end": 95}]}
+{"text": "mi correo es jorge.lopez.fake@outlook.com y mi cel 55 4770 4608 porfa guardalo", "entities": [{"type": "email", "start": 13, "end": 41}, {"type": "phone_mx", "start": 51, "end": 63}]}
+{"text": "Mi teléfono es (33) 6155-4483, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 29}]}
+{"text": "Mi teléfono es 55 4750 2104, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 27}]}
+{"text": "Llena el formulario con mi CURP OAKI800225MVZBWS00 y mi RFC GQLT911115Y02", "entities": [{"type": "curp", "start": 32, "end": 50}, {"type": "rfc", "start": 60, "end": 73}]}
+{"text": "¿Qué es la CURP y para qué sirve?", "entities": []}
+{"text": "¿Puedes revisar si este CURP está bien escrito? REJO910201HNLMWB96", "entities": [{"type": "curp", "start": 48, "end": 66}]}
+{"text": "Mis datos: Ricardo Díaz, CURP VOXF890320HMCXXBF6, tel. 33 8564 3977", "entities": [{"type": "person", "start": 11, "end": 23}, {"type": "curp", "start": 30, "end": 48}, {"type": "phone_mx", "start": 55, "end": 67}]}
+{"text": "Vivo en Prolongación Paseo de la Reforma 2443, Col. Coyoacán, C.P. 62348, Querétaro, ¿qué gimnasio me queda cerca?", "entities": [{"type": "address", "start": 8, "end": 83}]}
+{"text": "Ayúdame a responderle a Diego Ortiz Rivera, que me escribió desde valeria_rivera21.fake@empresa.com.mx", "entities": [{"type": "person", "start": 24, "end": 42}, {"type": "email", "start": 66, "end": 102}]}
+{"text": "¿Puedes revisar si este CURP está bien escrito? ZOJN951123MNLJMJD9", "entities": [{"type": "curp", "start": 48, "end": 66}]}
+{"text": "Envíale la factura a paolatorres91.fake@correo.ibero.mx con el RFC PPHO950313G97", "entities": [{"type": "email", "start": 21, "end": 55}, {"type": "rfc", "start": 67, "end": 80}]}
+{"text": "Traduce 'Avenida Reforma' al inglés", "entities": []}
+{"text": "Ayúdame a responderle a José Luis Díaz Martínez, que me escribió desde emiliohernandez26.fake@hotmail.com", "entities": [{"type": "person", "start": 24, "end": 47}, {"type": "email", "start": 71, "end": 105}]}
+{"text": "Corrige este texto: 'atentamente, Carlos Torres, jose_hernandez.fake@gmail.com'", "entities": [{"type": "person", "start": 34, "end": 47}, {"type": "email", "start": 49, "end": 78}]}
+{"text": "Resume el capítulo 3 de Cien años de soledad", "entities": []}
+{"text": "Llena el formulario con mi CURP DUNL800720HMCXJLC6 y mi RFC AQZR720614C58", "entities": [{"type": "curp", "start": 32, "end": 50}, {"type": "rfc", "start": 60, "end": 73}]}
+{"text": "Mi teléfono es 22-2604-1828, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 27}]}
+{"text": "Escribe un poema sobre Guadalajara", "entities": []}
+{"text": "Mi contraseña tiene 16 caracteres, ¿es segura?", "entities": []}
+{"text": "Mi dirección fiscal es Calle Zaragoza 1140, C.P. 21926, Monterrey, Nuevo León y mi RFC IEGY810203M14", "entities": [{"type": "address", "start": 23, "end": 77}, {"type": "rfc", "start": 87, "end": 100}]}
+{"text": "Envíale la factura a carlosmorales22.fake@empresa.com.mx con el RFC TNGR721210M56", "entities": [{"type": "email", "start": 21, "end": 56}, {"type": "rfc", "start": 68, "end": 81}]}
+{"text": "Corrige este texto: 'atentamente, Jorge González Sánchez, reginaramirez75.fake@empresa.com.mx'", "entities": [{"type": "person", "start": 34, "end": 56}, {"type": "email", "start": 58, "end": 93}]}
+{"text": "Hola, soy Ricardo Ortiz, mi correo es anatorres.fake@hotmail.com por si me quieren contactar", "entities": [{"type": "person", "start": 10, "end": 23}, {"type": "email", "start": 38, "end": 64}]}
+{"text": "Haz un CV para Ricardo Flores, correo joseflores69.fake@outlook.com, teléfono 22-9864-1588, domicilio Calle Reforma 962, Col. Narvarte", "entities": [{"type": "person", "start": 15, "end": 29}, {"type": "email", "start": 38, "end": 67}, {"type": "phone_mx", "start": 78, "end": 90}, {"type": "address", "start": 102, "end": 134}]}
+{"text": "Mis datos: Guadalupe Torres, CURP VEIZ971126HMCFWKJ4, tel. 3321691977", "entities": [{"type": "person", "start": 11, "end": 27}, {"type": "curp", "start": 34, "end": 52}, {"type": "phone_mx", "start": 59, "end": 69}]}
+{"text": "Necesito una constancia de situación fiscal, mi RFC es YFRY930120K7A", "entities": [{"type": "rfc", "start": 55, "end": 68}]}
+{"text": "Agenda una cita con el doctor y avisa a (33) 2545-2588", "entities": [{"type": "phone_mx", "start": 40, "end": 54}]}
+{"text": "Haz un CV para Valeria Ramírez, correo valeria_ramirez.fake@hotmail.com, teléfono 3347887275, domicilio Calle Morelos 264, Col. Lomas de Chapultepec, C.P. 55496, Puebla", "entities": [{"type": "person", "start": 15, "end": 30}, {"type": "email", "start": 39, "end": 71}, {"type": "phone_mx", "start": 82, "end": 92}, {"type": "address", "start": 104, "end": 168}]}
+{"text": "Envíale la factura a ricardo.garcia71.fake@yahoo.com.mx con el RFC EUYP660119J76", "entities": [{"type": "email", "start": 21, "end": 55}, {"type": "rfc", "start": 67, "end": 80}]}
+{"text": "¿Cuántos habitantes tiene Monterrey?", "entities": []}
+{"text": "El contacto del proveedor es Valeria Martínez Cruz, cel 22 7209 6511", "entities": [{"type": "person", "start": 29, "end": 50}, {"type": "phone_mx", "start": 56, "end": 68}]}
+{"text": "El Banco de México subió la tasa de interés, ¿cómo me afecta?", "entities": []}
+{"text": "El contacto del proveedor es José Luis Ortiz Morales, cel (33) 8744-4981", "entities": [{"type": "person", "start": 29, "end": 52}, {"type": "phone_mx", "start": 58, "end": 72}]}
+{"text": "Agenda una cita con el doctor y avisa a +52 81 1722 1058", "entities": [{"type": "phone_mx", "start": 40, "end": 56}]}
+{"text": "Haz un CV para Jorge Martínez, correo alejandro.ramirez.fake@yahoo.com.mx, teléfono 44-1339-5415, domicilio Av. Insurgentes Sur 3126, C.P. 86394, Monterrey, Nuevo León", "entities": [{"type": "person", "start": 15, "end": 29}, {"type": "email", "start": 38, "end": 73}, {"type": "phone_mx", "start": 84, "end": 96}, {"type": "address", "start": 108, "end": 167}]}
+{"text": "Mi pedido 4589123 llegó incompleto, redacta una queja", "entities": []}
+{"text": "Haz un CV para Ximena Flores, correo jorge.flores.fake@empresa.com.mx, teléfono 22 4826 7730, domicilio Calle Hidalgo 3051, Col. Coyoacán, C.P. 87991", "entities": [{"type": "person", "start": 15, "end": 28}, {"type": "email", "start": 37, "end": 69}, {"type": "phone_mx", "start": 80, "end": 92}, {"type": "address", "start": 104, "end": 149}]}
+{"text": "Mi teléfono es 33 2858 8560, márcame después de las 5", "entities": [{"type": "phone_mx", "start": 15, "end": 27}]}
+{"text": "Necesito una constancia de situación fiscal, mi RFC es NNOX631121U1A", "entities": [{"type": "rfc", "start": 55, "end": 68}]}
+{"text": "Agenda una cita con el doctor y avisa a 5526468269", "entities": [{"type": "phone_mx", "start": 40, "end": 50}]}
+{"text": "La entrega es en Calle Zaragoza 2142, Col. Narvarte, C.P. 94872, Monterrey, Nuevo León", "entities": [{"type": "address", "start": 17, "end": 86}]}
+{"text": "Haz un CV para Alejandro Pérez, correo ricardo_flores77.fake@empresa.com.mx, teléfono 55 9464 4130, domicilio Calle Morelos 2950, Col. Roma Norte, Puebla", "entities": [{"type": "person", "start": 15, "end": 30}, {"type": "email", "start": 39, "end": 75}, {"type": "phone_mx", "start": 86, "end": 98}, {"type": "address", "start": 110, "end": 153}]}
+{"text": "Manda el paquete a Calle Zaragoza 3306, Col. Santa Fe, Mérida, Yucatán a nombre de Ana Sofía González López", "entities": [{"type": "address", "start": 19, "end": 70}, {"type": "person", "start": 83, "end": 107}]}
+{"text": "Escribe una carta de recomendación para Ximena Torres Sánchez", "entities": [{"type": "person", "start": 40, "end": 61}]}
+{"text": "¿Qué hizo Benito Juárez por México?", "entities": []}
+{"text": "Mi dirección fiscal es Av. Insurgentes Sur 2284, Col. Del Valle, C.P. 61901, Querétaro y mi RFC TKYO991217N86", "entities": [{"type": "address", "start": 23, "end": 86}, {"type": "rfc", "start": 96, "end": 109}]}
