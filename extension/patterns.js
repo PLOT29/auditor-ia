@@ -1,21 +1,26 @@
 /*
- * patterns.js — Capa 1 (DLP local, síncrono).
+ * patterns.js — Capa 1 (DLP local, SÍNCRONO).
  *
  * Mismo set de regex que backend/detectors/secrets.py y misma máscara que
- * backend/masking.py. Si cambias uno, cambia el otro: el test
- * backend/tests/test_patterns_parity.py compara ambos con Node.
+ * backend/masking.py. Si cambias uno, cambia el otro. La paridad se verifica con
+ *   node extension/test/patterns.test.js
+ *   python -m pytest backend/tests/test_patterns_parity.py
+ * usando los casos de extension/test/secret_cases.json.
  *
- * Fase 2: solo se usa para llenar `client_findings`.
- * Fase 3: content.js lo usará para bloquear el envío.
+ * Semántica: todas las regex son ASCII (`\b`, `\d`, `\s`), igual que el backend
+ * con re.ASCII. Los índices start/end son de JavaScript (unidades UTF-16).
  *
- * PRIVACIDAD: los valores en claro solo existen dentro de detectSecrets();
- * hacia afuera solo salen {type, masked}. Nunca hagas console.log del texto.
+ * PRIVACIDAD: los valores en claro solo existen dentro de estas funciones;
+ * hacia afuera salen {type, masked, start, end}. Nunca hagas console.log del texto.
+ *
+ * Se carga en content.js (window) y en background.js (importScripts) y en Node.
  */
 (function (root) {
   "use strict";
 
   const STARS = "****";
 
+  // ------------------------------------------------------------ secretos
   function luhnOk(number) {
     const digits = number.replace(/\D/g, "");
     if (digits.length < 13 || digits.length > 19) return false;
@@ -33,11 +38,12 @@
 
   function cardOk(value) {
     const digits = value.replace(/\D/g, "");
-    if (new Set(digits).size === 1) return false; // 0000..., 1111...
+    if (new Set(digits).size === 1) return false; // 0000..., 1111... pasan Luhn
     return luhnOk(digits);
   }
 
-  // Orden = prioridad (igual que en secrets.py). `group` = grupo con el valor.
+  // Orden = prioridad (igual que secrets.PATTERNS). `group` = grupo con el valor.
+  // Flag `d` donde hay grupo: da los índices exactos del grupo.
   const PATTERNS = [
     {
       type: "private_key",
@@ -50,19 +56,46 @@
     { type: "google_api_key", re: /\bAIza[0-9A-Za-z_\-]{35}(?![0-9A-Za-z_\-])/g },
     { type: "jwt", re: /\beyJ[A-Za-z0-9_\-]{5,}\.eyJ[A-Za-z0-9_\-]{5,}\.[A-Za-z0-9_\-]{5,}/g },
     {
+      // \s ASCII explícito ([ \t\n\r\f\v]) para igualar re.ASCII de Python.
       type: "password",
-      re: /\b(?:password|passwd|pwd|contrase(?:ñ|n)a)\b\s*[:=]\s*["']?([^\s"',;]{4,})/gi,
+      re: /\b(?:password|passwd|pwd|contrase[ñÑnN]a)\b[ \t\n\r\f\v]*[:=][ \t\n\r\f\v]*["']?([^ \t\n\r\f\v"',;]{4,})/dgi,
       group: 1,
     },
-    { type: "credit_card", re: /(?<![\d-])\d(?:[ -]?\d){12,18}(?![\d-])/g, validator: cardOk },
+    // (?<!\d[.,]) — no es la parte fraccionaria de un decimal (0.4111..., 3,1415...).
+    { type: "credit_card", re: /(?<![\d-])(?<!\d[.,])\d(?:[ -]?\d){12,18}(?![\d-])/g, validator: cardOk },
   ];
 
-  const FIXED_PREFIX = {
-    anthropic_key: "sk-ant-",
-    openai_key: "sk-",
-    google_api_key: "AIza",
-    jwt: "eyJ",
-  };
+  // ---------------------------------------------------------------- PII
+  // Solo para ENMASCARAR la cola offline (background.js) — la PII no bloquea.
+  // Aproximación de backend/detectors/pii.py (el backend sigue siendo la referencia).
+  const STATES =
+    "AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE";
+  const DATE = "\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])";
+  const PII_RULES = [
+    { type: "email", re: /(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g },
+    {
+      type: "curp",
+      re: new RegExp(`\\b[A-Z][AEIOUX][A-Z]{2}${DATE}[HM](?:${STATES})[B-DF-HJ-NP-TV-Z]{3}[A-Z\\d]\\d\\b`, "gi"),
+    },
+    { type: "rfc", re: new RegExp(`(?<![\\wÑñ&])[A-ZÑ&]{3,4}${DATE}[A-Z\\d]{2}[A\\d]\\b`, "gi") },
+    {
+      type: "phone_mx",
+      re: /(?<![\w+])(?:\+?52[\s.-]?)?(?:1[\s.-]?)?(?:\(\d{2,3}\)|\d{2,3})[\s.-]?\d{3,4}[\s.-]?\d{4}(?!\d)/g,
+      validator: phoneOk,
+    },
+  ];
+
+  function phoneOk(value) {
+    let digits = value.replace(/\D/g, "");
+    if (value.trimStart().startsWith("+") || digits.length > 10) {
+      if (digits.startsWith("52")) digits = digits.slice(2);
+      if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+    }
+    return digits.length === 10;
+  }
+
+  // ------------------------------------------------------------ máscara
+  const FIXED_PREFIX = { anthropic_key: "sk-ant-", openai_key: "sk-", google_api_key: "AIza", jwt: "eyJ" };
   const FULLY_HIDDEN = new Set(["password", "private_key"]);
 
   /** Igual que masking.mask_value() del backend. */
@@ -85,36 +118,64 @@
     return prefix + STARS + value.slice(-tailLen);
   }
 
+  /** Igual que masking.mask_text(): reemplaza cada hallazgo por <TIPO>. */
+  function maskText(text, findings) {
+    let out = text;
+    for (const f of [...findings].sort((a, b) => b.start - a.start)) {
+      out = out.slice(0, f.start) + `<${f.type.toUpperCase()}>` + out.slice(f.end);
+    }
+    return out;
+  }
+
+  // ----------------------------------------------------------- motor
+  function run(rules, text, taken, source) {
+    const found = [];
+    for (const rule of rules) {
+      rule.re.lastIndex = 0;
+      let m;
+      while ((m = rule.re.exec(text)) !== null) {
+        if (m[0].length === 0) {
+          rule.re.lastIndex++;
+          continue;
+        }
+        const [start, end] = rule.group ? m.indices[rule.group] : [m.index, m.index + m[0].length];
+        const value = text.slice(start, end);
+        if (rule.validator && !rule.validator(value)) continue;
+        if (taken.some((t) => t.start < end && start < t.end)) continue;
+        const f = { type: rule.type, masked: maskValue(rule.type, value), start, end, source };
+        taken.push(f);
+        found.push(f);
+      }
+    }
+    return found.sort((a, b) => a.start - b.start);
+  }
+
   /**
-   * Busca secretos en `text`.
-   * @returns {{type: string, masked: string}[]} ordenados por posición.
+   * Secretos en `text`, síncrono.
+   * @returns {{type: string, masked: string, start: number, end: number}[]}
    */
   function detectSecrets(text) {
     if (!text) return [];
-    const taken = []; // [start, end]
-    const found = [];
-    for (const p of PATTERNS) {
-      p.re.lastIndex = 0;
-      let m;
-      while ((m = p.re.exec(text)) !== null) {
-        if (m[0].length === 0) {
-          p.re.lastIndex++;
-          continue;
-        }
-        const value = p.group ? m[p.group] : m[0];
-        const start = p.group ? m.index + m[0].lastIndexOf(value) : m.index;
-        const end = start + value.length;
-        if (p.validator && !p.validator(value)) continue;
-        if (taken.some(([s, e]) => s < end && start < e)) continue;
-        taken.push([start, end]);
-        found.push({ start, type: p.type, masked: maskValue(p.type, value) });
-      }
-    }
-    found.sort((a, b) => a.start - b.start);
-    return found.map(({ type, masked }) => ({ type, masked }));
+    return run(PATTERNS, text, [], "secret").map(({ type, masked, start, end }) => ({ type, masked, start, end }));
   }
 
-  const api = { detectSecrets, maskValue, luhnOk, PATTERN_TYPES: PATTERNS.map((p) => p.type) };
+  /** Secretos + PII (sin solapes), con `source`. Para enmascarar la cola offline. */
+  function detectSensitive(text) {
+    if (!text) return [];
+    const taken = [];
+    const secrets = run(PATTERNS, text, taken, "secret");
+    const pii = run(PII_RULES, text, taken, "pii");
+    return [...secrets, ...pii].sort((a, b) => a.start - b.start);
+  }
+
+  const api = {
+    detectSecrets,
+    detectSensitive,
+    maskValue,
+    maskText,
+    luhnOk,
+    PATTERN_TYPES: PATTERNS.map((p) => p.type),
+  };
   root.AuditorPatterns = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

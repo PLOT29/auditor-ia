@@ -146,9 +146,13 @@ auditor-ia/
   "timestamp": "ISO-8601",
   "client_findings": [{"type": "openai_key", "masked": "sk-****abcd"}],
   "blocked": true,
-  "user_decision": "enviado | cancelado | no_aplica"
+  "user_decision": "enviado | cancelado | no_aplica",
+  "client_latency_ms": 0.4
 }
 ```
+- `client_latency_ms` (opcional, Fase 3): latencia de la decisión de bloqueo en `content.js` (CE-6). Solo se loguea; no se guarda en la BD.
+- `platform` acepta además `"test"` para `extension/test/test.html` (solo desarrollo).
+
 Respuesta:
 ```json
 {

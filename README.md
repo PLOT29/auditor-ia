@@ -7,8 +7,8 @@ Proyecto final · Seguridad de la Información · IBERO. Ver [SPEC.md](SPEC.md).
 | Fase | Estado |
 |---|---|
 | 1 · Backend `/analyze` + secretos + PII básica + SQLite enmascarada + tests | ✅ |
-| 2 · Extensión: captura + etiqueta flotante | ✅ (falta prueba manual en las 3 plataformas, CE-8) |
-| 3 · Modo bloqueo / DLP local | pendiente (`shouldBlock()` es stub) |
+| 2 · Extensión: captura + etiqueta flotante | ✅ |
+| 3 · Modo bloqueo / DLP local | ✅ en test.html (falta validar el reenvío en ChatGPT / Claude / Gemini) |
 | 4 · Clasificadores de tema e inyección + Presidio | pendiente (`topic.py` e `injection.py` son stubs) |
 | 5 · Dashboard | pendiente |
 | 6 · Evaluación y demo | pendiente |
@@ -74,6 +74,30 @@ Archivos:
 | `background.js` | **Único** lugar con `fetch` al backend (timeout 3 s) |
 | `overlay.css` | Estilos de la etiqueta (dentro del Shadow DOM) |
 | `popup.html/js` | Interruptor de monitoreo (y de bloqueo, deshabilitado hasta Fase 3) |
+
+### Modo bloqueo (Fase 3)
+
+- Si el prompt contiene un **secreto**, el envío se cancela en la fase de captura
+  (antes que cualquier listener de la página) y se abre un modal. La PII no bloquea.
+- «Cancelar» (default, también Escape) deja el texto en el input y registra
+  `blocked:true, user_decision:"cancelado"`.
+- «Enviar de todos modos» reenvía con `button.click()` → si la página no lo acepta,
+  `KeyboardEvent` Enter → si tampoco, pide al usuario presionar Enviar otra vez
+  (ventana de 10 s). Solo se registra `"enviado"` cuando la página realmente envió.
+- Backend apagado: el bloqueo sigue funcionando; los eventos bloqueados se guardan
+  **enmascarados** en `chrome.storage.local` (máx. 100) y se reenvían tras el
+  siguiente envío exitoso. El popup muestra cuántos hay en cola.
+- Limitación: un evento reenviado desde la cola llega con el texto ya enmascarado,
+  así que en la BD su `length` y `text_sha256` son los del texto enmascarado.
+
+### Pruebas de la extensión (Node)
+
+```bash
+node extension/test/patterns.test.js     # 59 casos + latencia CE-6
+node extension/test/background.test.js   # cola de reintento
+```
+
+Ambas corren también dentro de `python -m pytest` (`test_patterns_parity.py`).
 
 ## Qué detecta hoy
 

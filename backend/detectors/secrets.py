@@ -46,39 +46,48 @@ def _card_ok(value: str) -> bool:
     return luhn_ok(digits)
 
 
+# re.ASCII: `\b`, `\d`, `\s`, `\w` con semántica ASCII, igual que en JavaScript
+# (patterns.js). Sin esto, p. ej. "ñsk-..." o "contraseña:\u00a0x" darían
+# resultados distintos en la extensión y en el backend.
+_A = re.ASCII
+
 PATTERNS: list[SecretPattern] = [
     SecretPattern(
         "private_key",
         re.compile(
             r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----"
-            r"(?:[\s\S]*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----)?"
+            r"(?:[\s\S]*?-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----)?",
+            _A,
         ),
     ),
-    SecretPattern("anthropic_key", re.compile(r"\bsk-ant-[A-Za-z0-9_\-]{20,}")),
+    SecretPattern("anthropic_key", re.compile(r"\bsk-ant-[A-Za-z0-9_\-]{20,}", _A)),
     SecretPattern(
         "openai_key",
-        re.compile(r"\bsk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}"),
+        re.compile(r"\bsk-(?!ant-)(?:proj-|svcacct-|admin-)?[A-Za-z0-9_\-]{20,}", _A),
     ),
-    SecretPattern("aws_access_key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
+    SecretPattern("aws_access_key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b", _A)),
     SecretPattern(
         "github_token",
-        re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})\b"),
+        re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})\b", _A),
     ),
-    SecretPattern("google_api_key", re.compile(r"\bAIza[0-9A-Za-z_\-]{35}(?![0-9A-Za-z_\-])")),
+    SecretPattern("google_api_key", re.compile(r"\bAIza[0-9A-Za-z_\-]{35}(?![0-9A-Za-z_\-])", _A)),
     SecretPattern(
         "jwt",
-        re.compile(r"\beyJ[A-Za-z0-9_\-]{5,}\.eyJ[A-Za-z0-9_\-]{5,}\.[A-Za-z0-9_\-]{5,}"),
+        re.compile(r"\beyJ[A-Za-z0-9_\-]{5,}\.eyJ[A-Za-z0-9_\-]{5,}\.[A-Za-z0-9_\-]{5,}", _A),
     ),
     SecretPattern(
         "password",
+        # [ñÑnN] explícito: con re.ASCII, IGNORECASE no relaciona ñ/Ñ.
         re.compile(
-            r"(?i)\b(?:password|passwd|pwd|contrase(?:ñ|n)a)\b\s*[:=]\s*[\"']?([^\s\"',;]{4,})"
+            r"\b(?:password|passwd|pwd|contrase[ñÑnN]a)\b\s*[:=]\s*[\"']?([^\s\"',;]{4,})",
+            _A | re.IGNORECASE,
         ),
         group=1,
     ),
     SecretPattern(
         "credit_card",
-        re.compile(r"(?<![\d-])\d(?:[ -]?\d){12,18}(?![\d-])"),
+        # (?<!\d[.,]) — no es la parte fraccionaria de un decimal (0.4111..., 3,1415...).
+        re.compile(r"(?<![\d-])(?<!\d[.,])\d(?:[ -]?\d){12,18}(?![\d-])", _A),
         validator=_card_ok,
     ),
 ]

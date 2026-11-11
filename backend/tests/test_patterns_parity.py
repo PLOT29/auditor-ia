@@ -1,6 +1,12 @@
-"""extension/patterns.js debe detectar y enmascarar igual que el backend.
+"""Paridad extension/patterns.js ↔ backend (secrets.py + masking.py).
 
-Ejecuta patterns.js con Node (si no está instalado, el test se omite).
+Usa los casos de extension/test/secret_cases.json:
+  1. El backend da exactamente los secretos esperados (tipo + máscara).
+  2. patterns.js (vía Node) da EXACTAMENTE lo mismo que el backend, incluidas
+     las posiciones start/end (convertidas a UTF-16, que es como cuenta JS).
+  3. La PII que patterns.js usa para enmascarar la cola coincide con pii.py.
+  4. extension/test/patterns.test.js pasa.
+Si Node no está instalado, 2–4 se omiten.
 """
 import json
 import shutil
@@ -9,68 +15,90 @@ from pathlib import Path
 
 import pytest
 
-import fakes as F
 import masking
-from detectors import secrets
+from detectors import pii, secrets
 
-PATTERNS_JS = Path(__file__).resolve().parents[2] / "extension" / "patterns.js"
+REPO = Path(__file__).resolve().parents[2]
+CASES_FILE = REPO / "extension" / "test" / "secret_cases.json"
+NODE_TEST = REPO / "extension" / "test" / "patterns.test.js"
 NODE = shutil.which("node")
 
-SAMPLES = [
-    f"Corrige: client = OpenAI(api_key='{F.OPENAI_KEY}')",
-    F.OPENAI_KEY_LEGACY,
-    F.ANTHROPIC_KEY,
-    f"{F.AWS_KEY} y {F.GITHUB_TOKEN}",
-    "token github_pat_" + "F" * 30,
-    F.GOOGLE_KEY,
-    F.JWT,
-    F.PEM,
-    "-----BEGIN OPENSSH " + "PRIVATE KEY-----\nb3BlbnNz",
-    f"password={F.PASSWORD_VALUE}",
-    f"PASSWORD: '{F.PASSWORD_VALUE}'",
-    f"mi contraseña: {F.PASSWORD_VALUE}",
-    F.CARD,
-    F.CARD.replace(" ", "-"),
-    F.CARD_BAD_LUHN,
-    "0000 0000 0000 0000",
-    "Explícame qué es un firewall",
-    "mi password es muy segura",
-    "Usa el formato task-management-board-for-teams-2026",
-    "AKIA es un prefijo de AWS",
-    f"todo junto {F.OPENAI_KEY} {F.JWT} {F.CARD} password={F.PASSWORD_VALUE}",
-]
+CASES = json.loads(CASES_FILE.read_text(encoding="utf-8"))
+SECRET_CASES = CASES["secret_cases"]
+PII_CASES = CASES["pii_cases"]
 
-JS = """
-const P = require(process.argv[1]);
-const samples = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-process.stdout.write(JSON.stringify(samples.map(s => P.detectSecrets(s))));
-"""
+needs_node = pytest.mark.skipif(NODE is None, reason="Node.js no está instalado")
 
 
-def python_side(text):
-    return [{"type": f.type, "masked": masking.mask_value(f.type, f.value)} for f in secrets.detect(text)]
+def utf16(text: str, i: int) -> int:
+    """Índice de código Python → índice UTF-16 (JavaScript)."""
+    return len(text[:i].encode("utf-16-le")) // 2
 
 
-@pytest.mark.skipif(NODE is None, reason="Node.js no está instalado")
-def test_patterns_js_matches_backend():
-    out = subprocess.run(
-        [NODE, "-e", JS, str(PATTERNS_JS)],
-        input=json.dumps(SAMPLES),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        check=True,
-    )
-    js_results = json.loads(out.stdout)
-    for text, js in zip(SAMPLES, js_results):
-        assert js == python_side(text), f"diferencia en muestra que empieza con {text[:12]!r}"
+def py_secrets(text):
+    return [
+        {"type": f.type, "masked": masking.mask_value(f.type, f.value),
+         "start": utf16(text, f.start), "end": utf16(text, f.end)}
+        for f in secrets.detect(text)
+    ]
 
 
-@pytest.mark.skipif(NODE is None, reason="Node.js no está instalado")
-def test_same_types_in_same_order():
+def py_sensitive(text):
+    found = secrets.detect(text)
+    found += pii.detect(text, taken=found)
+    return [
+        {"type": f.type, "masked": masking.mask_value(f.type, f.value),
+         "start": utf16(text, f.start), "end": utf16(text, f.end)}
+        for f in sorted(found, key=lambda f: f.start)
+    ]
+
+
+@pytest.fixture(scope="module")
+def js():
+    out = subprocess.run([NODE, str(NODE_TEST), "--json"], capture_output=True,
+                         text=True, encoding="utf-8", check=True)
+    return json.loads(out.stdout)
+
+
+def test_at_least_30_secret_cases():
+    assert len(SECRET_CASES) >= 30
+    assert sum(1 for c in SECRET_CASES if c["expected"]) >= 10
+    assert sum(1 for c in SECRET_CASES if not c["expected"]) >= 10
+
+
+@pytest.mark.parametrize("case", SECRET_CASES, ids=[c["id"] for c in SECRET_CASES])
+def test_backend_matches_expected(case):
+    got = [{"type": f["type"], "masked": f["masked"]} for f in py_secrets(case["text"])]
+    assert got == case["expected"]
+
+
+@needs_node
+@pytest.mark.parametrize("i", range(len(SECRET_CASES)), ids=[c["id"] for c in SECRET_CASES])
+def test_js_equals_backend_secrets(js, i):
+    assert js["secret_cases"][i] == py_secrets(SECRET_CASES[i]["text"])
+
+
+@needs_node
+@pytest.mark.parametrize("i", range(len(PII_CASES)), ids=[c["id"] for c in PII_CASES])
+def test_js_equals_backend_pii(js, i):
+    text = PII_CASES[i]["text"]
+    assert js["pii_cases"][i] == py_sensitive(text)
+    assert [{"type": f["type"], "masked": f["masked"]} for f in py_sensitive(text)] == PII_CASES[i]["expected"]
+
+
+@needs_node
+def test_same_pattern_types_in_same_order():
     out = subprocess.run(
         [NODE, "-e", "process.stdout.write(JSON.stringify(require(process.argv[1]).PATTERN_TYPES))",
-         str(PATTERNS_JS)],
+         str(REPO / "extension" / "patterns.js")],
         capture_output=True, text=True, check=True,
     )
     assert json.loads(out.stdout) == [p.type for p in secrets.PATTERNS]
+
+
+@needs_node
+@pytest.mark.parametrize("script", ["patterns.test.js", "background.test.js"])
+def test_node_suites_pass(script):
+    out = subprocess.run([NODE, str(REPO / "extension" / "test" / script)],
+                         capture_output=True, text=True, encoding="utf-8")
+    assert out.returncode == 0, out.stdout + out.stderr

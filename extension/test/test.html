@@ -34,6 +34,7 @@
     .send:disabled { opacity: .4; cursor: default; }
     .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
     .samples button { background: color-mix(in srgb, CanvasText 8%, Canvas); color: inherit; font-size: 12px; padding: 6px 10px; }
+    .strict { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: -8px 0 20px; }
   </style>
 </head>
 <body>
@@ -48,8 +49,16 @@
     <button type="button" data-sample="normal">Prompt normal</button>
     <button type="button" data-sample="email">Correo + CURP falsos</button>
     <button type="button" data-sample="key">API key falsa</button>
+    <button type="button" data-sample="password">contraseña: …</button>
+    <button type="button" data-sample="card">Tarjeta de prueba</button>
+    <button type="button" data-sample="fp">Falso positivo (sk-ip)</button>
     <button type="button" id="new-chat">Nuevo chat (botón que no envía)</button>
   </div>
+
+  <label class="strict">
+    <input type="checkbox" id="strict">
+    Ignorar eventos no confiables (<code>isTrusted=false</code>) — simula una página estricta
+  </label>
 
   <section>
     <h2>A · textarea</h2>
@@ -75,7 +84,12 @@
     normal: "Explícame qué es un firewall",
     email: "Llena el formulario con demo.fake@gmail.com y CURP GOMJ800101HDFRRN09",
     key: "Corrige este código: client = OpenAI(api_key='" + FAKE_KEY + "')",
+    password: "Conéctate con usuario=admin y contraseña: Fake" + "1234!",
+    card: "Cobra a la tarjeta 4111 1111 1111 1111", // tarjeta de prueba Visa
+    fp: "¿Qué hace el parámetro sk-ip y el módulo desk-ip-configuration-for-routers?",
   };
+  const strict = document.getElementById("strict");
+  const ignored = (e) => strict.checked && !e.isTrusted;
 
   const log = document.getElementById("log");
   const count = document.getElementById("count");
@@ -107,10 +121,12 @@
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
         e.preventDefault();
-        send(input, "enter");
+        if (!ignored(e)) send(input, e.isTrusted ? "enter" : "enter (sintético)");
       }
     });
-    button.addEventListener("click", () => send(input, "clic"));
+    button.addEventListener("click", (e) => {
+      if (!ignored(e)) send(input, e.isTrusted ? "clic" : "clic (sintético)");
+    });
   }
   wire("input-a", "send-a");
   wire("input-b", "send-b");

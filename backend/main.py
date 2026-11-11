@@ -46,6 +46,9 @@ class AnalyzeRequest(BaseModel):
     client_findings: list[ClientFinding] = Field(default_factory=list)
     blocked: bool = False
     user_decision: Literal["enviado", "cancelado", "no_aplica"] = "no_aplica"
+    # Fase 3 (opcional): latencia de la decisión de bloqueo en content.js (CE-6).
+    # Solo se loguea; no se guarda (el esquema de la BD no cambia).
+    client_latency_ms: float | None = Field(default=None, ge=0, le=60_000)
 
 
 class FindingOut(BaseModel):
@@ -157,8 +160,10 @@ def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
         }
     )
     # Solo metadatos en el log — nunca el texto.
-    log.info("prompt id=%s platform=%s risk=%s findings=%d latency=%dms",
-             prompt_id, req.platform, level, len(public), latency_ms)
+    client_ms = "-" if req.client_latency_ms is None else f"{req.client_latency_ms:.2f}ms"
+    log.info("prompt id=%s platform=%s risk=%s findings=%d blocked=%s decision=%s latency=%dms cliente=%s",
+             prompt_id, req.platform, level, len(public), req.blocked, req.user_decision,
+             latency_ms, client_ms)
 
     return AnalyzeResponse(
         id=prompt_id,
