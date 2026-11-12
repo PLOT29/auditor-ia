@@ -110,7 +110,9 @@ def load_topic_probe() -> pd.DataFrame:
 
 
 def file_sha256(path: Path) -> str:
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    """SHA-256 del archivo con los finales de línea normalizados a LF (\\r\\n → \\n), para que
+    el hash no cambie si Git (core.autocrlf) o un editor convierten el archivo a CRLF."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def load_topic_test_real() -> pd.DataFrame | None:

@@ -32,7 +32,8 @@ def test_probe_has_60_cases_10_per_category():
 
 def test_probe_hash_matches_metrics():
     stored = json.loads(METRICS.read_text(encoding="utf-8"))["topic_probe"]["sha256"]
-    assert hashlib.sha256(PROBE.read_bytes()).hexdigest() == stored, "el probe set cambió después de la línea base"
+    data = PROBE.read_bytes().replace(b"\r\n", b"\n")  # mismo criterio que mlutils.file_sha256
+    assert hashlib.sha256(data).hexdigest() == stored, "el probe set cambió después de la línea base"
 
 
 @pytest.mark.parametrize("train_file", ["topic_synthetic_v1.csv", "topic_synthetic_v2.csv"])

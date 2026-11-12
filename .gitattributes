@@ -1,0 +1,2 @@
+# El probe set de tema (Fase 4C) se verifica por SHA-256: Git no debe tocar sus finales de línea.
+ml/data/topic_probe.csv -text
