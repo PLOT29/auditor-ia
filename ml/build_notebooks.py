@@ -2,6 +2,7 @@
 
     python ml/build_notebooks.py            # escribe los .ipynb
     python ml/build_notebooks.py --run      # además los ejecuta y guarda las salidas
+    python ml/build_notebooks.py --run --only evaluate.ipynb   # solo evalúa (no reentrena)
 
 Notebooks: train_topic.ipynb, train_injection.ipynb, evaluate.ipynb.
 
@@ -178,7 +179,8 @@ sorted(p.name for p in U.MODELS.glob("injection_*.joblib"))
 # ------------------------------------------------------------------ evaluate
 EVAL = [
     md("# Evaluación (Fase 4A)\n\n"
-       "- **Tema (CE-4 ≥ 0.80 F1 macro):** SOLO sobre el test real etiquetado a mano. Mientras no exista, se muestran "
+       "- **Tema (CE-4 ≥ 0.80 F1 macro):** SOLO sobre el test real etiquetado a mano (~100 prompts, estratificado por "
+       "plataforma), con IC 95 % por bootstrap (1000 remuestreos) y F1 por plataforma. Mientras no exista, se muestran "
        "métricas *provisionales* de validación cruzada sobre sintéticos, marcadas como tales (no cuentan para CE-4).\n"
        "- **Inyección (CE-5: recall ≥ 0.85 con precision ≥ 0.80):** test 20 %, por idioma; umbral fijado en train.\n"
        "- Latencia por prompt en CPU, tabla baseline vs. embeddings y 10 errores por modelo.\n"
@@ -213,18 +215,42 @@ def inj_score_emb(texts): return inj_emb["clf"].predict_proba(U.embed(texts))[:,
 test_real = U.load_topic_test_real()
 LABELS = U.TOPIC_LABELS
 
-def topic_block(y_true, preds, tag):
+N_BOOT = 1000
+
+def f1_macro(y_true, y_pred):
+    return float(f1_score(y_true, y_pred, average="macro", labels=LABELS, zero_division=0))
+
+def bootstrap_ci(y_true, y_pred, n_boot=N_BOOT, alpha=0.05):
+    \"\"\"IC del F1 macro por bootstrap (remuestreo con reemplazo de los prompts, seed fija).\"\"\"
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    rng = np.random.default_rng(U.SEED)
+    stats = [f1_macro(y_true[idx], y_pred[idx])
+             for idx in (rng.integers(0, len(y_true), len(y_true)) for _ in range(n_boot))]
+    lo, hi = np.percentile(stats, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return {"ic95": [round(float(lo), 4), round(float(hi), 4)], "n_boot": n_boot,
+            "semiamplitud": round(float(hi - lo) / 2, 4)}
+
+def topic_block(y_true, preds, tag, platforms=None):
     out = {}
     fig, axes = plt.subplots(1, 2, figsize=(13, 5.2))
     for ax, (name, y_pred) in zip(axes, preds.items()):
-        out[name] = {"f1_macro": round(float(f1_score(y_true, y_pred, average="macro", labels=LABELS)), 4),
-                     "accuracy": round(float((np.array(y_true) == np.array(y_pred)).mean()), 4),
-                     "por_clase": {k: {m: round(v[m], 3) for m in ("precision", "recall", "f1-score")}
+        y_pred = np.asarray(y_pred)
+        out[name] = {"f1_macro": round(f1_macro(y_true, y_pred), 4),
+                     "f1_macro_bootstrap": bootstrap_ci(y_true, y_pred),
+                     "accuracy": round(float((np.array(y_true) == y_pred).mean()), 4),
+                     "por_clase": {k: {m: round(v[m], 3) for m in ("precision", "recall", "f1-score", "support")}
                                    for k, v in classification_report(y_true, y_pred, labels=LABELS, output_dict=True, zero_division=0).items()
                                    if k in LABELS}}
+        if platforms is not None:
+            plat = np.asarray(platforms)
+            out[name]["por_plataforma"] = {
+                p: {"n": int((plat == p).sum()),
+                    "f1_macro": round(f1_macro(np.asarray(y_true)[plat == p], y_pred[plat == p]), 4)}
+                for p in sorted(set(plat))}
+        ci = out[name]["f1_macro_bootstrap"]["ic95"]
         ConfusionMatrixDisplay(confusion_matrix(y_true, y_pred, labels=LABELS), display_labels=LABELS).plot(
             ax=ax, xticks_rotation=45, colorbar=False, cmap="Blues")
-        ax.set_title(f"{name} · F1 macro {out[name]['f1_macro']:.3f}")
+        ax.set_title(f"{name} · F1 macro {out[name]['f1_macro']:.3f} [IC95 {ci[0]:.2f}–{ci[1]:.2f}]")
     fig.suptitle(f"Tema — {tag}")
     fig.tight_layout()
     return out, fig
@@ -232,7 +258,8 @@ def topic_block(y_true, preds, tag):
 if test_real is not None:
     status = "test_real"
     preds = {"tfidf": topic_pred_tfidf(test_real.text.tolist()), "embeddings": topic_pred_emb(test_real.text.tolist())}
-    topic_metrics, fig = topic_block(test_real.label.tolist(), preds, f"TEST REAL (n={len(test_real)})")
+    topic_metrics, fig = topic_block(test_real.label.tolist(), preds, f"TEST REAL (n={len(test_real)})",
+                                     platforms=test_real.platform.tolist())
     save(fig, "topic_confusion_test_real.png")
     errors_src = test_real.assign(pred_tfidf=preds["tfidf"], pred_emb=preds["embeddings"])
 else:
@@ -243,7 +270,17 @@ else:
     save(fig, "topic_confusion_cv_synthetic.png")
     errors_src = oof
 print("estado:", status)
-pd.DataFrame({k: {"f1_macro": v["f1_macro"], "accuracy": v["accuracy"]} for k, v in topic_metrics.items()}).T
+pd.DataFrame({k: {"f1_macro": v["f1_macro"], "IC95 bootstrap": v["f1_macro_bootstrap"]["ic95"],
+                  "± (semiamplitud)": v["f1_macro_bootstrap"]["semiamplitud"], "accuracy": v["accuracy"]}
+              for k, v in topic_metrics.items()}).T
+"""),
+    code("""\
+# F1 macro por plataforma (solo con el test real; con n pequeño por plataforma es muy inestable)
+if status == "test_real":
+    display(pd.DataFrame({k: {p: f"{d['f1_macro']:.3f} (n={d['n']})" for p, d in v["por_plataforma"].items()}
+                          for k, v in topic_metrics.items()}))
+else:
+    print("F1 por plataforma: pendiente (requiere el test real etiquetado)")
 """),
     code("""\
 pd.DataFrame({k: {c: v["por_clase"][c]["f1-score"] for c in LABELS} for k, v in topic_metrics.items()}).round(3)
@@ -389,7 +426,12 @@ def write(name: str, cells: list) -> Path:
 
 
 def main() -> None:
-    paths = [write("train_topic.ipynb", TOPIC), write("train_injection.ipynb", INJ), write("evaluate.ipynb", EVAL)]
+    # --only evaluate.ipynb → escribe/ejecuta solo ese notebook (no reentrena ni toca los modelos).
+    notebooks = {"train_topic.ipynb": TOPIC, "train_injection.ipynb": INJ, "evaluate.ipynb": EVAL}
+    only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
+    if only and only not in notebooks:
+        sys.exit(f"--only debe ser uno de: {', '.join(notebooks)}")
+    paths = [write(name, cells) for name, cells in notebooks.items() if not only or name == only]
     for p in paths:
         print("escrito", p.name)
     if "--nbconvert" in sys.argv:

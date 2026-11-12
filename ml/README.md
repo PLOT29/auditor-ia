@@ -41,15 +41,23 @@ fusiona los fragmentos de una dirección, filtra falsos LOCATION ("Col", "cel"�
 score mínimo configurable a las direcciones (`--min-location-score`, default 0.5) y da
 prioridad a las entidades de patrón sobre las del NER.
 
-## Importar historial de ChatGPT / Claude (CE-11)
+## Importar historial de ChatGPT / Claude / Gemini (CE-11)
 
 ```powershell
-python ml/import_history.py --file "C:\ruta\fuera\del\repo\conversations.json" --dry-run
-python ml/import_history.py --file "C:\ruta\fuera\del\repo\conversations.json"
+python ml/import_history.py --file "C:\auditor-data\exports\claude\conversations.json" --dry-run
+python ml/import_history.py --file "C:\auditor-data\exports\gemini\MiActividad.json" --dry-run
+python ml/import_history.py --file "...\conversations.json"          # importación real
 ```
 
 - `conversations.json` viene dentro del ZIP que se descarga de *Settings → Data controls →
-  Export* (ChatGPT) o *Settings → Privacy → Export data* (Claude). El formato se detecta solo.
+  Export* (ChatGPT) o *Settings → Privacy → Export data* (Claude). Para Gemini:
+  *Google Takeout → Mi actividad → Apps de Gemini*, en formato **JSON**
+  (`MiActividad.json` / `My Activity.json`). El formato se detecta solo.
+- Gemini: solo se importan las actividades cuyo `title` empieza con un prefijo de prompt
+  ("Prompted ", "Instrucción: "…); las respuestas en HTML y las actividades de Gems o de
+  configuración se ignoran y se cuentan aparte. Si tu cuenta usa otro prefijo, agrégalo
+  con `--gemini-prefix "Prefijo: "`. Las fechas se guardan en hora de la Ciudad de México.
+- Toda la importación es **una transacción**: si falla a la mitad, no queda nada a medias.
 - Solo se importan los mensajes **del usuario**, con su fecha. Pasan por `backend/main.py →
   process()`, el mismo pipeline que `/analyze`, y se guardan con `source = 'import'`.
 - Deduplica por `text_sha256`, así que se puede volver a correr sin duplicar. Nunca imprime texto.
@@ -58,12 +66,17 @@ python ml/import_history.py --file "C:\ruta\fuera\del\repo\conversations.json"
   el tema y el score de inyección se calculan al importar. Si importas antes, quedarán con
   los valores de los stubs actuales (`consulta_general` / 0.0).
 
-## Test real de tema (CE-4)
+## Test real de tema (CE-4) · ~100 prompts
 
-1. `python ml/export_for_labeling.py`
-2. Llena la columna `label` de `data/topic_to_label.csv` usando los criterios de
-   `make_topic_synthetic.py` y guárdalo como `data/topic_test_real.csv`.
-3. `python ml/build_notebooks.py --run`: `evaluate.ipynb` usa ese archivo automáticamente.
+1. `python ml/export_for_labeling.py` (default `--n 100`): muestreo **estratificado por
+   plataforma** (lo más parejo posible entre chatgpt, claude y gemini), sin duplicados y
+   con seed fija. Columnas `id, platform, text, label`. Se puede volver a correr cuando haya
+   más prompts: **nunca sobrescribe ni quita las filas ya etiquetadas**, solo agrega nuevas.
+2. Llena la columna `label` usando los criterios de `make_topic_synthetic.py` y guarda el
+   archivo como `data/topic_test_real.csv`.
+3. `python ml/build_notebooks.py --run --only evaluate.ipynb`: evalúa con ese archivo sin
+   reentrenar. Reporta F1 macro con **IC 95 % por bootstrap (1000 remuestreos)**, F1 por
+   plataforma y matriz de confusión. Con ~100 prompts el intervalo es amplio (±0.08 o más).
 
 Ambos CSV están en `.gitignore`. **Antes de hacer commit de `evaluate.ipynb` o de
 `reports/metrics.json` después de usar el test real**, revisa que no lleven texto de tus

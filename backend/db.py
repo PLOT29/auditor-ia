@@ -51,16 +51,48 @@ def db_path() -> Path:
     return Path(env) if env else DEFAULT_DB_PATH
 
 
-@contextmanager
-def connect():
+_tx_conn: sqlite3.Connection | None = None  # conexión de la transacción en curso (ver transaction())
+
+
+def _open() -> sqlite3.Connection:
     path = db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    return conn
+
+
+@contextmanager
+def connect():
+    if _tx_conn is not None:  # dentro de transaction(): misma conexión, sin commit parcial
+        yield _tx_conn
+        return
+    conn = _open()
     try:
         yield conn
         conn.commit()
     finally:
+        conn.close()
+
+
+@contextmanager
+def transaction():
+    """Agrupa varias operaciones (p. ej. una importación) en UNA transacción:
+    commit al final, rollback completo si hay cualquier excepción. Todas las llamadas
+    a connect() dentro del bloque usan la misma conexión (ven sus propias inserciones)."""
+    global _tx_conn
+    if _tx_conn is not None:
+        raise RuntimeError("ya hay una transacción en curso")
+    conn = _open()
+    _tx_conn = conn
+    try:
+        yield conn
+        conn.commit()
+    except BaseException:
+        conn.rollback()
+        raise
+    finally:
+        _tx_conn = None
         conn.close()
 
 

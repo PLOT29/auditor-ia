@@ -108,6 +108,9 @@ def load_topic_test_real() -> pd.DataFrame | None:
     df = pd.read_csv(path, dtype=str).fillna("")
     df = df[df["label"].str.strip() != ""].copy()
     df["label"] = df["label"].str.strip()
+    if "platform" not in df.columns:  # CSV exportado antes de la columna platform
+        df["platform"] = "desconocida"
+    df["platform"] = df["platform"].replace("", "desconocida")
     unknown = set(df["label"]) - set(TOPIC_LABELS)
     if unknown:
         raise ValueError(f"etiquetas no válidas en topic_test_real.csv: {unknown}")

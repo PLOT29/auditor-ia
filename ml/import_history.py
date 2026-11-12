@@ -1,22 +1,29 @@
-"""Importa tu historial de ChatGPT o Claude a la BD del auditor (CE-11).
+"""Importa tu historial de ChatGPT, Claude o Gemini a la BD del auditor (CE-11).
 
     python ml/import_history.py --file "C:\\ruta\\conversations.json" --dry-run   # solo cuenta
     python ml/import_history.py --file "C:\\ruta\\conversations.json"
-    python ml/import_history.py --file "..." --include-attachments   # + texto extraído de adjuntos
+    python ml/import_history.py --file "C:\\ruta\\MiActividad.json"           # Gemini (Takeout)
+    python ml/import_history.py --file "..." --include-attachments   # + texto extraído de adjuntos (Claude)
 
 - Detecta el formato automáticamente:
     ChatGPT → lista de conversaciones con "mapping" (nodos con author.role == "user")
     Claude  → lista de conversaciones con "chat_messages" (sender == "human")
-- Extrae SOLO los mensajes del usuario, con su fecha. En Claude, el texto sale de:
-    (a) los bloques de `content` con type == "text", concatenados;
-    (b) si eso queda vacío, el campo `text`;
-    (c) con --include-attachments, además `attachments[].extracted_content` (apagado por
-        defecto: puede traer documentos enteros).
+    Gemini  → Google Takeout › Mi actividad › Apps de Gemini (MiActividad.json /
+              My Activity.json): lista de actividades {header, title, time, subtitles?,
+              safeHtmlItem?} cuyo header o products menciona "Gemini".
+- Extrae SOLO los mensajes del usuario, con su fecha.
+    Claude: (a) bloques `content` con type == "text"; (b) si queda vacío, `text`;
+            (c) con --include-attachments, además `attachments[].extracted_content`.
+    Gemini: solo actividades cuyo `title` empieza con un prefijo de prompt
+            (GEMINI_PROMPT_PREFIXES, ampliable con --gemini-prefix); se quita el prefijo.
+            Las respuestas (safeHtmlItem, HTML) y las actividades que no son prompts
+            (Gems, configuración, comentarios…) se ignoran. La fecha (`time`, ISO UTC) se
+            convierte a America/Mexico_City.
 - Cada mensaje pasa por el MISMO pipeline que /analyze (backend/main.py → process()):
-  detección de secretos y PII, enmascarado, riesgo e inserción en la BD con
-  platform = chatgpt | claude y source = 'import'.
-- Deduplica por text_sha256 (contra la BD y dentro del mismo archivo), así que se puede
-  volver a correr sin duplicar.
+  detección de secretos y PII, enmascarado, riesgo e inserción con
+  platform = chatgpt | claude | gemini y source = 'import'.
+- Toda la importación va en UNA transacción (db.transaction()): si algo falla, no queda
+  nada a medias. Deduplica por text_sha256 (contra la BD y dentro del archivo).
 - --dry-run no escribe nada: cuenta por mes y año, cuántos traen secretos o PII, la
   longitud mediana y cuántos se descartarían por duplicados.
 - Nunca imprime ni guarda el texto original: solo conteos y fechas.
@@ -34,9 +41,24 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator, NamedTuple
+from zoneinfo import ZoneInfo
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "backend"))
+
+LOCAL_TZ = ZoneInfo("America/Mexico_City")
+
+# Prefijos con los que Takeout escribe un prompt en `title` (según el idioma de la cuenta).
+# El orden importa: primero los más largos/específicos.
+GEMINI_PROMPT_PREFIXES = [
+    "Prompted ",          # inglés
+    "Instrucción: ",      # español
+    "Instrucción ",
+    "Petición: ",
+    "Preguntaste: ",
+    "Pregunta: ",
+    "Consulta: ",
+]
 
 
 class Message(NamedTuple):
@@ -46,18 +68,27 @@ class Message(NamedTuple):
 
 
 # ------------------------------------------------------------------ formatos
+def _is_gemini_activity(a) -> bool:
+    if not isinstance(a, dict) or "title" not in a or "time" not in a:
+        return False
+    tags = [str(a.get("header", ""))] + [str(p) for p in a.get("products") or []]
+    return any("gemini" in t.lower() for t in tags)
+
+
 def detect_format(data) -> str:
     if isinstance(data, dict) and isinstance(data.get("conversations"), list):
         data = data["conversations"]
     if not isinstance(data, list):
-        raise ValueError("se esperaba una lista de conversaciones")
-    for conv in data:
-        if isinstance(conv, dict):
-            if "mapping" in conv:
+        raise ValueError("se esperaba una lista de conversaciones o actividades")
+    for item in data:
+        if isinstance(item, dict):
+            if "mapping" in item:
                 return "chatgpt"
-            if "chat_messages" in conv:
+            if "chat_messages" in item:
                 return "claude"
-    raise ValueError("formato no reconocido: no es un export de ChatGPT ni de Claude")
+    if any(_is_gemini_activity(a) for a in data):
+        return "gemini"
+    raise ValueError("formato no reconocido: no es un export de ChatGPT, Claude ni Gemini (Takeout)")
 
 
 def _from_epoch(value) -> datetime | None:
@@ -77,7 +108,7 @@ def _from_iso(value) -> datetime | None:
         return None
 
 
-def iter_chatgpt(convs: list, include_attachments: bool = False) -> Iterator[Message]:
+def iter_chatgpt(convs: list, include_attachments: bool = False, skipped: Counter | None = None) -> Iterator[Message]:
     # include_attachments no aplica: el export de ChatGPT no trae el texto de los adjuntos.
     for conv in convs:
         conv_ts = _from_epoch(conv.get("create_time"))
@@ -111,7 +142,7 @@ def claude_text(msg: dict, include_attachments: bool = False) -> str:
     return text
 
 
-def iter_claude(convs: list, include_attachments: bool = False) -> Iterator[Message]:
+def iter_claude(convs: list, include_attachments: bool = False, skipped: Counter | None = None) -> Iterator[Message]:
     for conv in convs:
         conv_ts = _from_iso(conv.get("created_at"))
         for msg in conv.get("chat_messages") or []:
@@ -124,41 +155,78 @@ def iter_claude(convs: list, include_attachments: bool = False) -> Iterator[Mess
                 yield Message(claude_text(msg, include_attachments), ts, has_files)
 
 
-def load_messages(path: Path, fmt: str = "auto", include_attachments: bool = False) -> tuple[str, list[Message]]:
+def gemini_prompt(activity: dict, prefixes: list[str] = GEMINI_PROMPT_PREFIXES) -> str | None:
+    """Texto del prompt (sin prefijo) o None si la actividad no es un prompt."""
+    title = activity.get("title")
+    if not isinstance(title, str):
+        return None
+    for p in prefixes:
+        if title.startswith(p):
+            return title[len(p):]
+    return None
+
+
+def iter_gemini(acts: list, include_attachments: bool = False, skipped: Counter | None = None,
+                prefixes: list[str] = GEMINI_PROMPT_PREFIXES) -> Iterator[Message]:
+    skipped = skipped if skipped is not None else Counter()
+    for a in acts:
+        if not _is_gemini_activity(a):
+            skipped["actividades_no_gemini"] += 1
+            continue
+        prompt = gemini_prompt(a, prefixes)
+        if prompt is None:
+            skipped["actividades_no_prompt"] += 1  # respuestas sueltas, Gems, configuración…
+            continue
+        ts = _from_iso(a.get("time"))
+        if not ts:
+            skipped["sin_fecha"] += 1
+            continue
+        # safeHtmlItem (la respuesta de Gemini en HTML) se ignora a propósito.
+        has_files = bool(a.get("attachedFiles") or a.get("imageFile"))
+        yield Message(prompt, ts.astimezone(LOCAL_TZ), has_files)
+
+
+ITERATORS = {"chatgpt": iter_chatgpt, "claude": iter_claude, "gemini": iter_gemini}
+
+
+def load_messages(path: Path, fmt: str = "auto", include_attachments: bool = False,
+                  gemini_prefixes: list[str] | None = None) -> tuple[str, list[Message], Counter]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if fmt == "auto":
         fmt = detect_format(data)
-    convs = data["conversations"] if isinstance(data, dict) else data
-    it = iter_chatgpt if fmt == "chatgpt" else iter_claude
-    return fmt, list(it(convs, include_attachments))
+    items = data["conversations"] if isinstance(data, dict) else data
+    skipped: Counter = Counter()
+    kwargs = {"prefixes": gemini_prefixes} if fmt == "gemini" and gemini_prefixes else {}
+    msgs = list(ITERATORS[fmt](items, include_attachments, skipped, **kwargs))
+    return fmt, msgs, skipped
 
 
 # ------------------------------------------------------------------ importación
-def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachments: bool = False) -> dict:
+def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachments: bool = False,
+        gemini_prefixes: list[str] | None = None) -> dict:
     import db  # noqa: PLC0415 — después de fijar AUDITOR_DB_PATH
     import main as backend  # noqa: PLC0415
 
     logging.getLogger("auditor").setLevel(logging.WARNING)  # sin una línea de log por prompt
-    platform, messages = load_messages(file, fmt, include_attachments)
-    stats: Counter = Counter()
+    platform, messages, skipped = load_messages(file, fmt, include_attachments, gemini_prefixes)
+    stats: Counter = Counter(skipped)
     years: Counter = Counter()
     months: Counter = Counter()
     lengths: list[int] = []
     seen: set[str] = set()
     first = last = None
     db_exists = db.db_path().exists()
-    if not dry_run:
-        db.init_db()  # aplica la migración de la columna `source` si hace falta
 
-    for m in messages:
+    def handle(m: Message) -> None:
+        nonlocal first, last
         text = m.text.strip()
         if not text:
             # Vacío en el export: no hay nada que importar. Se separa si traía archivos.
             stats["vacios_solo_archivos" if m.has_files else "vacios_sin_contenido_en_export"] += 1
-            continue
+            return
         if len(text) > backend.MAX_TEXT_LEN:
             stats["demasiado_largos"] += 1
-            continue
+            return
         first = min(first, m.ts) if first else m.ts
         last = max(last, m.ts) if last else m.ts
         years[str(m.ts.year)] += 1
@@ -169,14 +237,14 @@ def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachment
             h = backend.sha256_of(text)
             if h in seen or (db_exists and db.sha256_exists(h)):
                 stats["duplicados"] += 1
-                continue
+                return
             seen.add(h)
             stats["por_importar"] += 1
             found, _ = backend.analyze_text(text)  # mismos detectores; nada se guarda
             sources = {f.source for f in found}
             stats["con_secretos"] += "secret" in sources
             stats["con_pii"] += "pii" in sources
-            continue
+            return
 
         res = backend.process(backend.AnalyzeRequest(text=text, platform=platform, timestamp=m.ts),
                               source="import", dedupe=True)
@@ -185,6 +253,15 @@ def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachment
         else:
             stats["insertados"] += 1
             stats[f"riesgo_{res.risk}"] += 1
+
+    if dry_run:
+        for m in messages:
+            handle(m)
+    else:
+        db.init_db()  # aplica la migración de la columna `source` si hace falta
+        with db.transaction():  # todo o nada
+            for m in messages:
+                handle(m)
 
     return {
         "formato": platform,
@@ -203,12 +280,14 @@ def run(file: Path, fmt: str = "auto", dry_run: bool = False, include_attachment
 def main(argv: list[str] | None = None) -> dict:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--file", required=True, help="ruta a conversations.json (fuera del repo)")
-    ap.add_argument("--format", choices=["auto", "chatgpt", "claude"], default="auto")
+    ap.add_argument("--file", required=True, help="ruta al export (fuera del repo)")
+    ap.add_argument("--format", choices=["auto", "chatgpt", "claude", "gemini"], default="auto")
     ap.add_argument("--db", help="ruta de la BD (por defecto AUDITOR_DB_PATH o C:\\auditor-data\\auditor.db)")
     ap.add_argument("--dry-run", action="store_true", help="solo cuenta; no escribe en la BD")
     ap.add_argument("--include-attachments", action="store_true",
                     help="agrega el texto extraído de los adjuntos (Claude); apagado por defecto")
+    ap.add_argument("--gemini-prefix", action="append", default=[],
+                    help="prefijo extra de prompt en el title de Gemini (repetible)")
     args = ap.parse_args(argv)
 
     file = Path(args.file).expanduser().resolve()
@@ -218,8 +297,9 @@ def main(argv: list[str] | None = None) -> dict:
         ap.error("el export no puede estar dentro del repo: muévelo fuera (contiene tus conversaciones)")
     if args.db:
         os.environ["AUDITOR_DB_PATH"] = args.db
+    prefixes = args.gemini_prefix + GEMINI_PROMPT_PREFIXES if args.gemini_prefix else None
 
-    summary = run(file, args.format, args.dry_run, args.include_attachments)
+    summary = run(file, args.format, args.dry_run, args.include_attachments, prefixes)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return summary
 

@@ -1,6 +1,7 @@
 """Importador de historial (ml/import_history.py) y migración de la columna `source`."""
 import importlib.util
 import json
+from collections import Counter
 import sqlite3
 from pathlib import Path
 
@@ -264,3 +265,98 @@ def test_dry_run_counts_duplicates_already_in_db(env, capsys):
     assert s.get("por_importar", 0) == 0 and s["duplicados"] == 3
     out = capsys.readouterr().out
     assert F.OPENAI_KEY not in out and F.EMAIL not in out
+
+
+# ---------------------------------------------------------------- Gemini (Google Takeout)
+def gemini_export():
+    """Fixture FALSO con la forma de Takeout › Mi actividad › Apps de Gemini."""
+    return [
+        {"header": "Gemini Apps", "title": "Prompted How do I reverse a list in Python?",
+         "time": "2026-11-01T03:00:00.000Z", "products": ["Gemini Apps"],
+         "activityControls": ["Gemini Apps Activity"],
+         "safeHtmlItem": [{"html": "<p>You can use slicing: <code>lst[::-1]</code></p>"}]},
+        {"header": "Apps de Gemini", "title": f"Instrucción: corrige este código, mi key es {F.OPENAI_KEY}",
+         "time": "2026-11-05T18:30:00.000Z", "products": ["Apps de Gemini"],
+         "safeHtmlItem": [{"html": f"<p>Tu CURP {F.CURP} no debe aparecer</p>"}]},
+        # Respuesta suelta (solo HTML): se ignora
+        {"header": "Apps de Gemini", "title": "Gemini respondió",
+         "time": "2026-11-05T18:31:00.000Z", "products": ["Apps de Gemini"],
+         "safeHtmlItem": [{"html": f"<p>Escríbele a {F.EMAIL}</p>"}]},
+        # Actividades que no son prompts
+        {"header": "Apps de Gemini", "title": "Usaste la Gem Asistente de código",
+         "time": "2026-11-06T10:00:00.000Z", "products": ["Apps de Gemini"]},
+        {"header": "Apps de Gemini", "title": "Actualizaste la configuración de Apps de Gemini",
+         "time": "2026-11-06T10:05:00.000Z", "products": ["Apps de Gemini"]},
+        # Otra app de Google en el mismo archivo
+        {"header": "Búsqueda", "title": "Buscaste recetas", "time": "2026-11-06T11:00:00.000Z",
+         "products": ["Búsqueda"]},
+    ]
+
+
+def test_detect_gemini_format():
+    assert IH.detect_format(gemini_export()) == "gemini"
+    with pytest.raises(ValueError):
+        IH.detect_format([{"header": "Búsqueda", "title": "x", "time": "2026-01-01T00:00:00Z"}])
+
+
+def test_gemini_only_prompts_without_prefix_and_local_time():
+    skipped = Counter()
+    msgs = list(IH.iter_gemini(gemini_export(), skipped=skipped))
+    assert [m.text for m in msgs] == ["How do I reverse a list in Python?",
+                                      f"corrige este código, mi key es {F.OPENAI_KEY}"]
+    assert all("<" not in m.text for m in msgs)  # nada del HTML de la respuesta
+    assert msgs[0].ts.isoformat() == "2026-10-31T21:00:00-06:00"  # UTC → America/Mexico_City
+    assert skipped == {"actividades_no_prompt": 3, "actividades_no_gemini": 1}
+
+
+def test_gemini_custom_prefix():
+    acts = [{"header": "Gemini Apps", "title": "Asked: hola", "time": "2026-11-01T00:00:00Z"}]
+    assert list(IH.iter_gemini(acts)) == []
+    msgs = list(IH.iter_gemini(acts, prefixes=["Asked: "]))
+    assert msgs[0].text == "hola"
+
+
+def test_gemini_dry_run_counts(env):
+    tmp_path, db_file = env
+    f = write(tmp_path, "MiActividad.json", gemini_export())
+    s = IH.main(["--file", str(f), "--dry-run"])
+    assert s["formato"] == "gemini" and s["mensajes_de_usuario"] == 2
+    assert s["por_importar"] == 2 and s["con_secretos"] == 1 and s["con_pii"] == 0
+    assert s["actividades_no_prompt"] == 3 and s["actividades_no_gemini"] == 1
+    assert s["por_mes"] == {"2026-10": 1, "2026-11": 1}
+    assert not db_file.exists()
+
+
+def test_gemini_import(env, capsys):
+    tmp_path, db_file = env
+    f = write(tmp_path, "MiActividad.json", gemini_export())
+    s = IH.main(["--file", str(f)])
+    assert s["insertados"] == 2
+    data = rows(db_file)
+    assert {r["platform"] for r in data} == {"gemini"} and {r["source"] for r in data} == {"import"}
+    assert data[0]["ts"] == "2026-10-31T21:00:00-06:00"
+    assert data[1]["text_masked"] == "corrige este código, mi key es <OPENAI_KEY>"
+    raw = db_file.read_bytes()
+    for secret in (F.OPENAI_KEY, F.CURP, F.EMAIL):
+        assert secret.encode() not in raw
+    assert F.OPENAI_KEY not in capsys.readouterr().out
+    assert IH.main(["--file", str(f)])["duplicados"] == 2  # idempotente
+
+
+def test_import_is_one_transaction(env, monkeypatch):
+    """Si algo falla a mitad de la importación, no queda NADA insertado."""
+    tmp_path, db_file = env
+    import main as backend
+    original = backend.process
+    calls = {"n": 0}
+
+    def flaky(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise RuntimeError("falla simulada")
+        return original(*a, **kw)
+
+    monkeypatch.setattr(backend, "process", flaky)
+    with pytest.raises(RuntimeError):
+        IH.main(["--file", str(write(tmp_path, "MiActividad.json", gemini_export()))])
+    assert rows(db_file) == []

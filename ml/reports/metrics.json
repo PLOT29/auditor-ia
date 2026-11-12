@@ -525,73 +525,101 @@
     "models": {
       "tfidf": {
         "f1_macro": 0.6215,
+        "f1_macro_bootstrap": {
+          "ic95": [
+            0.5758,
+            0.66
+          ],
+          "n_boot": 1000,
+          "semiamplitud": 0.0421
+        },
         "accuracy": 0.6292,
         "por_clase": {
           "programacion": {
             "precision": 0.569,
             "recall": 0.463,
-            "f1-score": 0.51
+            "f1-score": 0.51,
+            "support": 80.0
           },
           "academico": {
             "precision": 0.506,
             "recall": 0.525,
-            "f1-score": 0.515
+            "f1-score": 0.515,
+            "support": 80.0
           },
           "redaccion": {
             "precision": 0.819,
             "recall": 0.85,
-            "f1-score": 0.834
+            "f1-score": 0.834,
+            "support": 80.0
           },
           "ciberseguridad": {
             "precision": 0.573,
             "recall": 0.637,
-            "f1-score": 0.604
+            "f1-score": 0.604,
+            "support": 80.0
           },
           "consulta_general": {
             "precision": 0.516,
             "recall": 0.412,
-            "f1-score": 0.458
+            "f1-score": 0.458,
+            "support": 80.0
           },
           "personal": {
             "precision": 0.74,
             "recall": 0.887,
-            "f1-score": 0.807
+            "f1-score": 0.807,
+            "support": 80.0
           }
         }
       },
       "embeddings": {
         "f1_macro": 0.822,
+        "f1_macro_bootstrap": {
+          "ic95": [
+            0.7845,
+            0.8547
+          ],
+          "n_boot": 1000,
+          "semiamplitud": 0.0351
+        },
         "accuracy": 0.8229,
         "por_clase": {
           "programacion": {
             "precision": 0.908,
             "recall": 0.863,
-            "f1-score": 0.885
+            "f1-score": 0.885,
+            "support": 80.0
           },
           "academico": {
             "precision": 0.719,
             "recall": 0.8,
-            "f1-score": 0.757
+            "f1-score": 0.757,
+            "support": 80.0
           },
           "redaccion": {
             "precision": 0.775,
             "recall": 0.863,
-            "f1-score": 0.817
+            "f1-score": 0.817,
+            "support": 80.0
           },
           "ciberseguridad": {
             "precision": 0.822,
             "recall": 0.75,
-            "f1-score": 0.784
+            "f1-score": 0.784,
+            "support": 80.0
           },
           "consulta_general": {
             "precision": 0.903,
             "recall": 0.7,
-            "f1-score": 0.789
+            "f1-score": 0.789,
+            "support": 80.0
           },
           "personal": {
             "precision": 0.846,
             "recall": 0.963,
-            "f1-score": 0.901
+            "f1-score": 0.901,
+            "support": 80.0
           }
         }
       }
@@ -703,33 +731,33 @@
   "latency_cpu": {
     "topic_tfidf": {
       "n": 200,
-      "mean_ms": 3.02,
-      "p95_ms": 8.01,
-      "max_ms": 14.13
+      "mean_ms": 1.91,
+      "p95_ms": 5.06,
+      "max_ms": 7.35
     },
     "topic_embeddings": {
       "n": 200,
-      "mean_ms": 28.0,
-      "p95_ms": 43.75,
-      "max_ms": 51.39
+      "mean_ms": 19.9,
+      "p95_ms": 31.13,
+      "max_ms": 33.22
     },
     "injection_tfidf": {
       "n": 200,
-      "mean_ms": 5.31,
-      "p95_ms": 15.7,
-      "max_ms": 21.82
+      "mean_ms": 2.43,
+      "p95_ms": 6.53,
+      "max_ms": 11.5
     },
     "injection_embeddings": {
       "n": 200,
-      "mean_ms": 26.22,
-      "p95_ms": 44.24,
-      "max_ms": 49.88
+      "mean_ms": 27.72,
+      "p95_ms": 55.76,
+      "max_ms": 87.53
     },
     "tema+inyeccion_embeddings_compartidos": {
       "n": 200,
-      "mean_ms": 28.12,
-      "p95_ms": 48.44,
-      "max_ms": 57.83
+      "mean_ms": 30.54,
+      "p95_ms": 60.12,
+      "max_ms": 122.7
     },
     "torch_threads": 8
   },
@@ -767,8 +795,8 @@
     {
       "tarea": "latencia",
       "métrica": "inyección p95 ms",
-      "tfidf": 15.7,
-      "embeddings": 44.24
+      "tfidf": 6.53,
+      "embeddings": 55.76
     }
   ],
   "errors": {

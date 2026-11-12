@@ -242,7 +242,7 @@ Respuesta:
 | CE-1 | Recall de secretos | ≥ 0.95 | Set de prueba de 100 prompts con secretos falsos |
 | CE-2 | Falsos positivos de bloqueo | ≤ 3 % | 200 prompts normales; % bloqueados por error |
 | CE-3 | F1 de PII (es) | ≥ 0.85 | Set etiquetado de 100 prompts |
-| CE-4 | F1 macro de tema | ≥ 0.80 | Hold-out 20 %, matriz de confusión |
+| CE-4 | F1 macro de tema | ≥ 0.80 | Test REAL de **~100 prompts etiquetados a mano** (antes 150), muestreados de la BD de forma estratificada por plataforma. Se reduce porque el export de Claude solo trajo texto desde el 2026-10-31. Se reporta F1 macro con IC 95 % por bootstrap (1000 remuestreos), F1 por plataforma y matriz de confusión. El entrenamiento usa solo sintéticos |
 | CE-5 | Recall de inyección/jailbreak | ≥ 0.85 (con precision ≥ 0.80) | Dataset público + prompts propios en español |
 | CE-6 | Latencia bloqueo local | < 50 ms | `performance.now()` en content.js |
 | CE-7 | Latencia etiqueta p95 | < 1 s | `latency_ms` en BD |
@@ -320,6 +320,11 @@ Respuesta:
 | Pocos datos en español para inyección | Traducir/parafrasear ejemplos y crear 50–100 propios |
 | Presidio débil en español | Recognizers regex propios para CURP, RFC, teléfono MX |
 | Falla en vivo | Video de respaldo + BD precargada |
+
+### Limitaciones
+- **Tamaño del test real de tema (~100 prompts):** da intervalos de confianza amplios. Con n ≈ 100 y 6 clases, el IC 95 % del F1 macro puede tener ±0.08 o más, y las clases con pocos ejemplos (≈ 10–20) tienen F1 por clase muy inestables. Por eso CE-4 se reporta con su intervalo, no solo con el valor puntual.
+- **Historial incompleto:** el export de Claude no trae texto antes del 2026-10-31, así que el uso real disponible para el test y para CE-11 es más corto de lo previsto.
+- **Test de inyección no del todo ciego:** el umbral se ajustó después de la primera evaluación (ver `ml/reports/metrics.json → injection_4A1.nota_metodologica`).
 
 ---
 
