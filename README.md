@@ -10,7 +10,7 @@ Proyecto final · Seguridad de la Información · IBERO. Ver [SPEC.md](SPEC.md).
 | 2 · Extensión: captura + etiqueta flotante | ✅ |
 | 3 · Modo bloqueo / DLP local | ✅ en test.html (falta validar el reenvío en ChatGPT / Claude / Gemini) |
 | 4 · Clasificadores de tema e inyección + Presidio | ✅ integrados al backend (4B); CE-4 pendiente del test real etiquetado. Ver [ml/README.md](ml/README.md) |
-| 5 · Dashboard | pendiente |
+| 5 · Dashboard | ✅ Streamlit en vivo (ver abajo) |
 | 6 · Evaluación y demo | pendiente |
 
 ## Entorno
@@ -98,6 +98,20 @@ node extension/test/background.test.js   # cola de reintento
 ```
 
 Ambas corren también dentro de `python -m pytest` (`test_patterns_parity.py`).
+
+## Dashboard (Fase 5)
+
+```powershell
+conda activate auditor
+streamlit run dashboard/app.py
+```
+
+Abre http://127.0.0.1:8501. Lee la BD de `AUDITOR_DB_PATH` (default `C:uditor-datauditor.db`)
+**en solo lectura** y se refresca cada 3 s. Para proyectar, deja activado el **Modo presentación**
+(viene así por defecto): oculta todo texto de prompts.
+Streamlit toma `dashboard/.streamlit/config.toml` (solo localhost, sin telemetría). Si alguna vez
+no lo encuentra, el dashboard se niega a mostrar datos; en ese caso usa `python dashboard/run.py`,
+que fuerza esas opciones.
 
 ## Qué detecta hoy
 

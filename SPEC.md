@@ -232,11 +232,17 @@ Umbrales finales (Fase 4B):
 
 **Regla de oro:** el texto original **nunca** se escribe en disco ni en logs.
 
-### 5.6 Dashboard (Streamlit)
-- KPIs arriba: total de prompts · % riesgo alto · envíos bloqueados · plataforma más usada.
-- Gráficas: prompts por plataforma · temas más frecuentes · riesgo por plataforma · mapa de calor día × hora · tendencia diaria.
-- Tabla de alertas recientes (texto enmascarado).
-- Refresco automático cada 3 s.
+### 5.6 Dashboard (Streamlit) — Fase 5
+Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.py` (alternativa: `python dashboard/run.py`). Se abre en http://127.0.0.1:8501.
+
+- **Estructura:** `dashboard/queries.py` concentra TODO el SQL, como funciones puras (filtros → DataFrames) sobre una conexión SQLite de **solo lectura** (`mode=ro`). `dashboard/app.py` es solo interfaz. `dashboard/.streamlit/config.toml` fija `server.address = 127.0.0.1` y `browser.gatherUsageStats = false` (RNF-03), además del tema claro para proyector.
+- **Privacidad:** Streamlit toma `dashboard/.streamlit/config.toml` (comprobado con Streamlit 1.67 lanzando desde la raíz del repo). Como defensa adicional, si la telemetría estuviera activa o el servidor no escuchara solo en localhost, `app.py` **no muestra datos** y explica cómo lanzarlo; `run.py` fuerza ambas opciones por línea de comandos.
+- **Filtros (barra lateral, no se refrescan):** rango de fechas (días de la Ciudad de México), plataforma (ChatGPT/Claude/Gemini; `test` nunca aparece), origen (extensión / importado / ambos) y **Modo presentación**, activado por defecto, que oculta TODO texto de prompts.
+- **KPIs, con la variación frente al periodo anterior de la misma duración:** total de prompts · % con datos sensibles (riesgo medio + alto, que incluye detecciones de inyección) · envíos bloqueados (cancelados vs. enviados de todos modos) · plataforma más usada · tema más frecuente.
+- **Gráficas (plotly):** prompts por plataforma · temas (los de confianza < umbral de `metrics.json → topic_v2.umbral_confianza` van en la barra "incierto") · riesgo por plataforma (apiladas) · mapa de calor día × hora (Ciudad de México) · tendencia diaria (todos vs. riesgo medio o alto) · tipos de hallazgo (de `findings_json`). Colores fijos, validados para daltonismo: ChatGPT `#009E73`, Claude `#AA3377`, Gemini `#0072B2`; riesgo bajo `#56B4E9`, medio `#E69F00`, alto `#D55E00`, siempre con etiquetas.
+- **Alertas recientes:** los últimos 20 eventos de riesgo medio o alto (hora, plataforma, riesgo, tipos de hallazgo, bloqueo/decisión y tema). El texto enmascarado (≤ 100 caracteres) solo aparece con el modo presentación **apagado**; con el modo activado, la columna ni siquiera se lee de la BD.
+- **Tiempo real:** `st.fragment(run_every=3)` refresca KPIs, gráficas y tabla cada 3 s, sin recargar los filtros. Muestra "Última actualización hh:mm:ss" y un punto verde/rojo según `GET /health` del backend.
+- **Hallazgo (golpe 3 de la demo):** una frase generada solo con cifras y nombres, por ejemplo: "El X % de tus prompts contenían datos personales; la plataforma con más riesgo fue Y (Z % …)".
 
 ---
 

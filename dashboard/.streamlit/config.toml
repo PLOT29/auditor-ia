@@ -1,0 +1,25 @@
+# Dashboard del Auditor de Prompts (Fase 5).
+# Streamlit (1.67) toma este archivo con `streamlit run dashboard/app.py` desde la raíz del repo.
+# app.py verifica de todos modos que la telemetría esté apagada y que solo escuche en localhost.
+
+[server]
+address = "127.0.0.1"      # solo localhost (RNF-03)
+port = 8501
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false   # sin telemetría hacia Streamlit (RNF-03)
+serverAddress = "127.0.0.1"
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+# Claro y de alto contraste: se lee bien en el proyector.
+base = "light"
+primaryColor = "#0072B2"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F4F7"
+textColor = "#111827"
+font = "sans serif"
