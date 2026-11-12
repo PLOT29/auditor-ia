@@ -21,7 +21,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("AUDITOR_DB_PATH", str(tmp_path / "t.db"))
     from main import app
 
-    with TestClient(app) as c:
+    with TestClient(app, headers=F.auth()) as c:
         yield c
 
 

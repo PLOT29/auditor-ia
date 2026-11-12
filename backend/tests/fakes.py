@@ -24,3 +24,13 @@ CURP = "GOMJ800101HDFRRN09"
 RFC = "GOMJ800101AB3"
 PHONE = "55 1234 5678"
 PHONE_INTL = "+52 55 1234 5678"
+
+# API key FALSA para el nivel 3 (BYOK) de la Fase 5C.
+BYOK_KEY = "sk-" + "byok-" + "FAKE" * 6 + "zq9X"
+
+
+def auth() -> dict:
+    """Header con el token de sesión del backend (Fase 5C) para los TestClient."""
+    import security
+
+    return {security.TOKEN_HEADER: security.SESSION_TOKEN}

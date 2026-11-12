@@ -11,6 +11,11 @@
  * mismo con patterns.js (secretos + PII) — nunca se guarda texto en claro.
  *
  * PRIVACIDAD: nunca loguear `payload.text`. Solo metadatos (latencia, estado).
+ *
+ * TOKEN DE SESIÓN (Fase 5C): /analyze y /stats exigen el header X-Centinela-Token. El backend genera
+ * uno nuevo cada vez que arranca; aquí se pide a GET /auth/token (que solo responde a un Origin
+ * chrome-extension://) y se guarda SOLO en memoria. Si el backend se reinició (403), se pide otro y se
+ * reintenta una vez. El token nunca se loguea ni se guarda en storage.
  */
 "use strict";
 
@@ -59,10 +64,33 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
+// ------------------------------------------------------------- token
+let sessionToken = null;
+
+async function getToken(force = false) {
+  if (sessionToken && !force) return sessionToken;
+  const res = await fetchWithTimeout(`${BACKEND}/auth/token`);
+  if (!res.ok) throw Object.assign(new Error(`token HTTP ${res.status}`), { name: "TokenError" });
+  sessionToken = (await res.json()).token;
+  return sessionToken;
+}
+
+/** fetch al backend con el token; si responde 403 (backend reiniciado = token nuevo), reintenta una vez. */
+async function authFetch(path, options = {}) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const token = await getToken(attempt > 0);
+    const res = await fetchWithTimeout(`${BACKEND}${path}`, {
+      ...options,
+      headers: { ...(options.headers || {}), "X-Centinela-Token": token },
+    });
+    if (res.status !== 403 || attempt > 0) return res;
+  }
+}
+
 /** POST /analyze. Devuelve el JSON o null si falla (red, timeout o HTTP ≠ 2xx). */
 async function postAnalyze(payload) {
   try {
-    const res = await fetchWithTimeout(`${BACKEND}/analyze`, {
+    const res = await authFetch("/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -164,7 +192,7 @@ async function today() {
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
   try {
-    const res = await fetchWithTimeout(`${BACKEND}/stats?desde=${encodeURIComponent(midnight.toISOString())}`);
+    const res = await authFetch(`/stats?desde=${encodeURIComponent(midnight.toISOString())}`);
     if (!res.ok) return { ok: false };
     const s = await res.json();
     const d = s.por_decision || {};

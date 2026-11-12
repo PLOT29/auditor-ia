@@ -27,7 +27,7 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_serializer
 
@@ -36,6 +36,8 @@ import config
 import db
 import masking
 import risk
+import security
+from agent.api import router as agent_router
 from detectors import catalog, embeddings, injection, pii, secrets, topic
 from events_bus import bus
 
@@ -54,7 +56,7 @@ class ClientFinding(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     text: str = Field(max_length=MAX_TEXT_LEN)
-    # "test" = extension/test/test.html (solo desarrollo; el dashboard puede filtrarlo).
+    # "test" = extension/test/test.html (solo desarrollo; las estadísticas lo excluyen).
     platform: Literal["chatgpt", "claude", "gemini", "test"]
     timestamp: datetime | None = None
     client_findings: list[ClientFinding] = Field(default_factory=list)
@@ -160,10 +162,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Auditor de Prompts", version="0.4.0", lifespan=lifespan)
 
-# CORS: NO se habilita a propósito. La extensión llama desde su service worker
-# (background.js) con host_permissions sobre localhost:8000, y Chrome no aplica
-# CORS a esas peticiones. Sin CORSMiddleware, una página web cualquiera NO puede
-# leer /stats ni mandar JSON a /analyze (el preflight falla). Ver test_cors.py.
+# CORS: NO se habilita a propósito (ni comodines ni lista). La extensión llama desde su service worker
+# (background.js) con host_permissions sobre localhost:8000, y Chrome no aplica CORS a esas peticiones;
+# el panel es del mismo origen. Sin CORSMiddleware, una página web cualquiera NO puede leer las
+# respuestas. Fase 5C: además, Host/Origin validados y token de sesión (security.py). Ver test_cors.py
+# y test_security.py.
 
 
 PANEL_DIR = Path(__file__).resolve().parent / "panel"
@@ -180,17 +183,27 @@ async def latency_log(request: Request, call_next):
     """Loguea método, ruta, estado y latencia total. Nunca el cuerpo.
 
     Fase 5B: /panel y /events solo responden a clientes locales (además de que uvicorn escucha en
-    127.0.0.1) y el panel se sirve con una CSP que prohíbe cualquier origen externo."""
+    127.0.0.1) y el panel se sirve con una CSP que prohíbe cualquier origen externo.
+    Fase 5C (security.py): en TODAS las rutas, Host local (DNS rebinding) y Origin local o de la extensión
+    (CSRF); en las sensibles, además, el token de sesión (X-Centinela-Token; en /events, ?token=)."""
     t0 = time.perf_counter()
     path = request.url.path
+    if not security.host_ok(request.headers.get("host")):
+        return JSONResponse(status_code=403, content={"detail": "host no permitido"})
+    if not security.origin_ok(request.headers.get("origin")):
+        return JSONResponse(status_code=403, content={"detail": "origen no permitido"})
     if path.startswith(LOCAL_ONLY_PREFIXES) and (request.client is None or request.client.host not in LOOPBACK):
         return JSONResponse(status_code=403, content={"detail": "solo localhost"})
+    if security.requires_token(path) and not security.token_ok(
+            request.headers.get(security.TOKEN_HEADER), request.query_params.get(security.TOKEN_QUERY),
+            allow_query=(path == "/events")):
+        return JSONResponse(status_code=403, content={"detail": "falta el token de sesión o no es válido"})
     response = await call_next(request)
     if path.startswith("/panel"):
         response.headers["Content-Security-Policy"] = PANEL_CSP
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Cache-Control"] = "no-cache"
+        response.headers.setdefault("Cache-Control", "no-cache")  # el HTML con token: no-store
     ms = (time.perf_counter() - t0) * 1000
     response.headers["X-Process-Time-Ms"] = f"{ms:.1f}"
     log.info("%s %s -> %s %.1fms", request.method, request.url.path, response.status_code, ms)
@@ -374,7 +387,7 @@ def stats(
 
     Fase 5B (aditivo): con `?detalle=1` agrega `panel` — KPIs con el periodo anterior, índice de
     exposición, Sankey, mapa de calor, tendencia por riesgo, tipos de hallazgo, motivos, frase de
-    hallazgo y últimos eventos — calculados por analytics.py (el mismo SQL del dashboard, conexión de
+    hallazgo y últimos eventos — calculados por analytics.py (consultas compartidas, conexión de
     SOLO LECTURA) con los filtros `inicio`/`fin` (días de la Ciudad de México; por defecto los últimos
     14), `plataformas` (chatgpt,claude,gemini) y `origen`. Nunca incluye texto de prompts.
     """
@@ -425,9 +438,44 @@ async def events(request: Request, limit: int | None = Query(default=None, ge=1,
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+@app.get("/events/{event_id}")
+def event_detail(event_id: int, presentacion: bool = False) -> dict:
+    """Fase 5C · detalle de UN evento para el panel lateral, desde la conexión de SOLO LECTURA.
+
+    El único texto que existe es `text_masked` (el original nunca se guardó). Con `?presentacion=1` el
+    panel está en modo presentación y la respuesta NO lo incluye (solo metadatos).
+    """
+    d = analytics.event_detail(db.db_path(), event_id, include_text=not presentacion,
+                               threshold=topic.confidence_threshold())
+    if d is None:
+        raise HTTPException(status_code=404, detail="evento no encontrado")
+    return d
+
+
+@app.get("/auth/token", include_in_schema=False)
+def auth_token(request: Request) -> JSONResponse:
+    """Fase 5C · token de sesión para la extensión (background.js). Solo responde a un Origin
+    chrome-extension:// (una página web no puede leerlo: no hay CORS y su Origin se rechaza)."""
+    if not security.is_extension_origin(request.headers.get("origin")):
+        return JSONResponse(status_code=403, content={"detail": "solo la extensión"})
+    return JSONResponse({"token": security.SESSION_TOKEN}, headers={"Cache-Control": "no-store"})
+
+
 @app.get("/panel", include_in_schema=False)
 def panel_root() -> RedirectResponse:
     return RedirectResponse(url="/panel/", status_code=307)
+
+
+@app.get("/panel/", include_in_schema=False)
+@app.get("/panel/index.html", include_in_schema=False)
+def panel_index() -> HTMLResponse:
+    """Fase 5C · el HTML del panel lleva embebido el token de sesión (<meta name="centinela-token">).
+    Otra página no puede leerlo: no hay CORS y el Host se valida (DNS rebinding)."""
+    html = (PANEL_DIR / "index.html").read_text(encoding="utf-8").replace("__CENTINELA_TOKEN__", security.SESSION_TOKEN)
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+app.include_router(agent_router)
 
 
 # Centro de control (Fase 5B): archivos estáticos de backend/panel/ (index.html, panel.css, panel.js y

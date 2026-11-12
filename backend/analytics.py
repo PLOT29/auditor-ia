@@ -1,15 +1,18 @@
-"""Consultas de estadística (Fase 5 → 5B). TODO el SQL de lectura para gráficas vive aquí.
+"""Consultas de estadística (Fases 5 → 5C). TODO el SQL de lectura vive aquí.
 
 Lo usan, sin duplicar SQL:
   - el centro de control (`GET /stats?detalle=1` → `panel()`, Fase 5B), servido por main.py;
-  - el dashboard de respaldo en Streamlit (dashboard/app.py, vía el shim dashboard/queries.py).
-(Antes vivía en dashboard/queries.py; se movió al backend en la Fase 5B.)
+  - el detalle de evento (`GET /events/{id}` → `event_detail()`, Fase 5C);
+  - las herramientas cerradas del agente (agent/tools.py, Fase 5C).
+(Antes vivía en dashboard/queries.py; se movió al backend en la 5B. Streamlit se retiró en la 5C.)
 
 Reglas:
-- Conexión SQLite en SOLO LECTURA (URI `mode=ro`): ni el panel ni el dashboard escriben en la BD.
+- Conexión SQLite en SOLO LECTURA (URI `mode=ro`): nada de aquí escribe en la BD.
 - Funciones puras: reciben la ruta de la BD + `Filters` y devuelven DataFrames (o un dict).
-- Ninguna consulta lee `text_masked`, salvo `recent_alerts(include_text=True)`, que el
-  dashboard solo usa con el "Modo presentación" APAGADO; y aun así se trunca a 100 caracteres.
+- Solo dos funciones leen `text_masked`, y solo si se pide explícitamente: `event_detail(include_text=True)`
+  (el panel con el modo presentación APAGADO) y `recent_alerts(include_text=True)` (trunca a 100
+  caracteres; hoy sin uso en la interfaz). `events()` —la base de los agregados y de las herramientas del
+  agente— nunca la selecciona.
 - Fechas: el usuario filtra por días de la Ciudad de México. El filtro se hace en SQL con
   julianday() (que entiende los offsets ISO de `ts`) y la hora local se calcula con zoneinfo.
 - BD inexistente, vacía o sin tabla → DataFrames vacíos, nunca una excepción.
@@ -443,3 +446,51 @@ def panel(path: Path | str, f: Filters, threshold: float | None = None) -> dict:
         "rango_datos": [d.isoformat() for d in (date_bounds(path) or ())],
         "nombres_tipos": TYPE_NAMES,  # para los chips del feed (también tipos que no salen en el periodo)
     }
+
+
+# ------------------------------------------------------------------ detalle de evento (Fase 5C)
+MARKER_PATTERN = r"<[A-Z_]+>|\[[A-ZÁÉÍÓÚÑ_]+\]"  # <OPENAI_KEY> (backend) y [API_KEY_OCULTA] (censura)
+
+
+def event_detail(path: Path | str, event_id: int, include_text: bool = False,
+                 threshold: float | None = None) -> dict | None:
+    """Detalle de UN evento (conexión de solo lectura). El único texto que existe es `text_masked`; solo
+    se lee de la BD si `include_text` (el panel lo pide con el modo presentación apagado)."""
+    path = Path(path)
+    if not path.is_file():
+        return None
+    with closing(connect_ro(path)) as conn:
+        if not _has_table(conn):
+            return None
+        cols = _columns(conn)
+        src = "source" if "source" in cols else "'extension' AS source"
+        text_col = ", text_masked" if include_text else ""
+        row = conn.execute(
+            f"SELECT id, ts, platform, risk, category, category_conf, injection_score, findings_json, blocked, "
+            f"user_decision, latency_ms, length, {src}{text_col} FROM prompts WHERE id = ?", (event_id,)).fetchone()
+    if row is None:
+        return None
+    r = dict(row)
+    try:
+        findings = json.loads(r["findings_json"] or "[]")
+    except ValueError:
+        findings = []
+    types = [f.get("type", "?") for f in findings]
+    base = event_summary(id=r["id"], ts=r["ts"], platform=r["platform"], risk=r["risk"], category=r["category"],
+                         category_conf=r["category_conf"], types=types, blocked=r["blocked"],
+                         decision=r["user_decision"], latency_ms=r["latency_ms"], threshold=threshold)
+    base.update({
+        "fecha": base["ts"][:10],
+        "origen": r["source"] or "extension",
+        "categoria_modelo": r["category"],
+        "confianza": None if r["category_conf"] is None else round(float(r["category_conf"]), 3),
+        "injection_score": None if r["injection_score"] is None else round(float(r["injection_score"]), 3),
+        "longitud": r["length"],
+        "hallazgos": [{"type": f.get("type", "?"), "nombre": TYPE_NAMES.get(f.get("type"), f.get("type", "?")),
+                       "masked": f.get("masked", "****"), "source": f.get("source"),
+                       **({"valido": f["valido"]} if "valido" in f else {})} for f in findings],
+        "texto": r.get("text_masked") if include_text else None,
+        "texto_oculto": not include_text,
+        "marcadores": MARKER_PATTERN,
+    })
+    return base

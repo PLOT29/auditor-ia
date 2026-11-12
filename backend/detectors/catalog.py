@@ -9,7 +9,7 @@ riesgo que asigna el backend y marcador de censura.
 - riesgo:    "alto" | "medio"                                  (risk.py)
 - local:     False = solo lo detecta el backend (Presidio)
 
-Sin dependencias: lo importan el backend, ml/ y el dashboard (por ruta).
+Sin dependencias: lo importan el backend (analytics, risk, agente) y ml/
 """
 from __future__ import annotations
 

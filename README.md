@@ -10,7 +10,7 @@ Proyecto final · Seguridad de la Información · IBERO. Ver [SPEC.md](SPEC.md).
 | 2 · Extensión: captura + etiqueta flotante | ✅ |
 | 3 · Modo bloqueo / DLP local | ✅ en test.html (falta validar el reenvío en ChatGPT / Claude / Gemini) |
 | 4 · Clasificadores de tema e inyección + Presidio | ✅ integrados al backend (4B); CE-4 pendiente del test real etiquetado. Ver [ml/README.md](ml/README.md) |
-| 5 · Dashboard | ✅ Streamlit en vivo (ver abajo) |
+| 5 · Centro de control | ✅ `/panel` en vivo (5B); detalle de eventos, asistente con 3 niveles de IA y API local protegida (5C). Streamlit retirado |
 | 6 · Evaluación y demo | pendiente |
 
 ## Entorno
@@ -124,25 +124,37 @@ nada fuera de `localhost`, así que funciona sin internet. Nunca muestra texto d
 
 - `http://localhost:8000/panel?demo=1` agrega el botón **Simular** (5 eventos falsos solo en pantalla).
 - Proyector: pantalla completa (F11) a 1920×1080; el «Modo presentación» viene activo.
+- **Detalle de evento:** clic (o Enter) en un evento del feed o de la pestaña «Tabla». Esc cierra; ←/→ recorren.
+  El texto enmascarado solo se ve con el modo presentación apagado.
+
+### API protegida (Fase 5C)
+
+Las rutas de datos y del asistente exigen el token de sesión que el backend genera al arrancar (header
+`X-Centinela-Token`) y rechazan cualquier `Origin`/`Host` que no sea local (CSRF y DNS rebinding). El panel y
+la extensión lo obtienen solos; para probar con curl, cópialo del `<meta name="centinela-token">` de
+http://localhost:8000/panel/ (cambia en cada arranque):
 
 ```bash
-curl -N http://127.0.0.1:8000/events          # ver el feed en crudo (Ctrl+C para salir)
-curl -s "http://127.0.0.1:8000/stats?detalle=1&inicio=2026-11-01&fin=2026-11-12"
+curl -s -H "X-Centinela-Token: <token>" "http://127.0.0.1:8000/stats?detalle=1&inicio=2026-11-01&fin=2026-11-12"
 ```
 
-## Dashboard de respaldo (Fase 5)
+### «Pregúntale a Centinela» — los tres niveles de IA
 
-```powershell
-conda activate auditor
-streamlit run dashboard/app.py
-```
+Pestaña «Pregúntale» de la columna derecha; el nivel se elige con el indicador «IA: …» de la cabecera.
 
-Abre http://127.0.0.1:8501. Lee la BD de `AUDITOR_DB_PATH` (default `C:uditor-datauditor.db`)
-**en solo lectura** y se refresca cada 3 s. Para proyectar, deja activado el **Modo presentación**
-(viene así por defecto): oculta todo texto de prompts.
-Streamlit toma `dashboard/.streamlit/config.toml` (solo localhost, sin telemetría). Si alguna vez
-no lo encuentra, el dashboard se niega a mostrar datos; en ese caso usa `python dashboard/run.py`,
-que fuerza esas opciones.
+1. **Sin IA (por defecto):** no hay que hacer nada. Responde las preguntas sugeridas (y variaciones) con reglas.
+2. **IA local con Ollama:** «IA: …» → **Activar IA local**. El backend revisa si Ollama responde, lo arranca si
+   está instalado, o pide confirmación para instalarlo con `winget` (paquete oficial `Ollama.Ollama`, ~1 GB),
+   verifica su firma, descarga el modelo `qwen2.5:3b` (~1.9 GB, barra de progreso) y hace una prueba. Si algo
+   falla, el panel explica la causa y la instalación manual (https://ollama.com/download/windows).
+   Otro modelo: variable `AUDITOR_OLLAMA_MODEL` antes de arrancar el backend.
+3. **IA en la nube con tu clave:** en la misma sección, URL base compatible con OpenAI (p. ej.
+   `https://api.openai.com/v1`), modelo y API key; acepta el aviso de que se enviarán **cifras agregadas, nunca
+   prompts** a ese dominio. La key se guarda en el Administrador de credenciales de Windows (no en archivos);
+   «Borrar clave» la elimina.
+
+El asistente solo puede llamar a 7 funciones de lectura que devuelven cifras (máx. 5 por pregunta) y nunca ve
+el texto de los prompts. Tus preguntas no se guardan. Ver SPEC §5.7–5.8.
 
 ## Qué detecta hoy
 
@@ -167,5 +179,8 @@ La lista completa (con política por defecto, riesgo y marcador) está en `backe
   con valores enmascarados (`sk-****abcd`, `o****@gmail.com`).
 - Logs y consola: solo metadatos (id, plataforma, riesgo, nº de hallazgos, latencia).
 - Los errores de validación (422) no repiten el cuerpo recibido.
-- Sin CORS a propósito: ninguna página web puede leer `/stats` ni mandar JSON a `/analyze`.
+- Sin CORS a propósito: ninguna página web puede leer `/stats` ni mandar JSON a `/analyze`; además, Host/Origin
+  locales y token de sesión en las rutas sensibles (Fase 5C).
+- El asistente solo ve cifras agregadas; las preguntas no se guardan. La API key del nivel 3 vive en el
+  Administrador de credenciales de Windows.
 - `tests/test_api.py::test_privacy_no_plaintext_in_db_or_logs` verifica CE-9.

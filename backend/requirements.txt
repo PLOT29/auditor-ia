@@ -1,7 +1,8 @@
 fastapi>=0.110
 uvicorn>=0.29
 pydantic>=2.6
-pandas>=2.2       # analytics.py: /stats?detalle=1 (centro de control) y dashboard
+pandas>=2.2       # analytics.py: /stats?detalle=1 (centro de control), detalle y agente
+httpx>=0.27        # agente: Ollama (nivel 2) y proveedor BYOK (nivel 3)
+keyring>=25        # nivel 3: la API key va al Administrador de credenciales de Windows
 # tests
 pytest>=8.0
-httpx>=0.27

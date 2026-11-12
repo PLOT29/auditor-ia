@@ -14,7 +14,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("AUDITOR_DB_PATH", str(db_file))
     from main import app
 
-    with TestClient(app) as c:
+    with TestClient(app, headers=F.auth()) as c:
         c.db_file = db_file
         yield c
 

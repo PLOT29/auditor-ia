@@ -1,18 +1,15 @@
-"""Fase 5: consultas del dashboard (dashboard/queries.py) con BD temporal y datos FALSOS."""
-import importlib.util
+"""Consultas de estadística (backend/analytics.py; antes dashboard/queries.py) con BD temporal y datos FALSOS.
+
+Fase 5C: Streamlit se retiró; estas consultas las usan el centro de control (/stats?detalle=1), el detalle
+de eventos y las herramientas del agente. Los tests se conservan sin cambios de lógica.
+"""
 import json
 import sqlite3
-import sys
 from datetime import date
-from pathlib import Path
 
 import pytest
 
-REPO = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("dash_queries", REPO / "dashboard" / "queries.py")
-Q = importlib.util.module_from_spec(spec)
-sys.modules["dash_queries"] = Q  # los dataclasses necesitan su módulo registrado
-spec.loader.exec_module(Q)
+import analytics as Q
 
 THR = 0.61
 

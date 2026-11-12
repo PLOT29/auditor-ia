@@ -31,7 +31,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("AUDITOR_DB_PATH", str(db_file))
     from main import app
 
-    with TestClient(app) as c:
+    with TestClient(app, headers=F.auth()) as c:
         c.db_file = db_file
         yield c
 
@@ -68,10 +68,22 @@ def test_panel_and_events_only_for_localhost():
 URL_RE = re.compile(r"(?:https?:)?//[A-Za-z0-9.-]+\.[A-Za-z]{2,}[^\s\"'`)<>]*")
 
 
+OLLAMA_LINK = "https://ollama.com/download/windows"
+
+
 @pytest.mark.parametrize("name", ["index.html", "panel.js", "panel.css"])
 def test_panel_sources_have_no_external_urls(name):
+    """Fase 5C: la única URL externa permitida es el ENLACE de descarga manual de Ollama, como <a href>
+    (navegación que el usuario decide), nunca como recurso que la página cargue."""
     text = (PANEL / name).read_text(encoding="utf-8")
-    assert not URL_RE.findall(text), f"URL externa en backend/panel/{name}"
+    urls = URL_RE.findall(text)
+    if name == "index.html":
+        assert urls == [OLLAMA_LINK]
+        assert re.search(r'<a id="ia-download" href="' + re.escape(OLLAMA_LINK) + r'" target="_blank" rel="noopener noreferrer">', text)
+        assert not re.search(r'(src|srcset|action|data)=["\']?' + re.escape(OLLAMA_LINK), text)
+        assert len(re.findall(re.escape(OLLAMA_LINK), text)) == 1
+    else:
+        assert not urls, f"URL externa en backend/panel/{name}"
     assert "@import" not in text and "fonts.googleapis" not in text
     assert not re.search(r"<script[^>]*>[^<]+</script>", text), "sin scripts en línea (la CSP los bloquea)"
     assert not re.search(r"\son[a-z]+=", text), "sin manejadores en línea (onclick=…)"

@@ -20,7 +20,7 @@ function load() {
   const posted = [];
   let messageListener = null;
   let installedListener = null;
-  const state = { backendUp: false };
+  const state = { backendUp: false, token: "tok-1", tokenRequests: 0, headers: [] };
 
   const chrome = {
     runtime: {
@@ -41,6 +41,13 @@ function load() {
   const fetch = async (url, opts = {}) => {
     if (!state.backendUp) throw Object.assign(new Error("down"), { name: "TypeError" });
     if (url.endsWith("/health")) return { ok: true, json: async () => ({ ok: true }) };
+    if (url.endsWith("/auth/token")) {
+      state.tokenRequests++;
+      return { ok: true, status: 200, json: async () => ({ token: state.token }) };
+    }
+    const sent = (opts.headers || {})["X-Centinela-Token"];
+    state.headers.push(sent);
+    if (sent !== state.token) return { ok: false, status: 403, json: async () => ({ detail: "token" }) };
     const body = JSON.parse(opts.body);
     posted.push(body);
     return { ok: true, status: 200, json: async () => ({ id: posted.length, risk: "alto", latency_ms: 1 }) };
@@ -72,6 +79,21 @@ const payload = (over = {}) => ({
 const settle = () => new Promise((r) => setTimeout(r, 20));
 
 const tests = {
+  async "manda el token de sesión y lo renueva si el backend se reinició (403)"() {
+    const bg = load();
+    bg.state.backendUp = true;
+    let resp = await bg.send({ type: "analyze", payload: payload({ blocked: false, user_decision: "no_aplica", text: "hola" }) });
+    assert.equal(resp.id, 1);
+    assert.equal(bg.state.tokenRequests, 1);
+    assert.deepEqual(bg.state.headers, ["tok-1"]);
+    bg.state.token = "tok-2"; // reinicio del backend: token nuevo
+    resp = await bg.send({ type: "analyze", payload: payload({ blocked: false, user_decision: "no_aplica", text: "otra" }) });
+    assert.equal(resp.id, 2);
+    assert.equal(bg.state.tokenRequests, 2);
+    assert.deepEqual(bg.state.headers, ["tok-1", "tok-1", "tok-2"]);
+    assert.ok(!JSON.stringify(bg.store).includes("tok-"), "el token nunca se guarda en storage");
+  },
+
   async "instalación nueva: políticas por defecto de la 5A.1"() {
     const bg = load();
     await bg.install();

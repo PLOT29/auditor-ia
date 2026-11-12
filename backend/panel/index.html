@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Centinela · Centro de control</title>
   <!--
-    Centro de control de Centinela (Fase 5B). Servido por el backend en http://localhost:8000/panel.
-    Solo pide cosas a su propio origen (CSP: default-src 'self'): /stats, /health, /events (SSE) y
-    vendor/echarts. Nunca recibe ni muestra texto de prompts. ?demo=1 muestra el botón «Simular».
+    Centro de control de Centinela (Fases 5B–5C). Servido por el backend en http://localhost:8000/panel.
+    Solo pide cosas a su propio origen (CSP: default-src 'self'): /stats, /health, /events (SSE),
+    /events/{id}, /agent/*, /ia/* y vendor/echarts. El backend reemplaza __CENTINELA_TOKEN__ por el token de
+    sesión al servir esta página; el panel lo manda en el header X-Centinela-Token. Con el modo presentación
+    activo nunca se muestra texto. ?demo=1 muestra el botón «Simular».
   -->
+  <meta name="centinela-token" content="__CENTINELA_TOKEN__">
   <link rel="stylesheet" href="panel.css">
   <script src="vendor/echarts/echarts.min.js" defer></script>
   <script src="panel.js" defer></script>
@@ -32,6 +35,9 @@
       <span class="pill" id="st-backend"><span class="dot"></span><span class="txt">Backend…</span></span>
       <span class="pill" id="st-models" title=""><span class="dot"></span><span class="txt">Modelos…</span></span>
       <span class="pill" id="st-feed"><span class="dot"></span><span class="txt">Feed…</span></span>
+      <button type="button" class="pill pill-btn" id="st-ia" aria-haspopup="dialog" aria-controls="ia-drawer"
+              title="Elegir el nivel de IA del asistente"><span class="dot"></span><span class="txt">IA: Sin IA</span></button>
+      <span class="pill warn" id="st-nube" hidden><span class="dot"></span><span class="txt">Proveedor externo: solo se envían cifras agregadas</span></span>
     </div>
 
     <div class="controls">
@@ -109,14 +115,125 @@
     </section>
   </main>
 
-  <aside class="feed" aria-labelledby="t-feed">
-    <header class="feed-h">
-      <h2 id="t-feed"><span class="live-dot" aria-hidden="true"></span>En vivo</h2>
-      <span class="muted" id="feed-count"></span>
-    </header>
-    <ol class="feed-list" id="feed" aria-live="polite" aria-relevant="additions"></ol>
-    <p class="empty" id="feed-empty">Esperando eventos… Escribe en ChatGPT, Claude o Gemini con la extensión activa.</p>
+  <aside class="feed" aria-label="Actividad y asistente">
+    <div class="tabs" role="tablist" aria-label="Vistas">
+      <button type="button" role="tab" id="tab-vivo" aria-selected="true" aria-controls="pane-vivo">
+        <span class="live-dot" aria-hidden="true"></span>En vivo</button>
+      <button type="button" role="tab" id="tab-tabla" aria-selected="false" aria-controls="pane-tabla" tabindex="-1">Tabla</button>
+      <button type="button" role="tab" id="tab-chat" aria-selected="false" aria-controls="pane-chat" tabindex="-1">Pregúntale</button>
+    </div>
+
+    <section class="pane" id="pane-vivo" role="tabpanel" aria-labelledby="tab-vivo">
+      <header class="feed-h"><span class="muted" id="feed-count"></span><span class="muted hint">Clic o Enter: detalle</span></header>
+      <ol class="feed-list" id="feed" aria-live="polite" aria-relevant="additions"></ol>
+      <p class="empty" id="feed-empty">Esperando eventos… Escribe en ChatGPT, Claude o Gemini con la extensión activa.</p>
+    </section>
+
+    <section class="pane" id="pane-tabla" role="tabpanel" aria-labelledby="tab-tabla" hidden>
+      <div class="table-wrap">
+        <table class="events-table" id="tabla">
+          <caption class="sr">Últimos eventos del periodo; clic o Enter para ver el detalle</caption>
+          <thead><tr><th scope="col">Hora</th><th scope="col">Plataforma</th><th scope="col">Riesgo</th><th scope="col">Motivo</th><th scope="col">Decisión</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="empty" id="tabla-empty" hidden>Sin eventos en este periodo.</p>
+    </section>
+
+    <section class="pane chat" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat" hidden>
+      <p class="chat-level" id="chat-level"></p>
+      <div class="sugeridas" id="sugeridas" aria-label="Preguntas sugeridas"></div>
+      <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <form class="chat-form" id="chat-form">
+        <label class="sr" for="chat-input">Pregunta sobre tus estadísticas</label>
+        <input id="chat-input" type="text" maxlength="500" autocomplete="off" placeholder="Pregunta sobre tus estadísticas…">
+        <button type="submit" class="btn" id="chat-send">Preguntar</button>
+      </form>
+      <p class="chat-note">El asistente solo ve cifras agregadas, nunca el texto de tus prompts. Tus preguntas no se guardan.</p>
+    </section>
   </aside>
 </div>
+
+<!-- Detalle de evento (Fase 5C) -->
+<div class="backdrop" id="detail-backdrop" hidden></div>
+<aside class="drawer" id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden tabindex="-1">
+  <header class="drawer-h">
+    <h2 id="detail-title">Evento</h2>
+    <span class="muted hint">← → recorrer · Esc cerrar</span>
+    <button type="button" class="icon-btn" id="detail-prev" aria-label="Evento anterior">←</button>
+    <button type="button" class="icon-btn" id="detail-next" aria-label="Evento siguiente">→</button>
+    <button type="button" class="icon-btn" id="detail-close" aria-label="Cerrar detalle">✕</button>
+  </header>
+  <div class="drawer-body">
+    <p class="risk-line" id="detail-risk"></p>
+    <dl class="meta-grid" id="detail-meta"></dl>
+    <h3>Hallazgos</h3>
+    <ul class="findings" id="detail-findings"></ul>
+    <h3>Texto conservado</h3>
+    <div class="masked-text" id="detail-text"></div>
+    <p class="note">Centinela nunca guarda el texto original; esto es lo único que se conservó.</p>
+  </div>
+</aside>
+
+<!-- Niveles de IA (Fase 5C) -->
+<div class="backdrop" id="ia-backdrop" hidden></div>
+<aside class="drawer ia" id="ia-drawer" role="dialog" aria-modal="true" aria-labelledby="ia-title" hidden tabindex="-1">
+  <header class="drawer-h">
+    <h2 id="ia-title">IA del asistente</h2>
+    <button type="button" class="icon-btn" id="ia-close" aria-label="Cerrar">✕</button>
+  </header>
+  <div class="drawer-body">
+    <fieldset class="levels">
+      <legend>Nivel activo</legend>
+      <label><input type="radio" name="nivel" value="1"> <b>1 · Sin IA</b> <span class="muted">reglas sobre las mismas herramientas; nunca falla</span></label>
+      <label><input type="radio" name="nivel" value="2"> <b>2 · IA local (Ollama)</b> <span class="muted">máxima privacidad; nada sale de tu computadora</span></label>
+      <label><input type="radio" name="nivel" value="3"> <b>3 · IA en la nube (tu clave)</b> <span class="muted">solo cifras agregadas, nunca prompts</span></label>
+    </fieldset>
+    <p class="msg" id="ia-msg" role="status"></p>
+
+    <section class="ia-sec" aria-labelledby="ia-local-t">
+      <h3 id="ia-local-t">Nivel 2 · IA local con Ollama <span class="muted" id="ia-model"></span></h3>
+      <div class="row-btns">
+        <button type="button" class="btn" id="ia-local-on">Activar IA local</button>
+        <button type="button" class="btn ghost" id="ia-local-off">Desactivar IA local</button>
+      </div>
+      <ol class="steps" id="ia-steps"></ol>
+      <div class="confirm" id="ia-confirm" role="alertdialog" aria-labelledby="ia-confirm-t" hidden>
+        <p id="ia-confirm-t"></p>
+        <div class="row-btns">
+          <button type="button" class="btn" id="ia-confirm-yes">Continuar</button>
+          <button type="button" class="btn ghost" id="ia-confirm-no">Cancelar</button>
+        </div>
+      </div>
+      <div class="progress" id="ia-progress" hidden>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-labelledby="ia-progress-t"><span></span></div>
+        <p class="mono" id="ia-progress-t"></p>
+      </div>
+      <pre class="out" id="ia-out" hidden></pre>
+      <div class="error-box" id="ia-error" hidden>
+        <p class="causa" id="ia-error-causa"></p>
+        <p><b>Instalación manual:</b></p>
+        <ol id="ia-error-pasos"></ol>
+        <p><a id="ia-download" href="https://ollama.com/download/windows" target="_blank" rel="noopener noreferrer">Página oficial de descarga de Ollama</a> · el chat sigue en el nivel 1.</p>
+      </div>
+    </section>
+
+    <section class="ia-sec" aria-labelledby="ia-nube-t">
+      <h3 id="ia-nube-t">Nivel 3 · IA en la nube con tu clave (BYOK)</h3>
+      <form id="ia-nube-form" autocomplete="off">
+        <label>URL base compatible con OpenAI <input id="nube-url" type="url" placeholder="https:// + URL base de tu proveedor (p. ej. api.openai.com/v1)" required></label>
+        <label>Modelo <input id="nube-modelo" type="text" placeholder="gpt-4o-mini" required></label>
+        <label>API key <input id="nube-key" type="password" autocomplete="new-password" placeholder="se guarda en el Administrador de credenciales de Windows"></label>
+        <p class="muted" id="nube-clave">Clave: no configurada</p>
+        <label class="accept"><input type="checkbox" id="nube-acepto"> <span id="nube-aviso">Se enviarán cifras agregadas (nunca prompts) a —</span></label>
+        <div class="row-btns">
+          <button type="submit" class="btn">Guardar y activar</button>
+          <button type="button" class="btn ghost" id="nube-probar">Probar conexión</button>
+          <button type="button" class="btn danger" id="nube-borrar">Borrar clave</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</aside>
 </body>
 </html>

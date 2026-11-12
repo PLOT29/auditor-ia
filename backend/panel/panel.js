@@ -8,6 +8,11 @@
  *
  * ?demo=1 → botón «Simular»: inyecta 5 eventos FALSOS al feed (marcados como simulados), sin tocar
  * el backend ni la BD.
+ *
+ * Fase 5C: token de sesión (meta centinela-token) en el header X-Centinela-Token de cada petición (en
+ * /events, como ?token= porque EventSource no manda headers); detalle de evento (/events/{id}, sin texto
+ * en modo presentación); «Pregúntale a Centinela» (/agent/preguntar, NDJSON en streaming) y niveles de IA
+ * (/ia/*). Nada de esto escribe en la BD de prompts.
  */
 (() => {
   "use strict";
@@ -48,6 +53,11 @@
   ]);
   const TYPE_NAMES = {}; // se llena con /stats (catálogo del backend)
   const FEED_MAX = 40;
+  const TOKEN = (document.querySelector('meta[name="centinela-token"]') || {}).content || "";
+
+  /** fetch al backend con el token de sesión (mismo origen; la CSP no permite otro). */
+  const api = (path, opts = {}) =>
+    fetch(path, { cache: "no-store", ...opts, headers: { ...(opts.headers || {}), "X-Centinela-Token": TOKEN } });
 
   // ------------------------------------------------------------ estado
   const state = {
@@ -120,7 +130,7 @@
 
   async function checkHealth() {
     try {
-      const r = await fetch("/health", { cache: "no-store" });
+      const r = await api("/health");
       const h = await r.json();
       pill("st-backend", "ok", "Backend conectado");
       const models = h.models || {};
@@ -177,6 +187,7 @@
     $("presentacion").addEventListener("change", (e) => {
       document.body.classList.toggle("presentacion", e.target.checked);
       store.set("presentacion", e.target.checked);
+      if (!$("detail").hidden) showDetail(); // el texto aparece o se oculta al momento
       Object.values(state.charts).forEach((c) => c.resize());
     });
   }
@@ -185,7 +196,7 @@
   async function load() {
     const qs = new URLSearchParams({ detalle: "1", inicio: $("f-inicio").value, fin: $("f-fin").value });
     try {
-      const r = await fetch(`/stats?${qs}`, { cache: "no-store" });
+      const r = await api(`/stats?${qs}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
       state.data = j.panel;
@@ -231,6 +242,7 @@
     renderTypes(p.tipos_hallazgo);
     renderMotives(p.motivos);
     if (!$("feed").children.length) for (const ev of [...p.recientes].reverse()) addEvent(ev, { initial: true });
+    renderTable(p.recientes);
     updateFeedEmpty();
   }
 
@@ -424,7 +436,12 @@
     if (ev.simulado) chips.append(el("span", "chip sim", "SIMULADO"));
     li.append(top, line);
     if (chips.children.length) li.append(chips);
-    li.setAttribute("aria-label", `${r.label}, ${PLATFORMS[ev.plataforma] || ev.plataforma}, ${ev.hora}${motive ? ", " + motive : ""}`);
+    li.setAttribute("aria-label", `${r.label}, ${PLATFORMS[ev.plataforma] || ev.plataforma}, ${ev.hora}${motive ? ", " + motive : ""}. Abrir detalle`);
+    li.tabIndex = 0;
+    li.setAttribute("role", "button");
+    li._ev = ev;
+    li.addEventListener("click", () => openDetail("feed", li));
+    li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail("feed", li); } });
     const list = $("feed");
     list.prepend(li);
     while (list.children.length > FEED_MAX) list.lastElementChild.remove();
@@ -451,7 +468,7 @@
       pill("st-feed", "bad", "Feed no soportado");
       return;
     }
-    const es = new EventSource("/events");
+    const es = new EventSource(`/events?token=${encodeURIComponent(TOKEN)}`);
     pill("st-feed", "warn", "Feed conectando…");
     es.addEventListener("open", () => {
       pill("st-feed", "ok", "Feed en vivo");
@@ -496,6 +513,431 @@
     });
   }
 
+
+  // ================================================================ Fase 5C
+  // ------------------------------------------------------------ pestañas (En vivo · Tabla · Pregúntale)
+  function initTabs() {
+    const tabs = [...document.querySelectorAll('.tabs [role="tab"]')];
+    const select = (tab, focus = true) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        $(t.getAttribute("aria-controls")).hidden = !on;
+      }
+      if (focus) tab.focus();
+      store.set("pestana", tab.id);
+      if (tab.id === "tab-chat") refreshIA();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => select(t, false));
+      t.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          select(tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]);
+        }
+      });
+    });
+    const saved = tabs.find((t) => t.id === store.get("pestana", "tab-vivo"));
+    if (saved) select(saved, false);
+  }
+
+  // ------------------------------------------------------------ tabla de eventos
+  function renderTable(items) {
+    const body = $("tabla").tBodies[0];
+    body.replaceChildren();
+    for (const ev of items || []) {
+      const r = RISK[ev.riesgo] || RISK.bajo;
+      const tr = el("tr");
+      tr.tabIndex = 0;
+      tr._ev = ev;
+      const cells = [ev.hora, PLATFORMS[ev.plataforma] || ev.plataforma, `${r.icon} ${r.label}`,
+        (ev.motivo || []).join(", ") || "—", DECISIONS[ev.decision] || "—"];
+      cells.forEach((c, i) => tr.append(el("td", i === 2 ? `r-${ev.riesgo}` : null, c)));
+      tr.setAttribute("aria-label", `${r.label}, ${PLATFORMS[ev.plataforma] || ev.plataforma}, ${ev.hora}. Abrir detalle`);
+      tr.addEventListener("click", () => openDetail("tabla", tr));
+      tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail("tabla", tr); } });
+      body.append(tr);
+    }
+    $("tabla-empty").hidden = !!(items && items.length);
+  }
+
+  // ------------------------------------------------------------ detalle de evento
+  const detail = { source: null, node: null, opener: null };
+  const SECRET_MK = /KEY|TOKEN|CLAVE|STRIPE|WEBHOOK|URI|SECRET|CONTRASENA|PASSWORD|TARJETA|CARD|JWT|PRIVATE|ORG|AWS|BEARER|API/;
+  const TERM_MK = /TERMINO/;
+  const MARKER_RE = /<[A-Z_]+>|\[[A-ZÁÉÍÓÚÑ_]+\]/g;
+
+  function detailNodes() {
+    return detail.source === "tabla" ? [...$("tabla").tBodies[0].rows] : [...$("feed").children];
+  }
+
+  function openDetail(source, node) {
+    detail.source = source;
+    detail.node = node;
+    if (!detail.opener) detail.opener = document.activeElement;
+    $("detail").hidden = false;
+    $("detail-backdrop").hidden = false;
+    showDetail();
+    $("detail-close").focus();
+  }
+
+  function closeDetail() {
+    $("detail").hidden = true;
+    $("detail-backdrop").hidden = true;
+    document.querySelectorAll(".current").forEach((n) => n.classList.remove("current"));
+    const back = detail.node && detail.node.isConnected ? detail.node : detail.opener;
+    detail.node = detail.opener = null;
+    if (back && back.focus) back.focus();
+  }
+
+  function moveDetail(step) {
+    const nodes = detailNodes();
+    const i = nodes.indexOf(detail.node);
+    const next = nodes[i + step];
+    if (!next) return;
+    detail.node = next;
+    showDetail();
+  }
+
+  function markedText(container, text) {
+    container.replaceChildren();
+    let pos = 0;
+    for (const m of text.matchAll(MARKER_RE)) {
+      container.append(text.slice(pos, m.index));
+      const name = m[0].slice(1, -1);
+      const kind = TERM_MK.test(name) ? "term" : SECRET_MK.test(name) ? "secret" : "pii";
+      const chip = el("span", `mk ${kind}`, m[0]);
+      chip.title = kind === "secret" ? "Secreto reemplazado" : kind === "term" ? "Término propio reemplazado" : "Dato personal reemplazado";
+      container.append(chip);
+      pos = m.index + m[0].length;
+    }
+    container.append(text.slice(pos));
+  }
+
+  function fillDetail(d, simulated = false) {
+    const r = RISK[d.riesgo] || RISK.bajo;
+    $("detail-title").textContent = simulated ? `Evento simulado ${d.id}` : `Evento #${d.id}`;
+    const risk = $("detail-risk");
+    risk.className = `risk-line ${d.riesgo}`;
+    risk.textContent = `${r.icon} Riesgo ${r.label.toLowerCase()}${(d.motivo || []).length ? " · " + d.motivo.join(" · ") : ""}`;
+    const pct = (x) => (x == null ? "—" : `${Math.round(x * 100)} %`);
+    const rows = [
+      ["Fecha y hora", `${d.fecha || ""} ${d.hora}`.trim()],
+      ["Plataforma", PLATFORMS[d.plataforma] || d.plataforma],
+      ["Origen", simulated ? "simulado (no existe en la BD)" : d.origen === "import" ? "importado del historial" : "extensión (en vivo)"],
+      ["Categoría", `${TOPICS[d.categoria] || d.categoria || "—"}${d.confianza != null ? ` · confianza ${pct(d.confianza)}` : ""}`],
+      ["Score de inyección", d.injection_score == null ? "—" : d.injection_score.toFixed(3)],
+      ["Decisión", DECISIONS[d.decision] || d.decision || "—"],
+      ["Bloqueado", d.bloqueado ? "sí" : "no"],
+      ["Latencia", d.latencia_ms == null ? "—" : `${d.latencia_ms} ms`],
+    ];
+    if (d.longitud != null) rows.push(["Longitud", `${fmtInt(d.longitud)} caracteres`]);
+    const dl = $("detail-meta");
+    dl.replaceChildren();
+    for (const [k, v] of rows) dl.append(el("dt", null, k), el("dd", null, v));
+
+    const ul = $("detail-findings");
+    ul.replaceChildren();
+    const fs = d.hallazgos || (d.tipos || []).map((t) => ({ type: t, nombre: typeName(t), masked: "—" }));
+    if (!fs.length) ul.append(el("li", "muted", "Sin hallazgos"));
+    for (const f of fs) {
+      const li = el("li");
+      li.append(el("span", `chip ${SECRET_TYPES.has(f.type) ? "danger" : "warn"}`, f.nombre || typeName(f.type)), el("code", null, f.masked));
+      if (f.valido === false) li.append(el("span", "muted", "letra de control no válida"));
+      ul.append(li);
+    }
+
+    const box = $("detail-text");
+    box.classList.toggle("hidden-text", !d.texto);
+    if (simulated) box.textContent = "Evento simulado: no hay texto.";
+    else if (d.texto_oculto) box.textContent = "Oculto en modo presentación (desactívalo para ver el texto enmascarado).";
+    else if (!d.texto) box.textContent = "(vacío)";
+    else markedText(box, d.texto);
+
+    const nodes = detailNodes();
+    const i = nodes.indexOf(detail.node);
+    $("detail-prev").disabled = i <= 0;
+    $("detail-next").disabled = i < 0 || i >= nodes.length - 1;
+    document.querySelectorAll(".current").forEach((n) => n.classList.remove("current"));
+    if (detail.node) {
+      detail.node.classList.add("current");
+      detail.node.scrollIntoView({ block: "nearest", behavior: reduced.matches ? "auto" : "smooth" });
+    }
+  }
+
+  async function showDetail() {
+    const ev = detail.node && detail.node._ev;
+    if (!ev) return;
+    if (ev.simulado) return fillDetail(ev, true);
+    fillDetail({ ...ev, texto: null, texto_oculto: true, hallazgos: null }); // inmediato; luego el detalle real
+    const presentation = document.body.classList.contains("presentacion");
+    try {
+      const r = await api(`/events/${encodeURIComponent(ev.id)}?presentacion=${presentation ? 1 : 0}`);
+      if (!r.ok) throw new Error(r.status === 404 ? "El evento ya no existe" : `HTTP ${r.status}`);
+      if (detail.node && detail.node._ev === ev) fillDetail(await r.json());
+    } catch (err) {
+      $("detail-text").textContent = `No se pudo leer el detalle (${err.message}).`;
+    }
+  }
+
+  function initDetail() {
+    $("detail-close").addEventListener("click", closeDetail);
+    $("detail-backdrop").addEventListener("click", closeDetail);
+    $("detail-prev").addEventListener("click", () => moveDetail(-1));
+    $("detail-next").addEventListener("click", () => moveDetail(1));
+    $("detail").addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); closeDetail(); }
+      else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); moveDetail(1); }
+      else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); moveDetail(-1); }
+      else if (e.key === "Tab") trapFocus(e, $("detail"));
+    });
+  }
+
+  function trapFocus(e, root) {
+    const f = [...root.querySelectorAll("button:not([disabled]), input:not([disabled]), a[href], [tabindex='0']")].filter((n) => n.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0];
+    const last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  // ------------------------------------------------------------ Pregúntale a Centinela
+  const chat = { busy: false };
+
+  async function initChat() {
+    try {
+      const r = await api("/agent/sugeridas");
+      const j = await r.json();
+      const box = $("sugeridas");
+      box.replaceChildren();
+      for (const q of j.preguntas || []) {
+        const b = el("button", null, q);
+        b.type = "button";
+        b.addEventListener("click", () => ask(q));
+        box.append(b);
+      }
+    } catch { /* el chat sigue funcionando con preguntas libres */ }
+    $("chat-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const q = $("chat-input").value.trim();
+      if (q) ask(q);
+    });
+  }
+
+  async function ask(question) {
+    if (chat.busy) return;
+    chat.busy = true;
+    $("chat-send").disabled = true;
+    $("chat-input").value = "";
+    const log = $("chat-log");
+    log.append(el("div", "msg-q", question));
+    const a = el("div", "msg-a pending");
+    const answer = el("div", "answer");
+    const tools = el("div", "tools");
+    a.append(answer);
+    log.append(a);
+    log.scrollTop = log.scrollHeight;
+    const used = [];
+    let done = null;
+    try {
+      const r = await api("/agent/preguntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pregunta: question }) });
+      if (!r.ok || !r.body) throw new Error(`HTTP ${r.status}`);
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done: end } = await reader.read();
+        if (end) break;
+        buf += dec.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const ev = JSON.parse(line);
+          if (ev.type === "delta") answer.append(ev.text);
+          else if (ev.type === "tool") used.push(ev);
+          else if (ev.type === "error") answer.append(ev.text);
+          else if (ev.type === "done") done = ev;
+          log.scrollTop = log.scrollHeight;
+        }
+      }
+    } catch (err) {
+      answer.append(`No pude contactar al asistente (${err.message}).`);
+    }
+    a.classList.remove("pending");
+    // «Herramientas usadas»: nombre y argumentos de cada llamada, para que la respuesta sea auditable.
+    tools.append(el("span", null, `Herramientas usadas${done ? ` · ${done.proveedor} · ${fmtInt(done.ms)} ms` : ""}:`));
+    const ul = el("ul");
+    const list = (done && done.herramientas) || used;
+    if (!list.length) ul.append(el("li", null, "ninguna"));
+    for (const t of list) {
+      const li = el("li", t.ok ? null : "bad");
+      li.append(el("code", null, `${t.nombre}(${JSON.stringify(t.argumentos || {})})`), t.ok ? " ✓" : ` ✕ ${t.error || "rechazada"}`);
+      ul.append(li);
+    }
+    tools.append(ul);
+    a.append(tools);
+    log.scrollTop = log.scrollHeight;
+    chat.busy = false;
+    $("chat-send").disabled = false;
+  }
+
+  // ------------------------------------------------------------ niveles de IA
+  const ia = { data: null, poll: null };
+  const STEP_ICON = { ok: "✓", error: "✕", en_curso: "⟳", esperando: "?", omitido: "–", pendiente: "·", cancelado: "–" };
+  const fmtBytes = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(2)} GB` : `${(n / 1e6).toFixed(0)} MB`);
+
+  async function refreshIA() {
+    try {
+      const r = await api("/ia/estado");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      ia.data = await r.json();
+      renderIA(ia.data);
+    } catch {
+      pill("st-ia", "", "IA: sin datos");
+    }
+  }
+
+  function renderIA(d) {
+    const label = d.nivel === 2 ? `IA local · ${d.ollama.modelo}` : d.nivel === 3 ? `IA nube · ${d.nube.dominio}` : "Sin IA";
+    const p = $("st-ia");
+    p.className = `pill pill-btn ${d.nivel === 2 ? "ia2" : d.nivel === 3 ? "ia3" : ""}`;
+    p.querySelector(".txt").textContent = `IA: ${label}`;
+    $("st-nube").hidden = d.nivel !== 3;
+    $("chat-level").textContent = d.nivel === 1 ? "Nivel 1 · Sin IA: respuestas con reglas sobre las mismas herramientas."
+      : d.nivel === 2 ? `Nivel 2 · IA local (${d.ollama.modelo}): nada sale de tu computadora.`
+        : `Nivel 3 · ${d.nube.dominio}: solo se envían cifras agregadas, nunca prompts.`;
+    for (const r of document.querySelectorAll('input[name="nivel"]')) r.checked = Number(r.value) === d.nivel;
+    $("ia-model").textContent = `· modelo ${d.ollama.modelo}`;
+
+    const L = d.local;
+    const steps = $("ia-steps");
+    steps.replaceChildren();
+    if (L.estado !== "inactivo") {
+      for (const s of L.pasos) {
+        const li = el("li", s.estado);
+        li.append(el("span", null, STEP_ICON[s.estado] || "·"), el("span", null, s.titulo));
+        if (s.detalle) li.append(el("span", "det", s.detalle));
+        steps.append(li);
+      }
+    } else if (d.ollama.lista) {
+      steps.append(el("li", "ok", "✓ IA local lista."));
+    }
+    const busy = L.estado === "en_curso" || L.estado === "esperando_confirmacion";
+    $("ia-local-on").disabled = busy;
+    $("ia-local-on").textContent = d.ollama.lista ? "Revisar IA local" : "Activar IA local";
+    $("ia-local-off").disabled = busy || (!d.ollama.lista && d.nivel !== 2);
+    $("ia-confirm").hidden = !L.confirmacion;
+    $("ia-confirm-t").textContent = L.confirmacion || "";
+    const pr = L.progreso;
+    $("ia-progress").hidden = !pr;
+    if (pr) {
+      const pct = pr.total ? Math.min(100, (100 * pr.completado) / pr.total) : 0;
+      $("ia-progress").querySelector(".bar span").style.width = `${pct.toFixed(1)}%`;
+      $("ia-progress").querySelector(".bar").setAttribute("aria-valuenow", pct.toFixed(0));
+      $("ia-progress-t").textContent = `${pr.estado} · ${fmtBytes(pr.completado)} / ${fmtBytes(pr.total)} (${pct.toFixed(0)} %)`;
+    }
+    $("ia-out").hidden = !(L.salida && L.salida.length);
+    $("ia-out").textContent = (L.salida || []).join("\n");
+    $("ia-error").hidden = !L.error;
+    if (L.error) {
+      $("ia-error-causa").textContent = L.error.causa;
+      const ol = $("ia-error-pasos");
+      ol.replaceChildren(...L.error.instrucciones.map((t) => el("li", null, t)));
+    }
+    const n = d.nube;
+    $("nube-clave").textContent = n.clave ? `Clave: configurada · ${n.clave}` : "Clave: no configurada";
+    if (n.base_url && !$("nube-url").value) $("nube-url").value = n.base_url;
+    if (n.modelo && !$("nube-modelo").value) $("nube-modelo").value = n.modelo;
+    updateAviso();
+    clearInterval(ia.poll);
+    if (busy || !$("ia-drawer").hidden) ia.poll = setInterval(refreshIA, busy ? 800 : 3000);
+  }
+
+  function nubeDomain() {
+    try { return new URL($("nube-url").value.trim()).hostname || "—"; } catch { return "—"; }
+  }
+  function updateAviso() {
+    $("nube-aviso").textContent = `Se enviarán cifras agregadas (nunca prompts) a ${nubeDomain()}`;
+  }
+
+  async function iaPost(path, body) {
+    const r = await api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : `HTTP ${r.status}`);
+    return j;
+  }
+
+  function iaMsg(text) { $("ia-msg").textContent = text || ""; }
+
+  function openIA() {
+    $("ia-drawer").hidden = false;
+    $("ia-backdrop").hidden = false;
+    iaMsg("");
+    refreshIA();
+    $("ia-close").focus();
+  }
+  function closeIA() {
+    $("ia-drawer").hidden = true;
+    $("ia-backdrop").hidden = true;
+    $("nube-key").value = ""; // la key nunca se queda en el formulario
+    $("st-ia").focus();
+  }
+
+  function initIA() {
+    $("st-ia").addEventListener("click", openIA);
+    $("ia-close").addEventListener("click", closeIA);
+    $("ia-backdrop").addEventListener("click", closeIA);
+    $("ia-drawer").addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); closeIA(); }
+      else if (e.key === "Tab") trapFocus(e, $("ia-drawer"));
+    });
+    for (const r of document.querySelectorAll('input[name="nivel"]')) {
+      r.addEventListener("change", async () => {
+        try { await iaPost("/ia/nivel", { nivel: Number(r.value) }); iaMsg(""); }
+        catch (err) { iaMsg(err.message); }
+        refreshIA();
+      });
+    }
+    $("ia-local-on").addEventListener("click", async () => {
+      iaMsg("");
+      try { await iaPost("/ia/local/activar"); } catch (err) { iaMsg(err.message); }
+      refreshIA();
+    });
+    $("ia-local-off").addEventListener("click", async () => {
+      try { await iaPost("/ia/local/desactivar"); iaMsg("IA local desactivada (Ollama sigue instalado)."); } catch (err) { iaMsg(err.message); }
+      refreshIA();
+    });
+    $("ia-confirm-yes").addEventListener("click", async () => { try { await iaPost("/ia/local/confirmar", { aceptar: true }); } catch (err) { iaMsg(err.message); } refreshIA(); });
+    $("ia-confirm-no").addEventListener("click", async () => { try { await iaPost("/ia/local/confirmar", { aceptar: false }); } catch (err) { iaMsg(err.message); } refreshIA(); });
+    $("nube-url").addEventListener("input", () => { updateAviso(); $("nube-acepto").checked = false; });
+    $("ia-nube-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!$("nube-acepto").checked) return iaMsg(`Debes aceptar que se enviarán cifras agregadas a ${nubeDomain()}.`);
+      const body = { base_url: $("nube-url").value.trim(), modelo: $("nube-modelo").value.trim(), acepto_envio: true, dominio_aceptado: nubeDomain() };
+      const key = $("nube-key").value.trim();
+      if (key) body.api_key = key;
+      try { await iaPost("/ia/nube/configurar", body); iaMsg("Proveedor configurado y nivel 3 activo."); }
+      catch (err) { iaMsg(err.message); }
+      $("nube-key").value = "";
+      refreshIA();
+    });
+    $("nube-probar").addEventListener("click", async () => {
+      iaMsg("Probando…");
+      try { const j = await iaPost("/ia/nube/probar"); iaMsg(`${j.ok ? "✓" : "✕"} ${j.detalle}`); } catch (err) { iaMsg(err.message); }
+    });
+    $("nube-borrar").addEventListener("click", async () => {
+      try { await iaPost("/ia/nube/borrar"); iaMsg("Clave borrada del Administrador de credenciales."); } catch (err) { iaMsg(err.message); }
+      $("nube-acepto").checked = false;
+      refreshIA();
+    });
+    refreshIA();
+    setInterval(() => { if ($("ia-drawer").hidden) refreshIA(); }, 15000);
+  }
+
   // ------------------------------------------------------------ arranque
   function resizeAll() {
     Object.values(state.charts).forEach((c) => c.resize());
@@ -507,6 +949,10 @@
     initPresentation();
     initRange();
     initDemo();
+    initTabs();
+    initDetail();
+    initChat();
+    initIA();
     if (!window.echarts) showAlert("No se pudo cargar la librería de gráficas (vendor/echarts). Los KPIs y el feed siguen funcionando.");
     checkHealth();
     setInterval(checkHealth, 10000);
