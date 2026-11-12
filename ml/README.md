@@ -9,14 +9,21 @@ e `injection_final.joblib`, con el umbral leído de `reports/metrics.json`. El b
 ```powershell
 conda activate auditor
 python ml/check_env.py                 # valida librerías, spaCy es y MiniLM
-python ml/make_topic_synthetic.py      # data/topic_synthetic.csv (480 sintéticos)
+python ml/make_topic_synthetic.py      # data/topic_synthetic_v1.csv (480 sintéticos, Fase 4A)
 python ml/export_for_labeling.py       # data/topic_to_label.csv (prompts reales enmascarados)
 python ml/build_injection_dataset.py   # data/injection.csv (HF + 200 propios en español)
 python ml/build_notebooks.py --run     # escribe y ejecuta los 3 notebooks (4A, pre-registrado)
 python ml/select_injection.py          # 4A.1: selección limpia → models/injection_final.joblib
 python ml/pii_eval.py                  # PII: regex vs. Presidio base / 4A.1 / producción (4B)
 python ml/bench_latency.py             # 4B: latencia de /analyze por etapa (CE-7), BD temporal
+python ml/probe_eval.py --model models/topic_clf_v1.joblib --tag v1   # 4C: línea base en el probe
+python ml/make_topic_synthetic_v2.py   # 4C: data/topic_synthetic_v2.csv (900, 150 por clase)
+python ml/train_topic_v2.py            # 4C: reentrena el tema, umbral de confianza, v1 vs. v2
 ```
+
+**Siempre con `conda activate auditor`.** Si lanzas `python.exe` del entorno sin activarlo, en
+esta máquina numpy puede morir con `Windows fatal exception 0xc06d007f` (conflicto de DLL de
+BLAS con otras instalaciones que están en el PATH).
 
 `build_notebooks.py` es la fuente de los notebooks. `--run` los ejecuta **dentro del mismo
 proceso** con IPython, porque en esta máquina el kernel de Jupyter no arranca (ZeroMQ falla
@@ -35,6 +42,23 @@ con `Bad file descriptor`). Con `--nbconvert` se usa el kernel normal.
   `nota_metodologica` (el procedimiento se ajustó después de la primera evaluación; ver ahí).
 - La inferencia de los 4 tipos de modelo vive en `injection_model.py`; el backend la usa tal
   cual (`backend/detectors/injection.py`), pasándole los embeddings ya calculados.
+
+## Tema v2 (Fase 4C)
+
+- **Motivo:** en vivo, "explícame qué es una tarjeta gráfica" salió como `ciberseguridad`.
+  Los sintéticos v1 ponían casi todo lo técnico en seguridad (ver `reports/error_analysis.md`).
+- **Guía:** [`LABELING.md`](LABELING.md) define cada categoría, con ejemplos de frontera y reglas
+  de desempate. Es la guía para etiquetar el test real.
+- **Probe set** (`data/topic_probe.csv`): 60 casos de frontera escritos a mano. Su SHA-256 está en
+  `metrics.json → topic_probe.sha256` y `probe_eval.py` se niega a evaluar si el archivo cambia.
+  **Nunca** se usa para entrenar ni para elegir hiperparámetros o umbrales, y no sustituye a CE-4.
+- **Datos v2:** las bases v1 revisadas, más bases nuevas y plantillas de frontera (tecnología
+  cotidiana en `consulta_general`, la misma con contexto escolar en `academico` y dentro de
+  código en `programacion`), más variantes de registro. Sin casi duplicados (coseno > 0.95) y
+  sin nada parecido al probe (> 0.90).
+- **Modelos:** `models/topic_clf.joblib` es el v2 (lo carga el backend) y `topic_clf_v1.joblib`
+  es el anterior. Umbral de confianza en `metrics.json → topic_v2.umbral_confianza` (0.61, elegido
+  con OOF). El backend responde `category_uncertain` y la extensión muestra "tema incierto".
 
 ## Presidio en español (Fases 4A.1 y 4B)
 
@@ -110,6 +134,9 @@ prompts (aunque estén enmascarados), o limpia las salidas.
 | `injection_model.py` | Inferencia de los 4 tipos de detector de inyección (ventanas, ensamble…) |
 | `select_injection.py` | Selección limpia del modelo y umbral (4A.1) |
 | `reclassify.py` | Reclasificación de filas existentes con los modelos de la 4B |
+| `LABELING.md` | Definiciones de las categorías de tema y reglas de desempate (4C) |
+| `probe_eval.py` | Evalúa un modelo de tema en el probe set (4C) |
+| `make_topic_synthetic_v2.py` / `train_topic_v2.py` | Sintéticos v2 y reentrenamiento del tema (4C) |
 | `bench_latency.py` | Latencia de `/analyze` por etapa (CE-7) |
 | `import_history.py` | Importador de historial de ChatGPT / Claude |
 | `models/*.joblib` | `topic_clf`, `injection_clf`, baselines `*_tfidf` y **`injection_final`** (el que se integra en la 4B) — no se suben al repo |

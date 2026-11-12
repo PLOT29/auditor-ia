@@ -37,7 +37,7 @@ pd.set_option("display.max_colwidth", 120)
 # ------------------------------------------------------------------ train_topic
 TOPIC = [
     md("# Entrenamiento · clasificador de TEMA (Fase 4A)\n\n"
-       "- **Train:** `data/topic_synthetic.csv` (sintéticos, ~80 por categoría).\n"
+       "- **Train:** `data/topic_synthetic_v1.csv` (sintéticos v1, ~80 por categoría; el v2 se entrena con `train_topic_v2.py`).\n"
        "- **Test:** SOLO prompts reales etiquetados a mano (`data/topic_test_real.csv`) → se evalúa en `evaluate.ipynb`.\n"
        "- Validación cruzada **5-fold agrupada** (`GroupKFold`): las variantes de un mismo prompt base nunca "
        "quedan en train y validación a la vez.\n"
@@ -89,7 +89,7 @@ print("acierto OOF  tfidf:", (oof.pred_tfidf == oof.label).mean().round(3), " em
     code("""\
 from datetime import datetime, timezone
 meta = {"seed": U.SEED, "sklearn_version": sklearn.__version__, "trained_at": datetime.now(timezone.utc).isoformat(),
-        "train_data": "ml/data/topic_synthetic.csv", "n_train": len(train)}
+        "train_data": "ml/data/topic_synthetic_v1.csv", "n_train": len(train)}
 
 tfidf = U.tfidf_pipeline(best_tfidf.C, class_weight="balanced").fit(X_text, y)
 joblib.dump({**meta, "kind": "tfidf+logreg", "pipeline": tfidf, "labels": list(tfidf.classes_),

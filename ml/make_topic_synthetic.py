@@ -1,4 +1,4 @@
-"""Genera ml/data/topic_synthetic.csv — ~80 prompts sintéticos por categoría (SOLO train).
+"""Genera ml/data/topic_synthetic_v1.csv — ~80 prompts sintéticos por categoría (SOLO train).
 
     python ml/make_topic_synthetic.py
 
@@ -26,7 +26,7 @@ from pathlib import Path
 
 SEED = 42
 PER_CLASS = 80
-OUT = Path(__file__).resolve().parent / "data" / "topic_synthetic.csv"
+OUT = Path(__file__).resolve().parent / "data" / "topic_synthetic_v1.csv"
 
 BASE: dict[str, list[str]] = {
     "programacion": [

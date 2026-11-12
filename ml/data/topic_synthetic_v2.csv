@@ -1,0 +1,901 @@
+text,label,source
+Me siento solo por mi salud,personal,v2:personal:tq0:plantilla
+¿Cómo detecto fugas de datos en la red wifi de mi casa?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+"Mi código en Rust da 'deadlock entre hilos', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. ¿Cuántos watts consume una computadora gamer? (es urgente),consulta_general,v2:consulta_general:ncons27:largo
+¿Cómo quito una mancha de café de una camisa blanca?,consulta_general,v2:consulta_general:v1bcons06:original
+"Para mi clase de Cálculo, explícame cómo?",academico,v2:academico:ta0:corto
+¿Qué diferencia hay entre mitosis y meiosis?,academico,v2:academico:v1bacad07:original
+¿Cómo protejo las laptops de mis empleados contra ransomware?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+¿Cuántas calorías tiene un plátano?,consulta_general,v2:consulta_general:v1bcons20:original
+¿Cómo respondo ante un incidente?,ciberseguridad,v2:ciberseguridad:v1bcibe27:corto
+Me siento ansioso por mi familia,personal,v2:personal:tq0:plantilla
+¿Qué es el horario de verano y por qué ya no se usa en México?,consulta_general,v2:consulta_general:ncons43:original
+"Gasto demasiado en comida a domicilio, ¿cómo lo controlo?",personal,v2:personal:v1bpers27:original
+¿Como elijo un puerto USB-C para programar?,consulta_general,v2:consulta_general:tc7:sin_acentos
+¿Para qué sirve el Bluetooth 5.3?,consulta_general,v2:consulta_general:ncons11:original
+"No soy experto en esto, así que explícamelo con calma. Necesito una expresión regular que valide correos electrónicos xfa",programacion,v2:programacion:v1bprog27:largo
+"Tengo examen de química mañana, explícame cómo balancear ecuaciones",academico,v2:academico:v1bacad15:original
+¿Qué corrientes filosóficas hubo en la Grecia antigua?,academico,v2:academico:nacad20:original
+Corrige la ortografía de una carta de presentación,redaccion,v2:redaccion:tr0:plantilla
+¿Cómo despliego una base de daots PostgrreSQL en Docker Compose?,programacion,v2:programacion:nprog22:typo
+¿Cómo libero espacio en mi celular Android?,consulta_general,v2:consulta_general:ncons20:original
+"No soy experto en esto, así que explícamelo con calma. Escribe pruebas unitarias con pytest para una función que suma dos números?? 🙏",programacion,v2:programacion:v1bprog21:largo
+¿Qué es el cross-site request forgery?,ciberseguridad,v2:ciberseguridad:v1bcibe35:original
+¿Cómo se usa Nmap para auditar los puertos abiertos de mi propio servidor?,ciberseguridad,v2:ciberseguridad:ncibe07:original
+¿Cuál es la capital de Australia?,consulta_general,v2:consulta_general:v1bcons05:original
+Escribe un script en Python que haga ping a una lista de IPs y guarde cuáles responden,programacion,v2:programacion:nprog02:original
+¿Cómo despliego una base de?,programacion,v2:programacion:nprog22:corto
+"Hazme más formal este mensaje: oye, ¿me pasas el reporte cuando puedas?",redaccion,v2:redaccion:v1breda02:original
+¿Para qué sirve un asistente de voz?,consulta_general,v2:consulta_general:tc2:plantilla
+Resume en tres líneas?,redaccion,v2:redaccion:tr2:corto
+porfa que es un ataque de phishing y como lo detecto? xfa,ciberseguridad,v2:ciberseguridad:v1bcibe00:informal
+¿Debería aceptar una oferta de trabajo que paga más pero está lejos de mi casa?,personal,v2:personal:v1bpers10:original
+¿Cómo armo un mueble de IKEA si perdí el instructivo?,consulta_general,v2:consulta_general:v1bcons34:original
+¿Cómo manejo el estrés del trabajo sin descuidar a mi familia?,personal,v2:personal:npers09:original
+"Mi código en Python da 'CORS policy blocked', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Mi app de Flutter no compila en iOS por un error de CocoaPods,programacion,v2:programacion:nprog15:original
+Quiero adoptar un perro pero vivo en un departamento chico,personal,v2:personal:npers14:original
+Ayúdame a planear mis metas para el próximo año,personal,v2:personal:v1bpers12:original
+Me siento muy estresado con la esceula y no sé cómo organiarme,personal,v2:personal:v1bpers00:typo
+"Explicame que fue la Guerra Fria, es para mi tarea de Historia",academico,v2:academico:ta2:sin_acentos
+¿Cómo organizo una fiesta infantil con poco presupuesto?,consulta_general,v2:consulta_general:v1bcons22:original
+¿Cuáles son los tipos de investigación cualitativa?,academico,v2:academico:v1bacad28:original
+"No soy experto en esto, así que explícamelo con calma. Explícame cómo funciona la memoria virtual para mi clase de Sistemas Operativos porfa",academico,v2:academico:nacad01:largo
+¿Cómo manejo los celos?,personal,v2:personal:v1bpers18:corto
+"Quiero dejar de procrastinar, siempre dejo todo para el final",personal,v2:personal:v1bpers09:original
+¿Cuál es la diferencia entre?,consulta_general,v2:consulta_general:v1bcons16:corto
+¿Cómo fuunciona un peurto USB-C?,consulta_general,v2:consulta_general:tc3:typo
+¿Para qué sirve el decorador @staticmethod en Python?,programacion,v2:programacion:v1bprog10:original
+¿Cómo funciona una red mesh?,consulta_general,v2:consulta_general:tc3:plantilla
+Escribe una carta de presentación que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Qué es el NFC del celular?,consulta_general,v2:consulta_general:tc0:plantilla
+"Quiero dejar el azúcar, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+¿Qué es una máquina de Turing? Es para Teoría de la Computación,academico,v2:academico:nacad05:original
+"Me sale error 500 en el servidor en mi proyecto de Python, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+Una duda que tengo desde hace rato: que es un puerto usb-c??? 🙏,consulta_general,v2:consulta_general:tc0:informal
+¿Cómo hago en R un programa que convierta grados Celsius a Fahrenheit?,programacion,v2:programacion:tp1:plantilla
+Te cuento un poco de contexto antes de preguntar. Cómo conecto mi app de Flask a una base de datos MySQL Te lo agradecería mucho.,programacion,v2:programacion:v1bprog13:largo
+¿Cómo funciona ChatGPT a grandes rasgos?,consulta_general,v2:consulta_general:ncons16:original
+Hazme un resumen ejecutivo de este informe para el director,redaccion,v2:redaccion:v1breda31:original
+Tengo examen de Química: ¿qué es una solución amortiguadora?,academico,v2:academico:ta1:plantilla
+Quiero mejorar mi alimentación pero como fuera todos los días,personal,v2:personal:npers11:original
+¿Qué patrón de diseño uso para crear objetos de distintos tipos según un parámetro?,programacion,v2:programacion:v1bprog28:original
+Una duda que tengo desde hace rato: reformula el reporte de soporte tecnico para que sea mas claro Te lo agradecería mucho.,redaccion,v2:redaccion:tr5:informal
+¿qué es la electronegatividad? Lo vemos en Química y no me queda claro,academico,v2:academico:ta4:plantilla
+¿Cómo protejo mi celular contra suplantación de identidad?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+Ayúdame a planear mis mteas para el rpóximo año,personal,v2:personal:v1bpers12:typo
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. ¿Cómo invierto una lista en Python sin usar reverse()? (es urgente),programacion,v2:programacion:v1bprog00:largo
+"No entendí en Redes qué es el modelo TCP/IP, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+Convierte este bucle for en una list comprehension: for x in datos: if x>0: res.append(x*2),programacion,v2:programacion:v1bprog09:original
+¿Qué es la inteligencia artificial generativa?,consulta_general,v2:consulta_general:ncons17:original
+¿Qué smartwatch me recomiendas para correr?,consulta_general,v2:consulta_general:ncons36:original
+¿Cómo hago hardening de un servidor Ubuntu recién instalado?,ciberseguridad,v2:ciberseguridad:ncibe13:original
+"Oye, una pregunta rápida: que es la induccion electromagnetica? lo vemos en fisica y no me queda claro (es urgente)",academico,v2:academico:ta4:informal
+¿Qué permisos peligrosos debo revisar en las apps de mi celular?,ciberseguridad,v2:ciberseguridad:ncibe22:original
+"Para mi clase de Electrónica, ¿cómo funciona un transistor?",academico,v2:academico:nacad06:original
+¿Cómo elijo el Bluetooth para una casa de dos pisos?,consulta_general,v2:consulta_general:tc7:plantilla
+¿Cómo configuro el firewall de iWndows para bloquear conexiones enttrantes no autorizadas?,ciberseguridad,v2:ciberseguridad:ncibe00:typo
+Ayúdame a escribir mi biografía?,redaccion,v2:redaccion:v1breda33:corto
+Ayúdame a hacer un plan para dejar el azúcar,personal,v2:personal:tq3:plantilla
+Corrige la ortografía de un correo para mi jefe,redaccion,v2:redaccion:tr0:plantilla
+Escribe el reporte de soporte técnico que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+"Últimamente estoy preocupado por el cambio de carrera, ¿qué hago?",personal,v2:personal:tq1:plantilla
+"Me sale IndexError: list index out of range en mi proyecto de R, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+¿A qué hora es el partido de la selección hoy?,consulta_general,v2:consulta_general:v1bcons13:original
+"Mi código en C# da 'IndexError: list index out of range', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+¿Qué hace un analista de un SOC?,ciberseguridad,v2:ciberseguridad:v1bcibe12:original
+¿Qué documentos piden para abrir una cuenta de banco?,consulta_general,v2:consulta_general:v1bcons26:original
+¿Cómo se juega el dominó?,consulta_general,v2:consulta_general:v1bcons12:original
+"Buenas tardes, quisiera saber algo. para mi clase de biologia, explicame que es la seleccion natural?? 🙏",academico,v2:academico:ta0:informal
+"Mi código de PyTorch dice 'CUDA out of memory' en la tarjeta gráfica, ¿cómo lo soluciono?",programacion,v2:programacion:nprog00:original
+¿Qué es un ataque de phishing y cómo lo detecto?,ciberseguridad,v2:ciberseguridad:v1bcibe00:original
+¿Cuánto tiempo se hierve un huevo para que quede tibio?,consulta_general,v2:consulta_general:v1bcons02:original
+Diferencia entre clase abstracta e interfaz en programación orientada a objetos,academico,v2:academico:v1bprog18:original
+Escribe el resumen de mi tesis que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Cuándo sale el próximo modelo de iPhone?,consulta_general,v2:consulta_general:ncons39:original
+Me ofrecieron un trabajo en otra ciudad y no sé si aceptarlo,personal,v2:personal:npers04:original
+¿Cómo planeo el macro teórico de mi tesina?,academico,v2:academico:nacad22:typo
+¿Qué es una cadena de suministro comprometida en software?,ciberseguridad,v2:ciberseguridad:ncibe18:original
+Tengo un error 'ModuleNotFoundError: No module named pandas' aunque ya lo instalé,programacion,v2:programacion:v1bprog14:original
+Explícame cómo funciona una red neuronal para mi materia de Inteligencia Artificial,academico,v2:academico:nacad24:original
+¿Cómo funciona el protocolo TLS y qué es un certificado digital?,ciberseguridad,v2:ciberseguridad:v1bcibe14:original
+Traduce al inglés un correo para mi jefe,redaccion,v2:redaccion:tr3:plantilla
+¿Cuánto cuetsa más o meenos el Bluetooth?,consulta_general,v2:consulta_general:tc6:typo
+¿Cómo hago en Go un programa que descargue una página web y extraiga los títulos?,programacion,v2:programacion:tp1:plantilla
+¿Cómo paso parámetros por query string en una ruta de Express?,programacion,v2:programacion:nprog08:original
+"Mi internet es muy lento en las noches, ¿por qué pasa eso?",consulta_general,v2:consulta_general:ncons07:original
+Me da miedo hablar en?,personal,v2:personal:npers10:corto
+Me siento inseguro con mi cuerpo,personal,v2:personal:npers07:original
+Explica qué es XSS y cómo protejjo mi fomrulario web,ciberseguridad,v2:ciberseguridad:v1bcibe09:typo
+Estoy algo perdido con esto: que es un repetidor de wifi y sirve de verdad??? 🙏,consulta_general,v2:consulta_general:ncons08:informal
+¿Cómo le pido perdón a mi hermana después de una pelea fuerte?,personal,v2:personal:v1bpers15:original
+¿Cuántos kilómetros hay de la Ciudad de México a Guadalajara?,consulta_general,v2:consulta_general:v1bcons08:original
+¿Cómo sé si mi contraseña fue?,ciberseguridad,v2:ciberseguridad:v1bcibe07:corto
+Ayúdame a entender la ley de la oferta y la demanda para mi examen de economía,academico,v2:academico:v1bacad04:original
+¿Qué es la memoria caché de un procesador?,consulta_general,v2:consulta_general:ncons22:original
+¿Cómo leo un archivo CSV con pandas y saco el promedio de una columna?,programacion,v2:programacion:v1bprog19:original
+Convierte este código de Python 2 a Python 3: print 'hola',programacion,v2:programacion:nprog13:original
+Me cuesta despertarme temprano,personal,v2:personal:npers13:original
+¿Cómo planteo el marco teórico de mi tesina?,academico,v2:academico:nacad22:original
+Explica la teoría de la relatividad de forma sencilla,academico,v2:academico:v1bacad17:original
+¿Cuál es la diferencia entre megas y gigas en el plan de internet?,consulta_general,v2:consulta_general:ncons06:original
+"No soy experto en esto, así que explícamelo con calma. ¿Qué es un ataque de ingeniería social por teléfono (vishing)? Gracias!",ciberseguridad,v2:ciberseguridad:ncibe12:largo
+Tengo examen de Química: ¿qué es el pH?,academico,v2:academico:ta1:plantilla
+"No soy experto en esto, así que explícamelo con calma. Convierte este código de Python 2 a Python 3: print 'hola' (es urgente)",programacion,v2:programacion:nprog13:largo
+¿Cómo creo un Dockerfile para una app de Node?,programacion,v2:programacion:v1bprog16:original
+¿Cómo protejo mi red wifi de casa?,ciberseguridad,v2:ciberseguridad:v1bcibe21:original
+"Últimamente estoy sin motivación por la mudanza, ¿qué hago?",personal,v2:personal:tq1:plantilla
+¿Qué impresora me recomiendas para jugar en 4K?,consulta_general,v2:consulta_general:tc4:plantilla
+Escribe una publicación de LinkedIn que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Qué consola me recomiendas para jugar con mis hijos?,consulta_general,v2:consulta_general:ncons24:original
+¿Cómo reviso si una extensión de Chrome está robando mis datos?,ciberseguridad,v2:ciberseguridad:ncibe04:original
+Explícame el concepto de límite en cálculo,academico,v2:academico:v1bacad21:original
+¿Por qué el cielo es azul?,consulta_general,v2:consulta_general:v1bcons21:original
+"No soy experto en esto, así que explícamelo con calma. Quiero bajar de peso, ayúdame a armar una rutina de ejercicio para mí Gracias!",personal,v2:personal:v1bpers04:largo
+Explícame qué hace un procesador y por qué importa cuántos núcleos tiene,consulta_general,v2:consulta_general:ncons00:original
+¿Que es una consola de videojuegos?,consulta_general,v2:consulta_general:tc0:sin_acentos
+¿Qué celular me recomiendas para ver series?,consulta_general,v2:consulta_general:tc4:plantilla
+"Me duele la cabezza toddas las tardes, ¿puede ser por el estrés?",personal,v2:personal:v1bpers16:typo
+Hola! mi app de flutter no compila en ios por un error de cocoapods Te lo agradecería mucho.,programacion,v2:programacion:nprog15:informal
+¿Cómo hago un pastel de chocolate sin horno?,consulta_general,v2:consulta_general:v1bcons15:original
+Necesito una expresion regular que valide correos electronicos,programacion,v2:programacion:v1bprog27:sin_acentos
+Me da miedo no encontrar trabajo cuando me gradúe,personal,v2:personal:v1bpers22:original
+Escribe una resena de 150 palabras de la pelicula que vi ayer,redaccion,v2:redaccion:v1breda12:sin_acentos
+"Explícame qué es una integral definida, es para mi tarea de Cálculo",academico,v2:academico:ta2:plantilla
+"Te cuento un poco de contexto antes de preguntar. Quiero aprender TypeScript, ¿qué tipos básicos debo conocer? xfa",programacion,v2:programacion:v1bprog35:largo
+"Para mi clae de Electrónica, ¿cómo funcionna un transistor?",academico,v2:academico:nacad06:typo
+Me sineto solo por mi trabajjo,personal,v2:personal:tq0:typo
+Reformula un post sobre tarjetas gráficas para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+Me siento frustrado por mi salud,personal,v2:personal:tq0:plantilla
+"Oye, una pregunta rápida: que hago si mi roomie no me paga su parte de la renta? xfa",personal,v2:personal:v1bpers32:informal
+Escribe una función en Java que descargue una página web y extraiga los títulos,programacion,v2:programacion:tp0:plantilla
+Resume en tres líneas la descripción de mi producto,redaccion,v2:redaccion:tr2:plantilla
+"Oye, una pregunta rápida: escribeme un poema corto sobre el otono (es urgente)",redaccion,v2:redaccion:v1breda07:informal
+¿Qué es la entropía en termodinámica?,academico,v2:academico:v1bacad24:original
+Haz más formal un correo para mi jefe,redaccion,v2:redaccion:tr1:plantilla
+¿Qué hace un aanlista de un SOC?,ciberseguridad,v2:ciberseguridad:v1bcibe12:typo
+"No entendí en Física qué es la energía cinética, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+"Me sale 'TypeError: cannot read properties of undefined' en React cuando hago map, ¿por qué?",programacion,v2:programacion:v1bprog01:original
+Mi abuela está enferma?,personal,v2:personal:v1bpers23:corto
+¿Cómo upedo mejrar mi autoestima?,personal,v2:personal:v1bpers24:typo
+¿Cómo respondo ante un incidente de seguridad en una pyme?,ciberseguridad,v2:ciberseguridad:v1bcibe27:original
+¿Qué es el principio de mínimo privilegio?,ciberseguridad,v2:ciberseguridad:v1bcibe11:original
+¿Cómo hago un merge de dos DataFrams de pandas por una colmna en común?,programacion,v2:programacion:nprog11:typo
+¿Qué es el OWWASP Top 10?,ciberseguridad,v2:ciberseguridad:v1bcibe06:typo
+Reescribe este párrafo en lenguaje sencillo para niños,redaccion,v2:redaccion:nreda08:original
+"Explícame qué es la electronegatividad, es para mi tarea de Química",academico,v2:academico:ta2:plantilla
+"No soy experto en esto, así que explícamelo con calma. Quiero dejar de procrastinar, siempre dejo todo para el final porfa",personal,v2:personal:v1bpers09:largo
+"Me preocupa accesos no autorizados en la API de mi app, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+¿Qué es un keylogger y?,ciberseguridad,v2:ciberseguridad:v1bcibe24:corto
+¿Qué es la fotosíntesis y qué productos genera?,academico,v2:academico:v1bacad03:original
+"No soy experto en esto, así que explícamelo con calma. ¿Vale la pena comprar un centro de datos para una oficina pequeña??? 🙏",consulta_general,v2:consulta_general:tc5:largo
+¿Qué es la deriva?,academico,v2:academico:nacad29:corto
+Haz un resumen ejecutivo del informe de ventas del trimestre,redaccion,v2:redaccion:nreda07:original
+"Mi código en Swift da 'CORS policy blocked', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Escribe una función en JavaScript que elimine los elementos repetidos de una lista,programacion,v2:programacion:tp0:plantilla
+¿Cómo detecto suplantación de identidad en mi cuenta de banco en línea?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+Estoy algo perdido con esto: mi hermano y yo no nos hablamos desde hace un ano Te lo agradecería mucho.,personal,v2:personal:npers08:informal
+¿Cómo hago un merge de dos DataFrames de pandas por una columna en común?,programacion,v2:programacion:nprog11:original
+Resume en tres líneas un post soobre taretas gráficas,redaccion,v2:redaccion:tr2:typo
+¿Cómo funciona un sistema operativo?,consulta_general,v2:consulta_general:tc3:plantilla
+Escribe un programa en C++ que?,programacion,v2:programacion:nprog17:corto
+¿Qué es una prueba de penetración y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+Redacta un aviso para los empleados sobre el cambio de contraseñas del lunes,redaccion,v2:redaccion:nreda02:original
+Escribe una consulta SQL que saque el top 5 de clientes por ventas del mes,programacion,v2:programacion:nprog10:original
+¿Cómo funciona la firma?,ciberseguridad,v2:ciberseguridad:v1bcibe31:corto
+Resume las etapas del ciclo celular para estudiar,academico,v2:academico:nacad26:original
+Resume este texto en tres líneas,redaccion,v2:redaccion:v1breda04:original
+Corrige la redacción de este correo para soporte técnico,redaccion,v2:redaccion:nreda03:original
+"Resuelve este sistema de ecuaciones: 2x + y = 7, x - y = 2",academico,v2:academico:v1bacad27:original
+¿Cómo hago una petición HTTP con requests y manejo los timeouts?,programacion,v2:programacion:nprog20:original
+Una duda que tengo desde hace rato: mi abuela esta enferma y me siento muy triste Gracias!,personal,v2:personal:v1bpers23:informal
+Explícame la diferencia entre TCP y UDP para mi tarea de Redes,academico,v2:academico:nacad08:original
+¿qué es la selección natural? Lo vemos en Biología y no me queda claro,academico,v2:academico:ta4:plantilla
+Corrige la ortografía de una publicación de LinkedIn,redaccion,v2:redaccion:tr0:plantilla
+Mi jefe me trata mal y ya no sé si renunciar,personal,v2:personal:v1bpers11:original
+"Una duda que tengo desde hace rato: mejora la redaccion de mi introduccion, se lee muy repetitiva (es urgente)",redaccion,v2:redaccion:v1breda05:informal
+"eMjora la reedacción de mi introducción, se lee muy repetitiva",redaccion,v2:redaccion:v1breda05:typo
+¿Para qué sirve el Bluetooth?,consulta_general,v2:consulta_general:tc2:plantilla
+¿Cómo hago en Java un programa que descargue una página web y extraiga los títulos?,programacion,v2:programacion:tp1:plantilla
+Explícame la ley de Ohm con un ejercicio resuelto,academico,v2:academico:nacad13:original
+"Mi celular se calienta mucho cuando lo cargo, ¿es normal?",consulta_general,v2:consulta_general:ncons03:original
+Explícame qué es el big O de un algoritmo de ordenamiento por burbuja,academico,v2:academico:v1bprog32:original
+¿Cómo hago en TypeScript un programa que valide que una contraseña tenga 8 caracteres?,programacion,v2:programacion:tp1:plantilla
+¿Vale la pena comprar un sistema operativo para programar?,consulta_general,v2:consulta_general:tc5:plantilla
+"Quiero dormir mejor, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+¿Cómo funciona la fibra óptica?,consulta_general,v2:consulta_general:ncons09:original
+Mi Arduino no lee el sensor?,programacion,v2:programacion:nprog04:corto
+Escribe un ensayo de opinión de una cuartilla sobre el uso de celulares en clase,redaccion,v2:redaccion:v1breda29:original
+¿qué es la inducción electromagnética? Lo vemos en Física y no me queda claro,academico,v2:academico:ta4:plantilla
+¿Qué es el cryptojacking?,ciberseguridad,v2:ciberseguridad:ncibe28:original
+"Mi código en Java da 'SyntaxError: unexpected EOF', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+¿Cómo puedo mejorar mi autoestima?,personal,v2:personal:v1bpers24:original
+"Para mi clse de Cálculo, explícame qué es una inetgral definida",academico,v2:academico:ta0:typo
+"Me sale stack overflow en mi proyecto de Java, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+"Quiero aprender TypeScript, ¿qué tipos básicos debo conocer?",programacion,v2:programacion:v1bprog35:original
+"No soy experto en esto, así que explícamelo con calma. Traduce al inglés este correo para un cliente Te lo agradecería mucho.",redaccion,v2:redaccion:v1breda08:largo
+¿Cómo protejo mi corro de Gmail contra inyceción SQL?,ciberseguridad,v2:ciberseguridad:ts0:typo
+Quiero hablar con mi papá de algo que me molesta pero siempre terminamos peleando,personal,v2:personal:v1bpers29:original
+¿Vale la pena comprar una tablet para mi mamá que casi no usa la computadora?,consulta_general,v2:consulta_general:tc5:plantilla
+Ayúdame a escribir mi biografía para la página de la empresa,redaccion,v2:redaccion:v1breda33:original
+"No soy experto en esto, así que explícamelo con calma. ¿A qué hora es el partido de la selección hoy? Te lo agradecería mucho.",consulta_general,v2:consulta_general:v1bcons13:largo
+¿Cómo calculo la propina en un restaurante?,consulta_general,v2:consulta_general:v1bcons32:original
+¿Cómo hago en Python un programa que haga una petición GET a una API y muestre el JSON?,programacion,v2:programacion:tp1:plantilla
+¿cómo funciona el protocolo DNS? Lo vemos en Redes y no me queda claro,academico,v2:academico:ta4:plantilla
+Mejora el título de mi presentación sobre redes 5G,redaccion,v2:redaccion:nreda06:original
+¿Cómo hago en JavaScript un programa que haga una petición GET a una API y muestre el JSON?,programacion,v2:programacion:tp1:plantilla
+¿Cómo cito un artículo científico en formato APA 7?,academico,v2:academico:v1bacad09:original
+¿Qué es el cross-site requet forgery?,ciberseguridad,v2:ciberseguridad:v1bcibe35:typo
+Escribe un artículo para el blog de la empresa sobre cómo elegir una laptop,redaccion,v2:redaccion:nreda00:original
+¿Qué es un hash y por qué se usa sal (salt) al guardar contraseñas?,ciberseguridad,v2:ciberseguridad:v1bcibe17:original
+Me da miedo no?,personal,v2:personal:v1bpers22:corto
+"Buenas tardes, quisiera saber algo. que hago si descargue un archivo .exe sospechoso de un correo? porfa",ciberseguridad,v2:ciberseguridad:ncibe14:informal
+¿Qué es Linux y por qué lo usan en servidores?,consulta_general,v2:consulta_general:ncons32:original
+¿Qué películas de ciencia ficción me recomiendas?,consulta_general,v2:consulta_general:v1bcons07:original
+Explica la segunda ley de Newton con ejercicios resueltos,academico,v2:academico:v1bacad08:original
+Estoy algo perdido con esto: hazme una publicacion para linkedin anunciando mi nuevo trabajo xfa,redaccion,v2:redaccion:v1breda10:informal
+Acorta este párrafo a la mitad sin perder la idea principal,redaccion,v2:redaccion:v1breda22:original
+Escribe un mensaje para mis clientes que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+Resume en tres líneas una reseña de una laptop,redaccion,v2:redaccion:tr2:plantilla
+¿qué es el ciclo fetch-decode-execute? Lo vemos en Arquitectura de Computadoras y no me queda claro,academico,v2:academico:ta4:plantilla
+"Para mi clase de Redes, explícame cómo funciona el protocolo DNS",academico,v2:academico:ta0:plantilla
+Mis compañeros de cuarto no limpian y ya me cansé,personal,v2:personal:v1bpers20:original
+Resuelve la integral de x por e a la x,academico,v2:academico:v1bacad02:original
+Explícame qué hace este código: [x for x in range(10) if x % 2 == 0],programacion,v2:programacion:nprog21:original
+¿Qué es el método de Newton-Raphson? Lo piden en Métodos Numéricos,academico,v2:academico:nacad19:original
+Escribe un post sobre tarjetas gráficas que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+"Buenas tardes, quisiera saber algo. como protejo mi correo de gmail contra inyeccion sql? porfa",ciberseguridad,v2:ciberseguridad:ts0:informal
+Corrige la ortografía de el reporte de soporte técnico,redaccion,v2:redaccion:tr0:plantilla
+Reformula una carta de presentación para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+¿Cómo manejo los celos en mi relación?,personal,v2:personal:v1bpers18:original
+¿Cómo se recicla un celular viejo?,consulta_general,v2:consulta_general:ncons30:original
+¿Vale la pena comprar un monitor de 144 Hz para trabajar?,consulta_general,v2:consulta_general:ncons01:original
+Hola! como manejo los celos en mi relacion? xfa,personal,v2:personal:v1bpers18:informal
+¿Es normal sentirme agotado aunque duerma ocho horas?,personal,v2:personal:v1bpers28:original
+¿Qué es el método científico y cuáles son sus pasos?,academico,v2:academico:v1bacad10:original
+¿Qué hago si descargué un archivo .exe sospechoso de un correo?,ciberseguridad,v2:ciberseguridad:ncibe14:original
+¿Qué es el OWASP Top 10?,ciberseguridad,v2:ciberseguridad:v1bcibe06:original
+Escribe una carta de recomendación para un exalumno,redaccion,v2:redaccion:nreda12:original
+¿Qué es una vulnerabilidad de día cero?,ciberseguridad,v2:ciberseguridad:v1bcibe18:original
+¿Qué series están de moda en Netflix?,consulta_general,v2:consulta_general:v1bcons27:original
+"No entendí en Historia qué fue la Revolución Francesa, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+Haz más formal una publicación de LinkedIn,redaccion,v2:redaccion:tr1:plantilla
+"Me sale IndexError: list index out of range en mi proyecto de Swift, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+Traduce al inglés el reporte de soporte técnico,redaccion,v2:redaccion:tr3:plantilla
+Traduce al inglés el resumen de mi tesis,redaccion,v2:redaccion:tr3:plantilla
+Escribe una función en Swift que haga una petición GET a una API y muestre el JSON,programacion,v2:programacion:tp0:plantilla
+Te cuento un poco de contexto antes de preguntar. ¿Cuánto cuesta más o menos el GPS? Te lo agradecería mucho.,consulta_general,v2:consulta_general:tc6:largo
+Hola! que es una solucion amortiguadora? lo vemos en quimica y no me queda claro?? 🙏,academico,v2:academico:ta4:informal
+¿Cómo cuido una planta de suculenta?,consulta_general,v2:consulta_general:v1bcons09:original
+¿Debería aceptaar una oferta de trabajo que paga más pero está lejs de mi casa?,personal,v2:personal:v1bpers10:typo
+Tengo ansiedad antes de?,personal,v2:personal:v1bpers05:corto
+Te cuento un poco de contexto antes de preguntar. Tengo un error 'port 3000 already in use' al correr npm start porfa,programacion,v2:programacion:nprog06:largo
+¿A qué temperatura se?,consulta_general,v2:consulta_general:ncons42:corto
+"Para mi clase de Historia, explícame qué fue la Revolución Francesa",academico,v2:academico:ta0:plantilla
+"Para mi clase de Redes, explíícame cómo funciona el enrutaamiento",academico,v2:academico:ta0:typo
+"Te cuento un poco de contexto antes de preguntar. Terminé con mi pareja y no puedo dejar de pensar en ella, ¿qué hago? (es urgente)",personal,v2:personal:v1bpers01:largo
+¿Cómo cifro un disco duro externo con BitLocker?,ciberseguridad,v2:ciberseguridad:ncibe03:original
+"Me cuesta mucho hablar con gente nueva, ¿cómo hago amigos?",personal,v2:personal:v1bpers13:original
+¿Cómo hago en Rust un programa que calcule el factorial de forma iterativa?,programacion,v2:programacion:tp1:plantilla
+Me siento ansioso por?,personal,v2:personal:tq0:corto
+¿Cómo se representan los números en complemento a dos? Lo vimos en clase,academico,v2:academico:nacad09:original
+"No soy experto en esto, así que explícamelo con calma. ¿Cómo leo un archivo CSV con pandas y saco el promedio de una columna? Te lo agradecería mucho.",programacion,v2:programacion:v1bprog19:largo
+"Mi router tiene la contraseña de fábrica, ¿qué riesgos hay y cómo lo aseguro?",ciberseguridad,v2:ciberseguridad:ncibe01:original
+¿Cómo detecto ransomware en la base de datos de clientes?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+¿Qué es el 5G y en qué se diferencia del 4G?,consulta_general,v2:consulta_general:ncons10:original
+Necesito una expresión regular que valide correos electrónicos,programacion,v2:programacion:v1bprog27:original
+Resume este texto en?,redaccion,v2:redaccion:v1breda04:corto
+Explícame qué es un árbol AVL?,academico,v2:academico:ta2:corto
+¿qué hace la unidad de control? Lo vemos en Arquitectura de Computadoras y no me queda claro,academico,v2:academico:ta4:plantilla
+"Estoy pensando en adoptar un gato, pero no sé si tengo tiempo",personal,v2:personal:v1bpers14:original
+Explícame qué es una tablet,consulta_general,v2:consulta_general:tc1:plantilla
+Explícame el algoritmo de Dijkstra para mi examen de Algoritmos,academico,v2:academico:nacad04:original
+Quiero pagar mis deudas?,personal,v2:personal:tq2:corto
+¿Cómo manejo el estrés del chamba sin descuidar a mi familia?,personal,v2:personal:npers09:spanglish
+¿A qué temperatura se cocina un pastel de zanahoria?,consulta_general,v2:consulta_general:ncons42:original
+"Para mi clase de Fisica, explicame que es la energia cinetica",academico,v2:academico:ta0:sin_acentos
+Haz una clase en Kotlin para un adaptador de RecyclerView,programacion,v2:programacion:nprog23:original
+Estoy algo perdido con esto: explicame la ley de ohm con un ejercicio resuelto?? 🙏,academico,v2:academico:nacad13:informal
+¿Cómo hago en PHP un programa que descargue una página web y extraiga los títulos?,programacion,v2:programacion:tp1:plantilla
+Redacta un mensaje para cancelar una reunión de forma amable,redaccion,v2:redaccion:v1breda14:original
+Me siento frustrado por mis amistades,personal,v2:personal:tq0:plantilla
+¿Vale la pena comprar la?,consulta_general,v2:consulta_general:tc5:corto
+"No soy experto en esto, así que explícamelo con calma. Para mi clase de Economía, explícame qué es el PIB per cápita?? 🙏",academico,v2:academico:ta0:largo
+"No soy experto en esto, así que explícamelo con calma. ¿Cómo sé si mi contraseña fue filtrada en una brecha de datos? Te lo agradecería mucho.",ciberseguridad,v2:ciberseguridad:v1bcibe07:largo
+"Tengo un memory leak en mi app de Node, ¿cómo lo encuentro?",programacion,v2:programacion:nprog19:original
+¿Cómo calculo el determinante de una matriz de 3x3?,academico,v2:academico:nacad18:original
+"Oye, una pregunta rápida: corrige la redaccion de este correo para soporte tecnico Te lo agradecería mucho.",redaccion,v2:redaccion:nreda03:informal
+Mi página en Django no carga los archivos estáticos en producción,programacion,v2:programacion:v1bprog20:original
+Reformula un correo para mi jefe para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+Reformula una publicación de LinkedIn para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+¿Qué es la realidad virtual?,consulta_general,v2:consulta_general:tc0:plantilla
+Estoy algo perdido con esto: explicame el algoritmo de dijkstra para mi examen de algoritmos xfa,academico,v2:academico:nacad04:informal
+Traduce al inglés un post sobre tarjetas gráficas,redaccion,v2:redaccion:tr3:plantilla
+Una duda que tengo desde hace rato: explica que es xss y como protejo mi formulario web Gracias!,ciberseguridad,v2:ciberseguridad:v1bcibe09:informal
+¿Qué hago si mi roomie no me paga su parte de la renta?,personal,v2:personal:v1bpers32:original
+Estoy algo perdido con esto: como funciona el sistema inmune? lo vemos en biologia y no me queda claro Gracias!,academico,v2:academico:ta4:informal
+Te cuento un poco de contexto antes de preguntar. Me siento agotado por el dinero (es urgente),personal,v2:personal:tq0:largo
+"Me preocupa fuerza bruta en el servidor de mi empresa, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Mi pareja y yo discutimos por las tareas de la casa,personal,v2:personal:npers03:original
+"No entendí en Redes cómo funciona el protocolo DNS, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+Mejora el título de mi presentación sobe erdes 5G,redaccion,v2:redaccion:nreda06:typo
+"Me llegó un SMS del banco con un link raro, ¿es fraude?",ciberseguridad,v2:ciberseguridad:v1bcibe34:original
+¿Qué ropa llevo para ir a la playa en diciembre?,consulta_general,v2:consulta_general:v1bcons31:original
+Corrige la ortografía de un mensaje para mis clientes,redaccion,v2:redaccion:tr0:plantilla
+¿Qué es la oferta agregada? Tengo examen de macroeconomía,academico,v2:academico:nacad14:original
+¿Qué lugares me recomiendas visitar en Oaxaca en tres días?,consulta_general,v2:consulta_general:v1bcons01:original
+Tengo un error 'ModuleNotFoundError: No module nmed pandas' aunque ya lo istalé,programacion,v2:programacion:v1bprog14:typo
+¿Cómo dejo de pasar tantas horas?,personal,v2:personal:npers05:corto
+Escribe un guion de 30?,redaccion,v2:redaccion:v1breda23:corto
+Escribe una función en C++ que valide que una contraseña tenga 8 caracteres,programacion,v2:programacion:tp0:plantilla
+"Ayúdame con mi tarea de probabilidad: lanzo dos dados, ¿probabilidad de que sumen 7?",academico,v2:academico:v1bacad31:original
+Redacta un mensaje para vaisar a mi equipo que la reunión se posopne,redaccion,v2:redaccion:nreda10:typo
+Resume en tres líneas un mensaje para mis clientes,redaccion,v2:redaccion:tr2:plantilla
+"Estoy algo perdido con esto: mi componente de react se renderiza dos veces, por que? (es urgente)",programacion,v2:programacion:nprog09:informal
+"Tengo ansiedad antes de mis presentaciones, ¿cómo la controlo?",personal,v2:personal:v1bpers05:original
+"Oye, una pregunta rápida: para que sirve una memoria usb? Gracias!",consulta_general,v2:consulta_general:tc2:informal
+Quiero hacer ejercicio diario?,personal,v2:personal:tq2:corto
+"Mi código en JavaScript da 'ModuleNotFoundError', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Quiero aprender a cocinar?,personal,v2:personal:v1bpers25:corto
+Me cuuesta despertarme tempranno,personal,v2:personal:npers13:typo
+"Explícame qué es el momento angular, es para mi tarea de Física",academico,v2:academico:ta2:plantilla
+¿Cómo hago en Swift un programa que ordene una lista de diccionarios por fecha?,programacion,v2:programacion:tp1:plantilla
+¿Qué raza de perro es buena para un departamento pequeño?,consulta_general,v2:consulta_general:v1bcons35:original
+Cómo conecto mi app de Flask a una base de datos MySQL,programacion,v2:programacion:v1bprog13:original
+"No entendí en Arquitectura de Computadoras qué hace la unidad de control, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+¿Qué es el ranomware y qué hago si mi epresa es infectada?,ciberseguridad,v2:ciberseguridad:v1bcibe04:typo
+"Me sale CORS policy blocked en mi proyecto de PHP, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+"Buenas tardes, quisiera saber algo. que es la ingenieria social??? 🙏",ciberseguridad,v2:ciberseguridad:v1bcibe15:informal
+"Explícame qué es una máscara de subred, es para mi tarea de Redes",academico,v2:academico:ta2:plantilla
+Escribe una función en Kotlin que cuente las palabras de un texto,programacion,v2:programacion:tp0:plantilla
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. ¿Cuántas calorías tiene un plátano? porfa,consulta_general,v2:consulta_general:v1bcons20:largo
+Escribeme un mensaje de felicitacion de cumpleanos para mi jefa,redaccion,v2:redaccion:v1breda18:sin_acentos
+Hoy fue un día muy malo y solo qiuero desahhogarme,personal,v2:personal:v1bpers34:typo
+¿Cómo conecto mi laptop a la televisión?,consulta_general,v2:consulta_general:ncons23:original
+Refactoriza este código para que no tenga tantos if anidados,programacion,v2:programacion:v1bprog25:original
+¿Cómo cirfo un disco duro exteno con BitLocker?,ciberseguridad,v2:ciberseguridad:ncibe03:typo
+¿Cómo protejo mi cuenta de Instagram contra malware?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+¿Vale la pena comprar el NFC del celular para trabajar desde casa?,consulta_general,v2:consulta_general:tc5:plantilla
+"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. No entendí en Historia qué fue la Guerra Fría, ¿me lo explicas con un ejemplo? xfa",academico,v2:academico:ta3:largo
+¿Para qué sirve un navegador web?,consulta_general,v2:consulta_general:tc2:plantilla
+Te cuento un poco de contexto antes de preguntar. ¿Qué es un SIEM y cómo me protege? Te lo agradecería mucho.,ciberseguridad,v2:ciberseguridad:ts2:largo
+"Explícame la diferencia entre let, const y var en JavaScript",programacion,v2:programacion:v1bprog02:original
+"Me preocupa fugas de datos en mi correo de Gmail, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+"No soy experto en esto, así que explícamelo con calma. Quiero dejar de fumar, ¿por dónde empiezo??? 🙏",personal,v2:personal:npers02:largo
+Haz una función en C que invierta una cadena sin usar strrev,programacion,v2:programacion:nprog07:original
+Hazme un resumen de la Segunda Guerra Mundial para estudiar,academico,v2:academico:v1bacad06:original
+Tengo examen de Cálculo: ¿qué es una integral definida?,academico,v2:academico:ta1:plantilla
+¿Cómo detecto malware en mi cuenta de Instagram?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+"Me preocupa keyloggers en mi celular, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Corrige la ortografía de un artículo sobre ciberseguridad,redaccion,v2:redaccion:tr0:plantilla
+¿Qué es un lenguaje de programación?,consulta_general,v2:consulta_general:ncons13:original
+Quiero mejorar mi alimentación pero?,personal,v2:personal:npers11:corto
+¿Por qué el cielo?,consulta_general,v2:consulta_general:v1bcons21:corto
+¿Cómo le pido perdón a mi?,personal,v2:personal:v1bpers15:corto
+"Para mi clase de Historia, explícame las causas de la Independencia de México",academico,v2:academico:ta0:plantilla
+Escribe un mensaje de bienvenida para nuevos clientes,redaccion,v2:redaccion:nreda09:original
+¿Cómo resuelvo un conflicto de merge en git?,programacion,v2:programacion:v1bprog08:original
+¿Cómo funciona una impresora 3D?,consulta_general,v2:consulta_general:ncons29:original
+Escribe un artículo sobre ciberseguridad que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Qué es la recursión? Dame?,programacion,v2:programacion:v1bprog22:corto
+Escribe un titular llamativo para un artículo sobre ahorro,redaccion,v2:redaccion:v1breda25:original
+"Para mi clase de Redes, explícame qué es el modelo TCP/IP",academico,v2:academico:ta0:plantilla
+"Oye, una pregunta rápida: mi jefe me trata mal y ya no se si renunciar Te lo agradecería mucho.",personal,v2:personal:v1bpers11:informal
+"Buenas tardes, quisiera saber algo. mi pareja y yo discutimos por las tareas de la casa porfa",personal,v2:personal:npers03:informal
+Traduce al inglés este correo para un cliente,redaccion,v2:redaccion:v1breda08:original
+Me siento triste por mi relación,personal,v2:personal:tq0:plantilla
+Escribe una reseña de una laptop que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Cómo le digo a mis papás que quiero cambiarme de carrera?,personal,v2:personal:v1bpers02:original
+¿Qué es la fibra óptica?,consulta_general,v2:consulta_general:tc0:plantilla
+Redacta una invitación para la fiesta de fin de año de la oficina,redaccion,v2:redaccion:v1breda35:original
+¿Cómo protejo mi API REST?,ciberseguridad,v2:ciberseguridad:ncibe11:corto
+¿Cómo hago en C++ un programa que valide que una contraseña tenga 8 caracteres?,programacion,v2:programacion:tp1:plantilla
+¿Cómo protejo los datos personales de mis clientes según la LFPDPPP?,ciberseguridad,v2:ciberseguridad:ncibe19:original
+"Me sale CORS polcy blocked en mi proyecto de PHP, ayúdame a deppurarlo",programacion,v2:programacion:tp3:typo
+¿Cómo hago un endpoint POST en FastAPI que reciba un JSON?,programacion,v2:programacion:v1bprog23:original
+"Mi Arduino no lee el sensor de temperatura, este es mi código: analogRead(A0)...",programacion,v2:programacion:nprog04:original
+Redacta una queja formal a la aerolínea por pérdida de equipaje,redaccion,v2:redaccion:v1breda21:original
+Hazme un script en bash que renombre todos los .jpg de una carpeta,programacion,v2:programacion:v1bprog11:original
+Escribe la descripción de un curso de introducción a Python para la página web,redaccion,v2:redaccion:nreda05:original
+Hola! explicame que hace este codigo: [x for x in range(10) if x % 2 == 0] Te lo agradecería mucho.,programacion,v2:programacion:nprog21:informal
+¿Cuál es la receta de unos chilaquiles verdes?,consulta_general,v2:consulta_general:v1bcons00:original
+Explícame para qué sirve una red mesh,consulta_general,v2:consulta_general:tc2:instruccion
+¿Cómo se hace una tabla de frecuencias en estadística?,academico,v2:academico:v1bacad18:original
+¿Qué es la inflación y cómo la mide el Banco de México?,academico,v2:academico:v1bacad35:original
+"Quiero hacer ejercicio diario, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+Escribe la descripción de un curso de?,redaccion,v2:redaccion:nreda05:corto
+"Explícame qué es un interbloqueo, es para mi tarea de Sistemas Operativos",academico,v2:academico:ta2:plantilla
+Escribe una función en Rust que haga una petición GET a una API y muestre el JSON,programacion,v2:programacion:tp0:plantilla
+¿Cómo hago un plan de respuesta a incidentes para mi pyme?,ciberseguridad,v2:ciberseguridad:ncibe23:original
+¿Cómo funciona un servidor?,consulta_general,v2:consulta_general:tc3:plantilla
+Escribe una reseña de 150 palabras de la película que vi ayer,redaccion,v2:redaccion:v1breda12:original
+Te cuento un poco de contexto antes de preguntar. ¿Cómo sé si mi cámara web está siendo usada sin mi permiso? xfa,ciberseguridad,v2:ciberseguridad:ncibe27:largo
+Tengo examen de Economía: ¿qué es la elasticidad de la demanda?,academico,v2:academico:ta1:plantilla
+¿Vale la pena copmrar la nube para una casa de dos pisos?,consulta_general,v2:consulta_general:tc5:typo
+Haz más formal una reseña de una laptop,redaccion,v2:redaccion:tr1:plantilla
+"Me preocupa robo de sesión en mi página de WordPress, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Escribe una función en Python que haga una petición GET a una API y muestre el JSON,programacion,v2:programacion:tp0:plantilla
+"No soy experto en esto, así que explícamelo con calma. Para mi clase de Redes, explícame cómo funciona el enrutamiento Gracias!",academico,v2:academico:ta0:largo
+Resume en tres líneas una carta de presentación,redaccion,v2:redaccion:tr2:plantilla
+"¿Qué es mejor para una oficina pequeña, laptop o computadora de escritorio?",consulta_general,v2:consulta_general:ncons02:original
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Corrige la ortografía de un correo para mi jefe?? 🙏,redaccion,v2:redaccion:tr0:largo
+¿Qué es un gestor de contraseñas y es seguro usarlo?,ciberseguridad,v2:ciberseguridad:v1bcibe28:original
+¿Qué impresora me recomiendas para mi mamá que casi no usa la computadora?,consulta_general,v2:consulta_general:tc4:plantilla
+"Te cuento un poco de contexto antes de preguntar. Me duele la cabeza todas las tardes, ¿puede ser por el estrés? Gracias!",personal,v2:personal:v1bpers16:largo
+¿Qué es un ataque de ingeniería social por teléfono (vishing)?,ciberseguridad,v2:ciberseguridad:ncibe12:original
+"Oye, una pregunta rápida: escribe un articulo para el blog de la empresa sobre como elegir una laptop Te lo agradecería mucho.",redaccion,v2:redaccion:nreda00:informal
+Te cuento un poco de contexto antes de preguntar. Escribe un mensaje de bienvenida para el grupo de WhatsApp del curso Te lo agradecería mucho.,redaccion,v2:redaccion:v1breda32:largo
+¿Qué es un kylogger y cómo lo deteecto en mi computadora?,ciberseguridad,v2:ciberseguridad:v1bcibe24:typo
+"Buenas tardes, quisiera saber algo. haz que este texto suene mas profesional para un reporte de la empresa porfa",redaccion,v2:redaccion:v1breda20:informal
+¿Cómo limpio la pantalla de mi televisión sin rayarla?,consulta_general,v2:consulta_general:v1bcons25:original
+Resume en tres líneas el reporte de soporte técnico,redaccion,v2:redaccion:tr2:plantilla
+Hola! que es un honeypot? Gracias!,ciberseguridad,v2:ciberseguridad:ncibe20:informal
+Explicame que es un firewall y para que sirve,ciberseguridad,v2:ciberseguridad:v1bcibe05:sin_acentos
+¿Cómo protejo la base de datos de clientes contra inyección SQL?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+¿Por qué mi variable de entorno no se lee en el contenedor de Docker?,programacion,v2:programacion:v1bprog34:original
+"No entendí en Historia qué fue la Guerra Fría, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+Te cuento un poco de contexto antes de preguntar. ¿Qué plan de internet me recomiendas para ver series? porfa,consulta_general,v2:consulta_general:tc4:largo
+"Últimamente estoy triste por mis amistades, ¿qué hago?",personal,v2:personal:tq1:plantilla
+¿Cuál es el animal más rápido del mundo?,consulta_general,v2:consulta_general:v1bcons28:original
+Mi hermano y yo no nos hablamos desde hace un año,personal,v2:personal:npers08:original
+Me siento presionado por mi familia para casarme,personal,v2:personal:v1bpers31:original
+¿Cuál es la complejidad de búsqueda binaria y cómo la implemento?,programacion,v2:programacion:v1bprog12:original
+¿Cómo protejo la API de mi app contra malware?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+"Mejora la redacción de mi introducción, se lee muy repetitiva",redaccion,v2:redaccion:v1breda05:original
+Hola! resume en tres lineas el reporte de soporte tecnico Te lo agradecería mucho.,redaccion,v2:redaccion:tr2:informal
+"Mi código en Go da 'IndexError: list index out of range', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+¿Qué son las leyes de Kirchhoff?,academico,v2:academico:nacad25:original
+"Me preocupa keyloggers en las laptops de mis empleados, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Reformula un mensaje para mis clientes para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+Hazme una publicación para LinkedIn anunciando mi nuevo chamba,redaccion,v2:redaccion:v1breda10:spanglish
+Escribe un correo para mi jefe que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+"Para mi clase de Economía, explícame qué es un monopolio",academico,v2:academico:ta0:plantilla
+Estoy algo perdido con esto: como creo un dockerfile para una app de node? (es urgente),programacion,v2:programacion:v1bprog16:informal
+¿Qué es un honeypot?,ciberseguridad,v2:ciberseguridad:ncibe20:original
+"Últimamente estoy triste por mi familia, ¿qué hago?",personal,v2:personal:tq1:plantilla
+Recomiéndame un libro para leer en vacaciones,consulta_general,v2:consulta_general:v1bcons17:original
+Diferencia entre IDS e IPS,ciberseguridad,v2:ciberseguridad:v1bcibe13:original
+¿Está bien escrito 'a ver' o 'haber' en esta oración?,redaccion,v2:redaccion:v1breda19:original
+¿Para qué sirve Wireshark en el análisis de tráfico?,ciberseguridad,v2:ciberseguridad:v1bcibe29:original
+Te cuento un poco de contexto antes de preguntar. Quiero aprender a cocinar para comer más sano xfa,personal,v2:personal:v1bpers25:largo
+Resume en tres líneas el resumen de mi tesis,redaccion,v2:redaccion:tr2:plantilla
+porfa como uso la gpu en un notebook de google colab para entrenar mi modelo? Te lo agradecería mucho.,programacion,v2:programacion:nprog24:informal
+Escribe un programa en C++ que lea un archivo línea por línea,programacion,v2:programacion:nprog17:original
+"Últimamente estoy sin motivación por mi salud, ¿qué hago?",personal,v2:personal:tq1:plantilla
+Resuelve la integral de x?,academico,v2:academico:v1bacad02:corto
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Redacta el agradecimiento de mi tesis?? 🙏,redaccion,v2:redaccion:v1breda27:largo
+¿Cómo se calcula la desviación estándar de una muestra?,academico,v2:academico:v1bacad05:original
+Dame ideas de regalo para el día del padre,consulta_general,v2:consulta_general:v1bcons11:original
+Haz una función en C que?,programacion,v2:programacion:nprog07:corto
+¿Cómo hago en Kotlin un programa que ordene una lista de diccionarios por fecha?,programacion,v2:programacion:tp1:plantilla
+¿Qué audífonos inalámbricos tienen buena cancelación de ruido?,consulta_general,v2:consulta_general:ncons28:original
+¿Qué es un keylogger y cómo lo detecto en mi computadora?,ciberseguridad,v2:ciberseguridad:v1bcibe24:original
+¿Qué es el ransomware y qué hago si mi empresa es infectada?,ciberseguridad,v2:ciberseguridad:v1bcibe04:original
+"No puedo dormir bien desde hace semanas, ¿qué me recomiendas?",personal,v2:personal:v1bpers03:original
+¿Cómo organizo mis gastos si me pagan por quincena?,personal,v2:personal:npers01:original
+¿Qué es Starlink y cómo funciona el internet satelital?,consulta_general,v2:consulta_general:ncons37:original
+¿Qué es un repetidor de wifi y sirve de verdad?,consulta_general,v2:consulta_general:ncons08:original
+¿Cómo elijo Windows 11 para diseño gráfico?,consulta_general,v2:consulta_general:tc7:plantilla
+¿Qué disco SSD me recomiendas para editar video?,consulta_general,v2:consulta_general:tc4:plantilla
+Te cuento un poco de contexto antes de preguntar. ¿Para qué sirve el overclocking? xfa,consulta_general,v2:consulta_general:tc2:largo
+Dime cómo funciona la firma digital,ciberseguridad,v2:ciberseguridad:v1bcibe31:instruccion
+¿Qué es un ataque de?,ciberseguridad,v2:ciberseguridad:v1bcibe00:corto
+"Me duele la cabeza todas las tardes, ¿puede ser por el estrés?",personal,v2:personal:v1bpers16:original
+"Tengo deudas en tres tarjetas, ¿cuál pago primero?",personal,v2:personal:npers12:original
+Te cuento un poco de contexto antes de preguntar. ¿Es normal sentirme agotado aunque duerma ocho horas??? 🙏,personal,v2:personal:v1bpers28:largo
+Dame un resumen del libro Pedro Páramo para mi clase de literatura,academico,v2:academico:v1bacad23:original
+No tengo motivación para nada últimamente,personal,v2:personal:v1bpers17:original
+"Me sale deadlock entre hilos en mi proyecto de JavaScript, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+"Oye, una pregunta rápida: como elijo un centro de datos para ver series? Te lo agradecería mucho.",consulta_general,v2:consulta_general:tc7:informal
+¿Por qué mi Dockerfile tarda tanto en?,programacion,v2:programacion:nprog12:corto
+Dame una lista de compras para la semana para dos personas,consulta_general,v2:consulta_general:v1bcons24:original
+¿Cómo creo una contarseña segura que peuda recordar?,ciberseguridad,v2:ciberseguridad:v1bcibe16:typo
+"Oye, una pregunta rápida: como le pido perdon a mi hermana despues de una pelea fuerte? (es urgente)",personal,v2:personal:v1bpers15:informal
+Reformula el reporte de soporte técnico para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+¿Cómo pongo límites con un amigo que siempre me pide dinero?,personal,v2:personal:v1bpers35:original
+Escribe una función en Java que valide si una cadena es palíndromo,programacion,v2:programacion:v1bprog03:original
+"Quiero llevarme mejor con mis papás, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+Hola! escribe una funcion en swift que haga una peticion get a una api y muestre el json?? 🙏,programacion,v2:programacion:tp0:informal
+¿Cómo detecto suplantación de identidad en mi página de WordPress?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+¿Cómo elijo una red mesh para trbaajar deesde casa?,consulta_general,v2:consulta_general:tc7:typo
+"Últimamente estoy agotado por mi relación, ¿qué hago?",personal,v2:personal:tq1:plantilla
+"Explícame qué es la inducción electromagnética, es para mi tarea de Física",academico,v2:academico:ta2:plantilla
+"Oye, una pregunta rápida: no entendi en biologia que es la meiosis, me lo explicas con un ejemplo? (es urgente)",academico,v2:academico:ta3:informal
+"Mi componente de React se renderiza dos veces, ¿por qué?",programacion,v2:programacion:nprog09:original
+Traduce al inglés una carta de presentación,redaccion,v2:redaccion:tr3:plantilla
+Te cuento un poco de contexto antes de preguntar. ¿Qué es una vulnerabilidad de día cero? Te lo agradecería mucho.,ciberseguridad,v2:ciberseguridad:v1bcibe18:largo
+Escribe la descripción de mi producto que suene profesional,redaccion,v2:redaccion:tr4:plantilla
+¿Qué son los enlaces covalentes e iónicos?,academico,v2:academico:v1bacad32:original
+"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Explícame cómo funciona la política monetaria, es para mi tarea de Economía Te lo agradecería mucho.",academico,v2:academico:ta2:largo
+Me cuesta despertarme temprano?,personal,v2:personal:npers13:corto
+¿Cuánto cuesta más o menos Windows 11?,consulta_general,v2:consulta_general:tc6:plantilla
+Explica qué hace async/await en JavaScript con un ejemplo,programacion,v2:programacion:v1bprog15:original
+Parafrasea este párrafo para que no parezca copiado,redaccion,v2:redaccion:v1breda06:original
+¿Qué necesito para rentar un coche en Estados Unidos?,consulta_general,v2:consulta_general:v1bcons19:original
+"Explícame qué es la energía cinética, es para mi tarea de Física",academico,v2:academico:ta2:plantilla
+¿Cómo se dice 'gracias' en japonés?,consulta_general,v2:consulta_general:v1bcons29:original
+"No soy experto en esto, así que explícamelo con calma. ¿Cómo elijo una webcam 4K para jugar en 4K? Te lo agradecería mucho.",consulta_general,v2:consulta_general:tc7:largo
+¿Qué es la autenticación multifactor resistente al phishing con llaves FIDO2?,ciberseguridad,v2:ciberseguridad:ncibe10:original
+"No entendí en Algoritmos qué es un árbol AVL, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+"Tengo que exponer sobre el Porfiriato, ¿qué puntos principales menciono?",academico,v2:academico:nacad28:original
+¿cómo funciona la memoria caché? Lo vemos en Arquitectura de Computadoras y no me queda claro,academico,v2:academico:ta4:plantilla
+Redacta un correo formal para pedirle una prórroga a mi profesor,redaccion,v2:redaccion:v1breda01:original
+Traduce al inglés este?,redaccion,v2:redaccion:v1breda08:corto
+Explícame qué es un pipeline en un procesador para mi materia de Arquitectura,academico,v2:academico:nacad10:original
+Escribe el reporte de?,redaccion,v2:redaccion:tr4:corto
+¿Qué es un sistema operativo?,consulta_general,v2:consulta_general:ncons18:original
+"Explícame cómo se balancea una reacción redox, es para mi tarea de Química",academico,v2:academico:ta2:plantilla
+Ayúdame a hacer un plan para comer más sano,personal,v2:personal:tq3:plantilla
+¿Qué es una botnet?,ciberseguridad,v2:ciberseguridad:v1bcibe30:original
+¿Qué es la gestión de parches de seguridad y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+"Mi código en Kotlin da 'error 500 en el servidor', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+¿Qué es el SIM swappping y cómo proejo mi número?,ciberseguridad,v2:ciberseguridad:ncibe05:typo
+¿Cómo organizo mi día para estudiar y trabajar al mismo tiempo?,personal,v2:personal:v1bpers21:original
+"Explícame qué es un registro, es para mi tarea de Arquitectura de Computadoras",academico,v2:academico:ta2:plantilla
+Me siento solo desde que me mudé de ciudad,personal,v2:personal:v1bpers08:original
+porfa que es una maquina de turing? es para teoria de la computacion?? 🙏,academico,v2:academico:nacad05:informal
+Escribe la descripción de un producto para mi tienda en línea de velas aromáticas,redaccion,v2:redaccion:v1breda16:original
+Te cuento un poco de contexto antes de preguntar. Revisa si este párrafo tiene coherencia y cohesión Gracias!,redaccion,v2:redaccion:v1breda34:largo
+Explica qué es XSS y cómo protejo mi formulario web,ciberseguridad,v2:ciberseguridad:v1bcibe09:original
+Quiero ahorrar para comprarme?,personal,v2:personal:npers06:corto
+"Me sale stack overflow en mi proyecto de C#, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. El build de mi proyecto de Android Studio falla por una versión de Gradle porfa,programacion,v2:programacion:v1bprog24:largo
+¿Qué es el robo de cookies de sesión?,ciberseguridad,v2:ciberseguridad:ncibe26:original
+Estoy algo perdido con esto: dame ideas de regalo para el dia del padre porfa,consulta_general,v2:consulta_general:v1bcons11:informal
+Traduce al inglés un mensaje para mis clientes,redaccion,v2:redaccion:tr3:plantilla
+Hazme una publicación para LinkedIn anunciando mi nuevo trabajo,redaccion,v2:redaccion:v1breda10:original
+Explica qué es una inyección SQL y cómo se previene,ciberseguridad,v2:ciberseguridad:v1bcibe01:original
+Te cuento un poco de contexto antes de preguntar. Explícame qué es un exploit de día cero?? 🙏,ciberseguridad,v2:ciberseguridad:ncibe06:largo
+Explícame qué es un cable ethernet categoría 6,consulta_general,v2:consulta_general:tc1:plantilla
+¿Cuál es la diferencia entre un café americano y un espresso?,consulta_general,v2:consulta_general:v1bcons16:original
+¿Cómo planteo la hipótesis de mi tesis de licenciatura?,academico,v2:academico:v1bacad34:original
+¿Qué es la ingeniería social?,ciberseguridad,v2:ciberseguridad:v1bcibe15:original
+¿Por qué mi Dockerfile tarda tanto en construir? Uso COPY . . al principio,programacion,v2:programacion:nprog12:original
+"Explícame qué es una nitegral definida, es para mi tara de Cálculo",academico,v2:academico:ta2:typo
+"Últimamente estoy agotado por mi salud, ¿qué hago?",personal,v2:personal:tq1:plantilla
+¿Cómo hago un JOIN entre dos tablas en SQL para traer clientes con sus pedidos?,programacion,v2:programacion:v1bprog04:original
+Escribe una función en PHP que calcule el factorial de forma iterativa,programacion,v2:programacion:tp0:plantilla
+¿Cuál es la emjor éppoca para visitar Chiapas?,consulta_general,v2:consulta_general:v1bcons33:typo
+¿Qué es un ataque XSS y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+Mi app de Flutter no compila?,programacion,v2:programacion:nprog15:corto
+¿Qué significa la expresión 'estar en la luna'?,consulta_general,v2:consulta_general:v1bcons14:original
+¿Cómo detecto si alguien entró a mi cuenta de Google?,ciberseguridad,v2:ciberseguridad:ncibe09:original
+Escríbeme un poema corto sobre el otoño,redaccion,v2:redaccion:v1breda07:original
+"Me sale CORS policy blocked en mi proyecto de TypeScript, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+Resume en tres líneas una publicación de LinkedIn,redaccion,v2:redaccion:tr2:plantilla
+"Haz una clase Carro en Python con atributos marca, modelo y un método arrancar",programacion,v2:programacion:v1bprog33:original
+¿Cómo hago pruebas unitarias con?,programacion,v2:programacion:nprog14:corto
+¿Cómo reviso los logs de acceso para encontrar un intento de intrusión?,ciberseguridad,v2:ciberseguridad:ncibe21:original
+"Quiero organizar mi semana, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+¿Cómo guardo contraseñas de forma segura en la base de datos de mi app?,ciberseguridad,v2:ciberseguridad:ncibe25:original
+Haz un cuento infantil de un perro que aprende a nadar,redaccion,v2:redaccion:v1breda15:original
+Explícame qué es un puerto USB-C,consulta_general,v2:consulta_general:tc1:plantilla
+"Buenas tardes, quisiera saber algo. como despliego mi app de next.js en vercel??? 🙏",programacion,v2:programacion:v1bprog31:informal
+¿Qué es el teorema del límite central?,academico,v2:academico:nacad12:original
+¿Cómo puedo hacer que esta conclusión suene más contundente?,redaccion,v2:redaccion:v1breda11:original
+Mi programa en Python se queda sin?,programacion,v2:programacion:v1bprog30:corto
+"Mi código en R da 'error 500 en el servidor', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Convierte estas notas en un párrafo bien redactado,redaccion,v2:redaccion:v1breda17:original
+¿Vale la pena comprar un dron para una oficina pequeña?,consulta_general,v2:consulta_general:tc5:plantilla
+Haz más formal un post sobre tarjetas gráficas,redaccion,v2:redaccion:tr1:plantilla
+¿Cómo detecto malware en las laptops de mis empleados?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+¿Cómo protejo mi página de WordPress contra inyección SQL?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+Corrige este texto y explícame los errores que tenía,redaccion,v2:redaccion:v1breda24:original
+Explícame el teorema de Pitágoras con un ejemplo,academico,v2:academico:v1bacad00:original
+Escribe una función en TypeScript que convierta grados Celsius a Fahrenheit,programacion,v2:programacion:tp0:plantilla
+¿Qué es el prompt injection en modelos de lenguaje?,ciberseguridad,v2:ciberseguridad:v1bcibe26:original
+¿Cuál es el río más largo del mundo?,consulta_general,v2:consulta_general:ncons44:original
+Escríbeme un mensaje de felicitación de cumpleaños para mi jefa,redaccion,v2:redaccion:v1breda18:original
+¿Cómo creo una contraseña segura que pueda recordar?,ciberseguridad,v2:ciberseguridad:v1bcibe16:original
+¿Qué es el DLP o prevención de pérdida de datos?,ciberseguridad,v2:ciberseguridad:v1bcibe33:original
+porfa como configuro eslint y prettier en un proyecto de typescript? xfa,programacion,v2:programacion:nprog18:informal
+¿Qué es un ataque de denegación de servicio distribuido?,ciberseguridad,v2:ciberseguridad:v1bcibe08:original
+Tengo examen de Fisica: ¿que es la induccion electromagnetica?,academico,v2:academico:ta1:sin_acentos
+¿Qué hace un ingeniero de software en su día a día?,consulta_general,v2:consulta_general:ncons15:original
+¿Cómo tramito la credencial del INE si la perdí?,consulta_general,v2:consulta_general:v1bcons18:original
+Mi programa en Python se queda sin memoria al leer un archivo de 5 GB,programacion,v2:programacion:v1bprog30:original
+Haz más formal la descripción de mi producto,redaccion,v2:redaccion:tr1:plantilla
+Hola! que patron de diseno uso para crear objetos de distintos tipos segun un parametro? xfa,programacion,v2:programacion:v1bprog28:informal
+¿Cómo elijo un dron para estudiar en línea?,consulta_general,v2:consulta_general:tc7:plantilla
+"Ayúdame a escribir el discurso de graduación, que dure dos minutos",redaccion,v2:redaccion:v1breda09:original
+¿Cómo dejo de pasar tantas horas en el celular en la noche?,personal,v2:personal:npers05:original
+¿Es seguro usar el mismo?,ciberseguridad,v2:ciberseguridad:ncibe29:corto
+¿Qué es el ADN y cómo se replica?,academico,v2:academico:v1bacad20:original
+¿Vale la pena comprar una tarjeta gráfica para jugar en 4K?,consulta_general,v2:consulta_general:tc5:plantilla
+Cómo paso de una lista de diccionarios a un DataFrame,programacion,v2:programacion:v1bprog29:original
+¿Qué es una cadeena de sumiistro comprometida en software?,ciberseguridad,v2:ciberseguridad:ncibe18:typo
+"Me sale stack overflow en mi proyecto de Rust, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+¿Qué es un ataque de denegación de servicio y cómo se mitiga?,ciberseguridad,v2:ciberseguridad:ncibe24:original
+Redacta un aviso para los empleados sobre el cambio de contrasenas del lunes,redaccion,v2:redaccion:nreda02:sin_acentos
+Me siento inseguro con?,personal,v2:personal:npers07:corto
+Hazme un guion para un video de TikTok sobre ahorrar dinero,redaccion,v2:redaccion:nreda11:original
+"Te cuento un poco de contexto antes de preguntar. Para mi clase de Biología, explícame qué es la selección natural porfa",academico,v2:academico:ta0:largo
+¿Cómo funciona la firma digital?,ciberseguridad,v2:ciberseguridad:v1bcibe31:original
+¿Cómo configuro ESLint y Prettier en un proyecto de TypeScript?,programacion,v2:programacion:nprog18:original
+Explícame la teoría de grafos básica para Matemáticas Discretas,academico,v2:academico:nacad21:original
+Pasa este texto de primera a tercera persona,redaccion,v2:redaccion:v1breda28:original
+¿Cómo protejo mi API REST contra ataques de fuerza bruta?,ciberseguridad,v2:ciberseguridad:ncibe11:original
+"Para mi clase de Sistemas Operativos, explícame cómo funciona la paginación",academico,v2:academico:ta0:plantilla
+"Me preocupa ransomware en la base de datos de clientes, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Haz más formal una carta de presentación,redaccion,v2:redaccion:tr1:plantilla
+Quiero centrar un div vertical y horizontalmente con CSS,programacion,v2:programacion:v1bprog17:original
+¿Cómo elijo una tarjeta madre para diseño gráfico?,consulta_general,v2:consulta_general:tc7:plantilla
+"¿Qué es mejor, una freidora de aire o un horno eléctrico?",consulta_general,v2:consulta_general:v1bcons23:original
+Ayúdame a hacer un plan para ahorrar para un viaje,personal,v2:personal:tq3:plantilla
+Explica el modelo de confianza cero (zero trust),ciberseguridad,v2:ciberseguridad:v1bcibe19:original
+Corrige la ortografía de el resumen de mi tesis,redaccion,v2:redaccion:tr0:plantilla
+Estoy algo perdido con esto: como puedo hacer que esta conclusion suene mas contundente? porfa,redaccion,v2:redaccion:v1breda11:informal
+"Explícame qué es una serie de Taylor, es para mi tarea de Cálculo",academico,v2:academico:ta2:plantilla
+Corrige la ortografía de un post sobre tarjetas gráficas,redaccion,v2:redaccion:tr0:plantilla
+¿Cómo protejo la red wifi de mi casa contra suplantación de identidad?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+¿Cómo dejo de ervisar el celullar a cada rato?,personal,v2:personal:v1bpers30:typo
+Te cuento un poco de contexto antes de preguntar. ¿Qué es la memoria RAM? (es urgente),consulta_general,v2:consulta_general:tc0:largo
+"Mi código en C++ da 'SyntaxError: unexpected EOF', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+"No soy experto en esto, así que explícamelo con calma. ¿Qué es la oferta agregada? Tengo examen de macroeconomía xfa",academico,v2:academico:nacad14:largo
+"Me sale ModuleNotFoundError en mi proyecto de Go, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+Explícame qué es Linux,consulta_general,v2:consulta_general:tc1:plantilla
+¿Es normal sentirme agotado aunuqe duuerma ocho horas?,personal,v2:personal:v1bpers28:typo
+Explica la segunda ley?,academico,v2:academico:v1bacad08:corto
+Estoy algo perdido con esto: escribe una consulta sql que saque el top 5 de clientes por ventas del mes porfa,programacion,v2:programacion:nprog10:informal
+No entendí en Biología qué es la?,academico,v2:academico:ta3:corto
+Corrige la puntuación de este cuento corto,redaccion,v2:redaccion:nreda14:original
+Explícame qué es la?,consulta_general,v2:consulta_general:tc1:corto
+"Buenas tardes, quisiera saber algo. traduce al espanol esta resena de una tarjeta grafica porfa",redaccion,v2:redaccion:nreda04:informal
+Traduce al español esta reseña de una tarjeta gráfica,redaccion,v2:redaccion:nreda04:original
+Ayúdame a hacer un?,personal,v2:personal:tq3:corto
+¿Qué es un QR y cómo se lee?,consulta_general,v2:consulta_general:ncons38:original
+Corrige la ortografía de una reseña de una laptop,redaccion,v2:redaccion:tr0:plantilla
+"No entendí en Arquitectura de Computadoras qué es el ciclo fetch-decode-execute, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+"No entendí en Biología cómo funciona el sistema inmune, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+¿Qué es MITRE ATT&CK y para qué sirve?,ciberseguridad,v2:ciberseguridad:v1bcibe20:original
+Ayúdame a hacer un plan para dormir mejor,personal,v2:personal:tq3:plantilla
+¿Cómo elijo una webcam 4K para jugar en 4K?,consulta_general,v2:consulta_general:tc7:plantilla
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Hazme un resumen ejecutivo de este informe para el director porfa,redaccion,v2:redaccion:v1breda31:largo
+¿Qué es una VPN y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+Escribe un guion de 30 segundos para un video de Instagram,redaccion,v2:redaccion:v1breda23:original
+Escribe pruebas unitarias con pytest para una función que suma dos números,programacion,v2:programacion:v1bprog21:original
+Reformula una reseña de una laptop para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+Ayúdame a hacer un plan para hacer ejercicio diario,personal,v2:personal:tq3:plantilla
+¿Cómo invierto una lista en Python sin usar reverse()?,programacion,v2:programacion:v1bprog00:original
+"Me preocupa keyloggers en la red wifi de mi casa, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+Me siento muy estresado con la escuela y no sé cómo organizarme,personal,v2:personal:v1bpers00:original
+¿Cómo ivierto una liista en Python sin usar reverse()?,programacion,v2:programacion:v1bprog00:typo
+"Últimamente estoy sin motivación por el cambio de carrera, ¿qué hago?",personal,v2:personal:tq1:plantilla
+"Te cuento un poco de contexto antes de preguntar. Tengo un memory leak en mi app de Node, ¿cómo lo encuentro? (es urgente)",programacion,v2:programacion:nprog19:largo
+¿Qué diferencia hay entre cifrado simétrico y asimétrico?,ciberseguridad,v2:ciberseguridad:v1bcibe02:original
+Escribe una invitación formal para la graduación,redaccion,v2:redaccion:nreda13:original
+porfa que es el sim swapping y como protejo mi numero? Gracias!,ciberseguridad,v2:ciberseguridad:ncibe05:informal
+Haz más formal el resumen de mi tesis,redaccion,v2:redaccion:tr1:plantilla
+Estoy algo perdido con esto: resume este texto en tres lineas (es urgente),redaccion,v2:redaccion:v1breda04:informal
+Me cuesta mucho hablar con?,personal,v2:personal:v1bpers13:corto
+"Me preocupa fuerza brruta en el servidor de mi empresa, ¿qué medidas de seguridaad tomo?",ciberseguridad,v2:ciberseguridad:ts3:typo
+Te cuento un poco de contexto antes de preguntar. ¿Qué significa que una app esté en la nube? (es urgente),consulta_general,v2:consulta_general:ncons31:largo
+"Últimamente estoy solo por mi trabajo, ¿qué hago?",personal,v2:personal:tq1:plantilla
+¿Cómo uso useEffect para llamar una API solo una vez?,programacion,v2:programacion:v1bprog26:original
+¿Qué necesito para tramitar mi licencia de conducir en la CDMX?,consulta_general,v2:consulta_general:ncons41:original
+Explica la diferencia entre correlación y causalidad,academico,v2:academico:v1bacad25:original
+Me siento frustrado por mi familia,personal,v2:personal:tq0:plantilla
+¿Cómo elijo una pantalla OLED para trabajar desde casa?,consulta_general,v2:consulta_general:tc7:plantilla
+Me siento solo por?,personal,v2:personal:tq0:corto
+Explícame cómo funciona la memoria virtual para mi clase de Sistemas Operativos,academico,v2:academico:nacad01:original
+Traduce al inglés la descripción de mi producto,redaccion,v2:redaccion:tr3:plantilla
+"No soy experto en esto, así que explícamelo con calma. ¿Cómo puedo hacer que esta conclusión suene más contundente? porfa",redaccion,v2:redaccion:v1breda11:largo
+¿Cuál es la estructura de una célula eucariota?,academico,v2:academico:v1bacad14:original
+"Últimamente estooy sin mtivación por mi relación, ¿qué hago?",personal,v2:personal:tq1:typo
+¿Cómo funciona la carga rápida de los celulares?,consulta_general,v2:consulta_general:ncons35:original
+¿Cuántos watts consume una computadora gamer?,consulta_general,v2:consulta_general:ncons27:original
+¿Cuál es la recceta de unos chliaquiles verdes?,consulta_general,v2:consulta_general:v1bcons00:typo
+Mi mejor amigo se enojó conmigo y no sé por qué,personal,v2:personal:v1bpers06:original
+"Quiero pagar mis deudas, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+Reformula un artículo sobre ciberseguridad para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+¿Por qué mi laptop hace mucho ruido con el ventilador?,consulta_general,v2:consulta_general:ncons26:original
+Te cuento un poco de contexto antes de preguntar. ¿qué es una serie de Taylor? Lo vemos en Cálculo y no me queda claro (es urgente),academico,v2:academico:ta4:largo
+Me siento solo desde?,personal,v2:personal:v1bpers08:corto
+"Explícame cómo funciona la política monetaria, es para mi tarea de Economía",academico,v2:academico:ta2:plantilla
+"Terminé con mi pareja y no puedo dejar de pensar en ella, ¿qué hago?",personal,v2:personal:v1bpers01:original
+¿Cómo detecto si alguien etró a mi cuneta de Google?,ciberseguridad,v2:ciberseguridad:ncibe09:typo
+¿Cómo detecto inyección SQL en la API de mi app?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+"Mi código en PHP da 'NullPointerException', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Explícame qué es un router,consulta_general,v2:consulta_general:tc1:plantilla
+Reformula el resumen de mi tesis para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+Corrige la putuación de este cento corto,redaccion,v2:redaccion:nreda14:typo
+Necesito una expresión regular?,programacion,v2:programacion:v1bprog27:corto
+¿Cómo leo la temperatura del procesador desde un script de Python?,programacion,v2:programacion:nprog01:original
+¿Para qué sirve una fuente de poder?,consulta_general,v2:consulta_general:tc2:plantilla
+Hola! haz una funcion en c que invierta una cadena sin usar strrev (es urgente),programacion,v2:programacion:nprog07:informal
+¿Cómo configuro la autenticación de dos factores en mi correo?,ciberseguridad,v2:ciberseguridad:v1bcibe03:original
+Me siento frutrado por mis amistaeds,personal,v2:personal:tq0:typo
+Me siento agotado por el dinero,personal,v2:personal:tq0:plantilla
+¿Qué es JavaScript y en qué se diferencia de Java?,consulta_general,v2:consulta_general:ncons14:original
+"Quiero comer más sano, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+Resume en tres líneas una publiccaión de LnikedIn,redaccion,v2:redaccion:tr2:typo
+Explícame la Revolución Industrial y sus consecuencias sociales,academico,v2:academico:nacad16:original
+¿Qué significa que una app esté en la nube?,consulta_general,v2:consulta_general:ncons31:original
+¿cómo funciona la paginación? Lo vemos en Sistemas Operativos y no me queda claro,academico,v2:academico:ta4:plantilla
+"Quiero ahorrar para un viaje, ¿cómo empiezo?",personal,v2:personal:tq2:plantilla
+Corrige la ortografía y la gramática de este párrafo: haber si nos vemos mañana para ablar del proyecto,redaccion,v2:redaccion:v1breda00:original
+Mi abuela está enferma y me siento muy triste,personal,v2:personal:v1bpers23:original
+¿Qué es un ataque de hombre en el medio en una red wifi pública?,ciberseguridad,v2:ciberseguridad:ncibe02:original
+¿Qué significa que un televisor sea 4K HDR?,consulta_general,v2:consulta_general:ncons05:original
+¿Conviene más Windows o macOS para estudiar diseño?,consulta_general,v2:consulta_general:ncons19:original
+¿Cómo dejo de revisar el celular a cada rato?,personal,v2:personal:v1bpers30:original
+Para estadística: ¿cuándo uso una prueba t y cuándo una chi cuadrada?,academico,v2:academico:nacad11:original
+¿Qué es un firewall de red y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+Hola! cuanto cuesta mas o menos la nube? (es urgente),consulta_general,v2:consulta_general:tc6:informal
+¿Cuánto cuesta más o menos un asistente de voz?,consulta_general,v2:consulta_general:tc6:plantilla
+¿Cómo funciona un SSD?,consulta_general,v2:consulta_general:tc3:plantilla
+¿Cómo funciona el sistema inmunológico?,academico,v2:academico:v1bacad26:original
+Explica el ciclo de Krebs paso a paso,academico,v2:academico:v1bacad33:original
+Explícame qué es una matriz inversa y cómo se calcula,academico,v2:academico:v1bacad29:original
+Te cuento un poco de contexto antes de preguntar. Ayúdame a hacer un plan para hacer ejercicio diario?? 🙏,personal,v2:personal:tq3:largo
+Te cuento un poco de contexto antes de preguntar. Parafrasea este párrafo para que no parezca copiado Te lo agradecería mucho.,redaccion,v2:redaccion:v1breda06:largo
+Mi hermano y yo no?,personal,v2:personal:npers08:corto
+¿Qué es el cifrado AES y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+¿Qué es un SIEM y cómo me protege?,ciberseguridad,v2:ciberseguridad:ts2:plantilla
+¿Qué receta fácil hago con pollo y arroz?,consulta_general,v2:consulta_general:ncons40:original
+Corrige la puntuación de?,redaccion,v2:redaccion:nreda14:corto
+Haz más formal el reporte de soporte técnico,redaccion,v2:redaccion:tr1:plantilla
+"Buenas tardes, quisiera saber algo. como funciona el 5g? porfa",consulta_general,v2:consulta_general:tc3:informal
+¿Qué es una Raspberry Pi y qué se puede hacer con ella?,consulta_general,v2:consulta_general:ncons12:original
+¿Cómo despliego mi app de Next.js en Vercel?,programacion,v2:programacion:v1bprog31:original
+Tengo examen de Algoritmos: ¿cómo funciona quicksort?,academico,v2:academico:ta1:plantilla
+"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Últimamente estoy frustrado por mi trabajo, ¿qué hago? Gracias!",personal,v2:personal:tq1:largo
+"Explícame qué es la meiosis, es para mi tarea de Biología",academico,v2:academico:ta2:plantilla
+¿Cómo sé si mi contraseña fue filtrada en una brecha de datos?,ciberseguridad,v2:ciberseguridad:v1bcibe07:original
+¿Cómo uso la GPU en un notebook de Google Colab para entrenar mi modelo?,programacion,v2:programacion:nprog24:original
+Escribe una función en Go que convierta grados Celsius a Fahrenheit,programacion,v2:programacion:tp0:plantilla
+¿Cómo despliego una base de datos PostgreSQL en Docker Compose?,programacion,v2:programacion:nprog22:original
+Una duda que tengo desde hace rato: diferencia entre ids e ips porfa,ciberseguridad,v2:ciberseguridad:v1bcibe13:informal
+"Últimamente estoy sin motivación por mi relación, ¿qué hago?",personal,v2:personal:tq1:plantilla
+¿Cómo configuro Nginx como proxy inverso para mi app de Node?,programacion,v2:programacion:nprog05:original
+"Para mi clase de Historia, explícame qué fue el Renacimiento",academico,v2:academico:ta0:plantilla
+¿Qué es un ataque de deenegación de servico y cómo se mitiga?,ciberseguridad,v2:ciberseguridad:ncibe24:typo
+"Oye, una pregunta rápida: me siento solo por mis amistades Te lo agradecería mucho.",personal,v2:personal:tq0:informal
+Escribe una función en R que valide que una contraseña tenga 8 caracteres,programacion,v2:programacion:tp0:plantilla
+Traduce al inglés un artículo sobre ciberseguridad,redaccion,v2:redaccion:tr3:plantilla
+¿Dónde puedo reciclar pilas en la CDMX?,consulta_general,v2:consulta_general:v1bcons30:original
+"No entendí en Cálculo qué es una integral definida, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+¿Cuáles son las partes de un ensayo académico y cómo se estructura un marco teórico?,academico,v2:academico:v1bacad22:original
+Corrige la ortografía de la descripción de mi producto,redaccion,v2:redaccion:tr0:plantilla
+"Quiero empezar a correr, pero me canso muy rápido",personal,v2:personal:v1bpers33:original
+¿Qué controles recomienda la ISO 27001?,ciberseguridad,v2:ciberseguridad:v1bcibe32:original
+Escribe un mensaje de bienvenida para el grupo de WhatsApp del curso,redaccion,v2:redaccion:v1breda32:original
+"Oye, una pregunta rápida: que permisos peligrosos debo revisar en las apps de mi celular? Gracias!",ciberseguridad,v2:ciberseguridad:ncibe22:informal
+"Me sale TypeError: undefined is not a function en mi proyecto de C++, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+"Quiero bajar de peso, ayúdame a armar una rutina de ejercicio para mí",personal,v2:personal:v1bpers04:original
+¿Que es un hash y por que se usa sal (salt) al guardar contrasenas?,ciberseguridad,v2:ciberseguridad:v1bcibe17:sin_acentos
+¿Quién fue Sor Juana Inés de la Cruz y por qué es importante?,academico,v2:academico:v1bacad12:original
+Traduce al inglés una reseña de una laptop,redaccion,v2:redaccion:tr3:plantilla
+¿Cómo saco mi pasaporte mexicano por primera vez?,consulta_general,v2:consulta_general:v1bcons04:original
+¿Cómo protejo el servidor de mi empresa contra inyección SQL?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+Tengo tarea de Bases de Datos: ¿qué es la tercera forma normal?,academico,v2:academico:nacad03:original
+Resume en tres líneas un artículo sobre ciberseguridad,redaccion,v2:redaccion:tr2:plantilla
+"Una duda que tengo desde hace rato: mejora el tono de este correo, suena muy agresivo?? 🙏",redaccion,v2:redaccion:v1breda30:informal
+¿Qué es un análisis de vulnerabilidades y en qué se diferencia de un pentest?,ciberseguridad,v2:ciberseguridad:v1bcibe22:original
+Explícame qué es un firewall y para qué sirve,ciberseguridad,v2:ciberseguridad:v1bcibe05:original
+¿Cómo elijo la fibra óptica para una oficina pequeña?,consulta_general,v2:consulta_general:tc7:plantilla
+¿Cómo uso multiprocessing en Python para procesar imágenes en paralelo?,programacion,v2:programacion:nprog16:original
+"Me preocupa ransomware en mi cuenta de Instagram, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+"Buenas tardes, quisiera saber algo. como hago un merge de dos dataframes de pandas por una columna en comun? Gracias!",programacion,v2:programacion:nprog11:informal
+¿cómo se balancea una reacción redox? Lo vemos en Química y no me queda claro,academico,v2:academico:ta4:plantilla
+¿Cómo detecto keyloggers en el servidor de mi empresa?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+¿Qué es un certificado SSL caducado y por qué es peligroso?,ciberseguridad,v2:ciberseguridad:ncibe08:original
+Explícame qué es un exploit de día cero,ciberseguridad,v2:ciberseguridad:ncibe06:original
+¿Qué celular de gama media me recomiendas comprar este año?,consulta_general,v2:consulta_general:v1bcons03:original
+"No soy experto en esto, así que explícamelo con calma. ¿Para qué sirve la refrigeración líquida? Gracias!",consulta_general,v2:consulta_general:tc2:largo
+Me siento ansioso por el dinero,personal,v2:personal:tq0:plantilla
+Explica que es XSS y como protejo mi formulario web,ciberseguridad,v2:ciberseguridad:v1bcibe09:sin_acentos
+Haz más formal un mensaje para mis clientes,redaccion,v2:redaccion:tr1:plantilla
+"No soy experto en esto, así que explícamelo con calma. ¿Qué es la inteligencia artificial generativa? Gracias!",consulta_general,v2:consulta_general:ncons17:largo
+¿Qué es el SIM swapping y cómo protejo mi número?,ciberseguridad,v2:ciberseguridad:ncibe05:original
+¿qué fue el Renacimiento? Lo vemos en Historia y no me queda claro,academico,v2:academico:ta4:plantilla
+"Hola! quiero aprender typescript, que tipos basicos debo conocer? porfa",programacion,v2:programacion:v1bprog35:informal
+¿Cómo hago en C# un programa que calcule el factorial de forma iterativa?,programacion,v2:programacion:tp1:plantilla
+"Quiero dejar de fumar, ¿por dónde empiezo?",personal,v2:personal:npers02:original
+¿Qué es un ataque de denegación?,ciberseguridad,v2:ciberseguridad:ncibe24:corto
+Acota este párrafo a la mittad sin perder la idea principal,redaccion,v2:redaccion:v1breda22:typo
+Llevo semanas sin ganas de nada y no sé por qué,personal,v2:personal:npers00:original
+"Últimamente estoy solo por mis amistades, ¿qué hago?",personal,v2:personal:tq1:plantilla
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Mi novia quiere que vivamos juntos y no sé si estoy listo (es urgente),personal,v2:personal:v1bpers26:largo
+¿Cómo abro un socket TCP en Java para mandar un mensaje a un servidor?,programacion,v2:programacion:nprog03:original
+¿Cómo se forma un enlace de hidrógeno?,academico,v2:academico:nacad15:original
+¿Cuál es la mejor época para visitar Chiapas?,consulta_general,v2:consulta_general:v1bcons33:original
+¿Qué son las leyes?,academico,v2:academico:nacad25:corto
+Escribe una carta de presentación para un puesto de practicante en marketing,redaccion,v2:redaccion:v1breda03:original
+Me siento preocupado por el cambio de carrera,personal,v2:personal:tq0:plantilla
+Dame tres versiones distintas del asunto de este correo,redaccion,v2:redaccion:v1breda26:original
+"Oye, una pregunta rápida: me sale stack overflow en mi proyecto de rust, ayudame a depurarlo Te lo agradecería mucho.",programacion,v2:programacion:tp3:informal
+Me siento solo por mis amistades,personal,v2:personal:tq0:plantilla
+"Quiero ahorrar para comprarme una computadora, ¿cómo me organizo?",personal,v2:personal:npers06:original
+Hoy fue un día muy malo y solo quiero desahogarme,personal,v2:personal:v1bpers34:original
+¿Cómo protejo mi cuenta de banco en línea contra malware?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+"Me preocupa ransomware en mi cuenta de banco en línea, ¿qué medidas de seguridad tomo?",ciberseguridad,v2:ciberseguridad:ts3:plantilla
+"Revisa la puntuación de este texto, creo que abuso de las comas",redaccion,v2:redaccion:v1breda13:original
+"Últimamente estoy frustrado por mi trabajo, ¿qué hago?",personal,v2:personal:tq1:plantilla
+Corrige este texto y explícame los buges que tenía,redaccion,v2:redaccion:v1breda24:spanglish
+Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. ¿Qué hago si descargué un archivo .exe sospechoso de un correo? Gracias!,ciberseguridad,v2:ciberseguridad:ncibe14:largo
+Ayúdame a hacer un plan para organizar mi semana,personal,v2:personal:tq3:plantilla
+¿Qué es la entropía de Shannon? Es para Teoría de la Información,academico,v2:academico:nacad23:original
+"Para mi examen de Redes, explícame qué hace la capa de transporte del modelo OSI",academico,v2:academico:nacad00:original
+Me siiento aotado por el dinero,personal,v2:personal:tq0:typo
+¿Cómo protejo mi correo de Gmail contra inyección SQL?,ciberseguridad,v2:ciberseguridad:ts0:plantilla
+Explícame qué es un número primo y cómo saber si 97 lo es,academico,v2:academico:v1bacad13:original
+No tengo motivación para?,personal,v2:personal:v1bpers17:corto
+¿Qué es la recursión? Dame un ejemplo con factorial en C,programacion,v2:programacion:v1bprog22:original
+Resume este texto sobre la historia de los procesadores en un párrafo,redaccion,v2:redaccion:nreda01:original
+Mi hrmano y yo no nos haablamos desde hace un año,personal,v2:personal:npers08:typo
+¿Cómo paso mis fotos del iPhone a una computadora con Windows?,consulta_general,v2:consulta_general:ncons04:original
+Ayúúdame a hacer un plan para hacer ejercicio diairo,personal,v2:personal:tq3:typo
+¿Qué es una fuente de poder modular?,consulta_general,v2:consulta_general:ncons21:original
+¿Qué diferencia hay entre una célula procariota y una eucariota?,academico,v2:academico:nacad17:original
+¿Cómo detecto robo de sesión en mi correo de Gmail?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+¿Qué es un disco NVMe?,consulta_general,v2:consulta_general:ncons25:original
+Escribe una función en C# que haga una petición GET a una API y muestre el JSON,programacion,v2:programacion:tp0:plantilla
+¿Cómo sé si mi cámara web está siendo usada sin mi permiso?,ciberseguridad,v2:ciberseguridad:ncibe27:original
+Mi pareeja y yo discutimos por las atreas de la casa,personal,v2:personal:npers03:typo
+Haz que este texto suene más profesional para un reporte de la empresa,redaccion,v2:redaccion:v1breda20:original
+"Oye, una pregunta rápida: explicame que es la seleccion natural, es para mi tarea de biologia?? 🙏",academico,v2:academico:ta2:informal
+Mi novia quiere que vivamos juntos y no sé si estoy listo,personal,v2:personal:v1bpers26:original
+"Haz una cllase Carro en Python con atributos marca, modelo y un método arancar",programacion,v2:programacion:v1bprog33:typo
+"¿Qué es mejor para viajar a Europa, euros en efectivo o tarjeta?",consulta_general,v2:consulta_general:v1bcons10:original
+¿Cómo funciona el cifrado de extremo a extremo de WhatsApp?,ciberseguridad,v2:ciberseguridad:ncibe17:original
+¿Cómo puedo ahorrar si gano 12 mil pesos al mes?,personal,v2:personal:v1bpers07:original
+Tengo un error 'port 3000 already in use' al correr npm start,programacion,v2:programacion:nprog06:original
+"Qiuero empezar a correr, pero me canso muy ráppido",personal,v2:personal:v1bpers33:typo
+"Explícame cómo funciona el enrutamiento, es para mi tarea de Redes",academico,v2:academico:ta2:plantilla
+¿Cuál es la diferencia entre RAM y almacenamiento?,consulta_general,v2:consulta_general:ncons34:original
+Me siento solo por mi trabajo,personal,v2:personal:tq0:plantilla
+"Mi código en TypeScript da 'ModuleNotFoundError', ¿cómo lo arreglo?",programacion,v2:programacion:tp2:plantilla
+Hola! que es linux y por que lo usan en servidores? Gracias!,consulta_general,v2:consulta_general:ncons32:informal
+Cómo paso de una lista?,programacion,v2:programacion:v1bprog29:corto
+Dame ejercicios de derivadas para practicar con sus respuestas,academico,v2:academico:v1bacad11:original
+Quiero aprender a cocinar para comer más sano,personal,v2:personal:v1bpers25:original
+¿Cómo hago pruebas unitarias con Jest para una función async?,programacion,v2:programacion:nprog14:original
+¿Cómo configuro el firewall de Windows para bloquear conexiones entrantes no autorizadas?,ciberseguridad,v2:ciberseguridad:ncibe00:original
+Traduce al inglés una publicación de LinkedIn,redaccion,v2:redaccion:tr3:plantilla
+Pasa este texto de?,redaccion,v2:redaccion:v1breda28:corto
+Resume en tres líneas un correo para mi jefe,redaccion,v2:redaccion:tr2:plantilla
+"Hola! me preocupa ransomware en mi cuenta de banco en linea, que medidas de seguridad tomo??? 🙏",ciberseguridad,v2:ciberseguridad:ts3:informal
+"Mi código de C++ da segmentation fault al recorrer un vector, aquí está: for(int i=0;i<=v.size();i++)",programacion,v2:programacion:v1bprog05:original
+¿Qué es una API REST y cómo la consumo con fetch?,programacion,v2:programacion:v1bprog06:original
+¿Qué es el principio de mínimo privilegio en la nube?,ciberseguridad,v2:ciberseguridad:ncibe15:original
+Estoy algo perdido con esto: refactoriza este codigo para que no tenga tantos if anidados porfa,programacion,v2:programacion:v1bprog25:informal
+¿Cómo manejo el estrés del?,personal,v2:personal:npers09:corto
+"Una duda que tengo desde hace rato: quiero dormir mejor, como empiezo? xfa",personal,v2:personal:tq2:informal
+"No entendí en Biología qué es la selección natural, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+"Mejora el tono de este correo, suena muy agresivo",redaccion,v2:redaccion:v1breda30:original
+¿Cómo funciona una VPN y realmente me protege en un wifi público?,ciberseguridad,v2:ciberseguridad:v1bcibe10:original
+¿Qué es un píxel?,consulta_general,v2:consulta_general:ncons33:original
+Redacta el agradecimiento de mi tesis,redaccion,v2:redaccion:v1breda27:original
+¿Qué es el efecto fotoeléctrico?,academico,v2:academico:nacad27:original
+¿Qué es un rootkit y cómo se detecta?,ciberseguridad,v2:ciberseguridad:ncibe16:original
+"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Para mi clase de Química, explícame qué es el pH Te lo agradecería mucho.",academico,v2:academico:ta0:largo
+¿Qué fue la Ilustración y qué filósofos la representan?,academico,v2:academico:v1bacad16:original
+Tenggo xeamen de Biología: ¿cómo funciona el sistema inmune?,academico,v2:academico:ta1:typo
+¿Qué es el álgebra booleana y cómo simplifico una expresión con mapas de Karnaugh?,academico,v2:academico:nacad07:original
+Ayúdame a optimizar este query de Postgres que tarda 10 segundos,programacion,v2:programacion:v1bprog07:original
+Revisa si este párrafo tiene coherencia y cohesión,redaccion,v2:redaccion:v1breda34:original
+¿Cómo pongo límiites con un aimgo que siempre me pide dinero?,personal,v2:personal:v1bpers35:typo
+¿Qué es el OWASP?,ciberseguridad,v2:ciberseguridad:v1bcibe06:corto
+Me da miedo hablar en público en las juntas del trabajo,personal,v2:personal:npers10:original
+¿Qué fue la Guerra Fría?,academico,v2:academico:v1bacad30:original
+Estoy algo perdido con esto: como reviso los logs de acceso para encontrar un intento de intrusion? xfa,ciberseguridad,v2:ciberseguridad:ncibe21:informal
+"Quiero empezar a meditar, ¿por dónde empiezo?",personal,v2:personal:v1bpers19:original
+¿Cuáles fueron las causas de la Revolución Mexicana?,academico,v2:academico:v1bacad01:original
+Explica la diferecnia entre corrrelación y causalidad,academico,v2:academico:v1bacad25:typo
+¿Cómo detecto keyloggers en mi celular?,ciberseguridad,v2:ciberseguridad:ts1:plantilla
+"Me sale TypeError: undefined is not a function en mi proyecto de Kotlin, ayúdame a depurarlo",programacion,v2:programacion:tp3:plantilla
+"No entendí en Química cómo se balancea una reacción redox, ¿me lo explicas con un ejemplo?",academico,v2:academico:ta3:plantilla
+Hola! como dejo de pasar tantas horas en el celular en la noche? Gracias!,personal,v2:personal:npers05:informal
+¿Qué es la arquitectura de Von Neumann? Me lo preguntan en el parcial,academico,v2:academico:nacad02:original
+"Explica la tríada CIA: confidencialidad, integridad y disponibilidad",ciberseguridad,v2:ciberseguridad:v1bcibe25:original
+¿Vale la pena cmprar la eralidad virtual para trabajar desde casa?,consulta_general,v2:consulta_general:tc5:typo
+¿Qué es la deriva continental?,academico,v2:academico:nacad29:original
+¿Es seguro usar el mismo PIN para todas mis tarjetas?,ciberseguridad,v2:ciberseguridad:ncibe29:original
+Reformula la descripción de mi producto para que sea más claro,redaccion,v2:redaccion:tr5:plantilla
+¿Qué datos personales protege la LFPDPPP en México?,ciberseguridad,v2:ciberseguridad:v1bcibe23:original
+Diferencia entre PIB nominal y PIB real,academico,v2:academico:v1bacad19:original
+"Oye, una pregunta rápida: que es una vpn y como me protege??? 🙏",ciberseguridad,v2:ciberseguridad:ts2:informal
+El build de mi proyecto de Android Studio falla por una versión de Gradle,programacion,v2:programacion:v1bprog24:original
+Redacta un mensaje para avisar a mi equipo que la reunión se pospone,redaccion,v2:redaccion:nreda10:original

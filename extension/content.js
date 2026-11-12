@@ -421,9 +421,11 @@
   const typesText = (findings) => [...new Set(findings.map((f) => typeName(f.type)))].join(", ");
 
   function categoryName(resp) {
-    // Mientras el ML no exista (Fase 4) la confianza es 0 → "sin clasificar".
+    // Sin modelo (o con confianza 0) → "sin clasificar".
     if (!resp.category || !resp.category_confidence) return "sin clasificar";
-    return CATEGORY_NAMES[resp.category] || resp.category;
+    const name = CATEGORY_NAMES[resp.category] || resp.category;
+    // Fase 4C: confianza por debajo del umbral (campo opcional del backend).
+    return resp.category_uncertain === true ? `tema incierto (¿${name}?)` : name;
   }
 
   function findingsText(findings) {

@@ -15,6 +15,33 @@ Aquí están las hipótesis, agrupadas por patrón. Todos los textos son sintét
 
 **Qué esperar con datos reales:** los prompts reales son más largos y mezclan temas, así que el F1 macro real probablemente será **menor** que el 0.82 de la CV. Eso es justo lo que medirá CE-4.
 
+### Fase 4C · "explícame qué es una tarjeta gráfica" → ciberseguridad
+
+**Caso detectado en vivo**, con el modelo v1 integrado en la 4B. En el probe set, v1 lo vuelve a fallar con la confianza más baja posible entre 6 clases: ciberseguridad 0.23, academico 0.19 y consulta_general 0.19.
+
+**Causa: desajuste de distribución en los sintéticos v1.**
+- En v1, casi todo el vocabulario técnico (redes, contraseñas, servidores, "cómo funciona…") estaba en `ciberseguridad`, y algo en `programacion`.
+- `consulta_general` solo tenía recetas, viajes y trámites, sin ninguna pregunta de tecnología cotidiana.
+- Además, las categorías no tenían definiciones escritas, así que nada decía que "hardware ≠ seguridad".
+
+Por eso el modelo aprendió que *técnico ⇒ ciberseguridad*. En el probe set, v1 acierta solo el **43 %** de los casos de frontera, y el F1 de `consulta_general` es 0.38.
+
+**Cómo se atacó:**
+1. **Definiciones primero:** `ml/LABELING.md`, con reglas de desempate en orden (redacción → seguridad → código → académico → personal → general). Regla explícita: *hardware, redes o software en general NO son ciberseguridad*.
+2. **Probe set fijo** de 60 casos de frontera (hash en `metrics.json`). Se usa solo para medir al final.
+3. **Sintéticos v2** (900, 150 por clase): tecnología cotidiana en `consulta_general` (45 objetos de hardware, software y redes), la misma tecnología con contexto escolar en `academico` y dentro de tareas de código en `programacion`. Además, `ciberseguridad` solo con objetivo de protección. Se quitaron los casi duplicados (coseno > 0.95) y todo lo parecido al probe (> 0.90).
+4. **Umbral de confianza** (0.61, elegido con OOF): lo que queda por debajo se muestra como "tema incierto".
+
+**Resultado:** v2 → `consulta_general` con 0.86 de confianza. En el probe, la exactitud en frontera pasa de 0.43 a **0.79** y el F1 macro de 0.68 a **0.83**.
+
+**Lo que v2 todavía falla en el probe (10/60):**
+- **Código vs. concepto para una clase:** "explícame la recursión para mi examen" → programacion; "explícame qué hace esta línea de JS" → academico.
+- **Decisiones personales con un objeto técnico:** "¿laptop gamer o ahorrar para el viaje?" → consulta_general.
+- **Redacción sobre seguridad:** "escribe un ensayo sobre phishing" → ciberseguridad. Aquí el tema le gana a la tarea, al revés de lo que dice la regla 1.
+- **Contexto escolar débil:** "APA 7 para mi tesis" → redaccion; "tarea de física… pelota" → consulta_general.
+
+Son fronteras genuinamente difíciles, y el test real (CE-4) dirá cuánto pesan.
+
 ## Inyección / jailbreak (test 20 %)
 
 | Patrón | Ejemplos | Hipótesis |

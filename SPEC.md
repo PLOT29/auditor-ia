@@ -167,15 +167,32 @@ Respuesta:
 ```
 `GET /stats` → agregados para el dashboard. `GET /health` → `{"ok": true, "models": {...}, "thresholds": {...}}` (qué modelos cargaron y umbrales vigentes; la extensión solo lee `ok`).
 
-**Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Es el único ajuste al contrato: `injection_score` admite `null`.
+**Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Por eso `injection_score` admite `null`.
+
+**Fase 4C — campo opcional `category_uncertain: bool | null`** (cambio aditivo; los clientes que no lo lean no se ven afectados): `true` si `category_confidence` < umbral de confianza del tema (`metrics.json → topic_v2.umbral_confianza.umbral`), `false` si no, y `null` sin clasificador de tema. La BD no cambia: sigue guardando la categoría más probable y su confianza. La extensión muestra "tema incierto (¿categoría?)" cuando es `true`.
 
 ### 5.3 Detectores
 | Detector | Método | Tipos |
 |---|---|---|
 | Secretos | Regex | API keys (OpenAI `sk-`, Anthropic `sk-ant-`, AWS `AKIA…`, GitHub `ghp_`, Google `AIza…`), JWT, claves privadas PEM, `password=`/`contraseña:` , tarjetas (con validación Luhn) |
 | PII | Presidio (es) con spaCy `es_core_news_md` + recognizers propios (`backend/detectors/presidio_es.py`, compartido con `ml/pii_eval.py`) | Correo, teléfono MX, CURP, RFC, nombre de persona (≥ 2 palabras), dirección (con calle, número, Col. o C.P.; una ciudad sola no cuenta). Fusión de fragmentos de dirección y lista negra de falsos LOCATION |
-| Tema | `paraphrase-multilingual-MiniLM-L12-v2` + LogisticRegression (`ml/models/topic_clf.joblib`) | `programacion`, `academico`, `redaccion`, `ciberseguridad`, `consulta_general`, `personal` |
+| Tema | `paraphrase-multilingual-MiniLM-L12-v2` + LogisticRegression (`ml/models/topic_clf.joblib`, **v2** desde la Fase 4C, entrenado con `ml/data/topic_synthetic_v2.csv`; el v1 queda en `topic_clf_v1.joblib`) | `programacion`, `academico`, `redaccion`, `ciberseguridad`, `consulta_general`, `personal` (definiciones abajo) |
 | Inyección/jailbreak | **Ensamble**: promedio de TF-IDF (palabras + caracteres) + LR y MiniLM + LR (`ml/models/injection_final.joblib`, inferencia de `ml/injection_model.py`) | score 0–1 |
+
+#### Definición de las categorías de tema (Fase 4C · guía completa en `ml/LABELING.md`)
+
+Se elige una sola etiqueta: la del **tema central**. **Desempate, en orden:** (1) pedir producir o transformar un texto que no es código → `redaccion`; (2) el tema central es seguridad → `ciberseguridad`; (3) hay código concreto o una tarea de desarrollo → `programacion`; (4) contexto escolar o concepto formal de una materia → `academico`; (5) la propia vida → `personal`; (6) lo demás → `consulta_general`.
+
+| Categoría | Definición | Positivo | Frontera (→ etiqueta, regla) |
+|---|---|---|---|
+| `ciberseguridad` | **Solo** si el tema central es seguridad: ataques, vulnerabilidades, malware, cifrado, autenticación, privacidad, hardening, forense. **Hardware, redes o software en general NO** | "¿Cómo detecto un correo de phishing?" | "¿Qué es una tarjeta gráfica?" → `consulta_general` (6) |
+| `programacion` | Escribir, depurar o explicar **código concreto** (errores, comandos, librerías, SQL) | "Mi Python da `KeyError` al leer el JSON" | "¿Qué es Python?" → `consulta_general` (6) |
+| `academico` | Tareas, exámenes, conceptos de una materia, investigación | "Explícame la 2.ª ley de Newton con un ejercicio" | "¿Qué hace la ALU? Es para mi clase" → `academico` (4) |
+| `consulta_general` | Dudas generales, **incluida la tecnología cotidiana** (hardware, apps, redes, cómo funciona algo) sin contexto escolar | "¿Qué laptop me recomiendas para editar video?" | "¿Es seguro el wifi del aeropuerto?" → `ciberseguridad` (2) |
+| `redaccion` | Escribir, corregir o reformular textos | "Redacta un correo para pedir una prórroga" | "Escribe un ensayo sobre phishing" → `redaccion` (1) |
+| `personal` | Vida personal, salud, finanzas personales, relaciones, planes | "Ayúdame con un presupuesto con mi sueldo" | "Me hackearon el Instagram" → `ciberseguridad` (2) |
+
+**Incertidumbre (Fase 4C):** si la confianza del clasificador es menor que el umbral de `metrics.json → topic_v2.umbral_confianza`, `/analyze` responde `category_uncertain: true` y la etiqueta muestra "tema incierto (¿categoría?)". En la BD se guarda igual la categoría más probable y su confianza.
 
 Los embeddings se calculan **una sola vez por prompt** y los reutilizan tema e inyección. Los modelos se cargan una vez al arrancar (rutas configurables: `AUDITOR_MODELS_DIR`, `AUDITOR_METRICS_PATH`). El backend no sale a internet: sentence-transformers usa la caché local (`HF_HUB_OFFLINE=1`).
 
@@ -269,7 +286,7 @@ Umbrales finales (Fase 4B):
 |---|---|---|
 | CE-1 / CE-2 | Paridad JS ↔ Python en 52 casos de secretos (0 falsos positivos en los 24 negativos); falta medirlo con los sets de 100 y 200 prompts | ⏳ |
 | CE-3 | F1 micro PII **0.99** (P 0.98 / R 1.00) con Presidio en la configuración de producción; solo regex: 0.76. Sobre 100 prompts **sintéticos**: es optimista para las regex, que reconocen exactamente los formatos generados | ✅ (sintético) |
-| CE-4 | **Pendiente** del test real (~100 prompts). Provisional, en CV agrupada sobre sintéticos (no cuenta): F1 macro 0.82 [IC 95 % 0.78–0.85] | ⏳ |
+| CE-4 | **Pendiente** del test real (~100 prompts). Provisionales, sin contar para CE-4: modelo **v2** (Fase 4C), F1 macro **0.86** en CV agrupada sobre sintéticos v2 y **0.83** en el probe set de 60 casos de frontera (v1: 0.68). Umbral de confianza 0.61 (cobertura 85 %) | ⏳ |
 | CE-5 | Ensamble con umbral 0.514, **test (n = 431): P 0.978 / R 0.872 / F1 0.922**; en español (n = 40): **P 0.826 / R 0.950** | ✅ (ver nota) |
 | CE-6 | Decisión de bloqueo en `content.js`: p95 0.1 ms (prompts del set), 0.4 ms (10 000 caracteres) | ✅ |
 | CE-7 | `/analyze` en CPU con 50 prompts: p95 del pipeline **104 ms**, de ida y vuelta HTTP **121 ms** (PII 57 ms y embeddings 36 ms en p95) | ✅ |

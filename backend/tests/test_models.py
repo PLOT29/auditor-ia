@@ -214,3 +214,47 @@ def test_models_load_once_for_many_prompts(tmp_path, monkeypatch, client):
     for i in range(3):
         post(client, f"prompt de prueba {i}")
     assert main._models["load_count"] == before
+
+
+# ------------------------------------------------------------------ Fase 4C: tema v2 e incertidumbre
+@needs_models
+def test_graphics_card_is_not_cybersecurity(client):
+    """Caso detectado en vivo que motivó la Fase 4C."""
+    data = post(client, "explícame qué es una tarjeta gráfica")
+    assert data["category"] == "consulta_general"
+
+
+@needs_models
+def test_category_uncertain_matches_threshold(client):
+    from detectors import topic
+
+    thr = topic.confidence_threshold()
+    assert thr is not None
+    for text in ("¿Cómo hago un JOIN en SQL entre clientes y pedidos?", "hola", "¿qué opinas?"):
+        data = post(client, text)
+        assert isinstance(data["category_uncertain"], bool)
+        assert data["category_uncertain"] == (data["category_confidence"] < thr)
+
+
+@needs_models
+def test_topic_threshold_is_read_from_metrics_json(tmp_path, monkeypatch, fresh_models):
+    from detectors import topic
+
+    real = json.loads(config.metrics_path().read_text(encoding="utf-8"))
+    assert topic.read_confidence_threshold() == real["topic_v2"]["umbral_confianza"]["umbral"]
+
+    fake = {"injection_4A1": real["injection_4A1"], "topic_v2": {"umbral_confianza": {"umbral": 0.99}}}
+    path = tmp_path / "metrics.json"
+    path.write_text(json.dumps(fake), encoding="utf-8")
+    monkeypatch.setenv("AUDITOR_METRICS_PATH", str(path))
+    fresh_models.reset_models()
+    fresh_models.load_models()
+    assert topic.confidence_threshold() == 0.99
+    assert topic.is_uncertain(0.98) is True and topic.is_uncertain(0.995) is False
+
+
+def test_category_uncertain_is_null_without_model(tmp_path, monkeypatch, client, fresh_models):
+    monkeypatch.setenv("AUDITOR_MODELS_DIR", str(tmp_path / "sin_modelos"))
+    fresh_models.reset_models()
+    data = post(client, "explícame qué es una tarjeta gráfica")
+    assert data["category"] == "sin_clasificar" and data["category_uncertain"] is None

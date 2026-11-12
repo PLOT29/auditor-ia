@@ -1378,5 +1378,787 @@
       "presidio": true
     },
     "nota": "TestClient en proceso, CPU, un prompt a la vez; incluye escritura en SQLite."
+  },
+  "topic_probe": {
+    "sha256": "621d13129f95dc07e9f61f97a90dc7de10e04baaf7bef38bc5c3ae50f757c321",
+    "n": 60,
+    "archivo": "ml/data/topic_probe.csv",
+    "uso": "solo evaluación final; nunca entrenar ni elegir hiperparámetros/umbrales; no sustituye a CE-4",
+    "resultados": {
+      "v1": {
+        "modelo": "models\\topic_clf_v1.joblib",
+        "f1_macro": 0.6751,
+        "accuracy": 0.6833,
+        "accuracy_frontera": 0.4286,
+        "accuracy_positivos": 0.9062,
+        "f1_por_clase": {
+          "programacion": 0.7,
+          "academico": 0.625,
+          "redaccion": 0.842,
+          "ciberseguridad": 0.667,
+          "consulta_general": 0.375,
+          "personal": 0.842
+        },
+        "matriz_confusion": {
+          "labels": [
+            "programacion",
+            "academico",
+            "redaccion",
+            "ciberseguridad",
+            "consulta_general",
+            "personal"
+          ],
+          "valores": [
+            [
+              7,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              2,
+              5,
+              1,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              10,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              6,
+              3,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              2,
+              8
+            ]
+          ]
+        },
+        "tarjeta_grafica": {
+          "pred": "ciberseguridad",
+          "proba": {
+            "academico": 0.186,
+            "ciberseguridad": 0.232,
+            "consulta_general": 0.185,
+            "personal": 0.085,
+            "programacion": 0.161,
+            "redaccion": 0.151
+          }
+        },
+        "errores": [
+          {
+            "id": "g01",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g02",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g03",
+            "real": "consulta_general",
+            "pred": "programacion"
+          },
+          {
+            "id": "g05",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g06",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g07",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g08",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "p03",
+            "real": "programacion",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "p09",
+            "real": "programacion",
+            "pred": "personal"
+          },
+          {
+            "id": "p10",
+            "real": "programacion",
+            "pred": "academico"
+          },
+          {
+            "id": "a01",
+            "real": "academico",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "a02",
+            "real": "academico",
+            "pred": "programacion"
+          },
+          {
+            "id": "a05",
+            "real": "academico",
+            "pred": "redaccion"
+          },
+          {
+            "id": "a06",
+            "real": "academico",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "a09",
+            "real": "academico",
+            "pred": "programacion"
+          },
+          {
+            "id": "r01",
+            "real": "redaccion",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "r10",
+            "real": "redaccion",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "q03",
+            "real": "personal",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "q06",
+            "real": "personal",
+            "pred": "consulta_general"
+          }
+        ]
+      },
+      "v1_tfidf": {
+        "modelo": "models\\topic_tfidf_v1.joblib",
+        "f1_macro": 0.6931,
+        "accuracy": 0.7,
+        "accuracy_frontera": 0.6071,
+        "accuracy_positivos": 0.7812,
+        "f1_por_clase": {
+          "programacion": 0.7,
+          "academico": 0.778,
+          "redaccion": 0.947,
+          "ciberseguridad": 0.609,
+          "consulta_general": 0.375,
+          "personal": 0.75
+        },
+        "matriz_confusion": {
+          "labels": [
+            "programacion",
+            "academico",
+            "redaccion",
+            "ciberseguridad",
+            "consulta_general",
+            "personal"
+          ],
+          "valores": [
+            [
+              7,
+              1,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              1,
+              7,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              9,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              7,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              6,
+              3,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              9
+            ]
+          ]
+        },
+        "tarjeta_grafica": {
+          "pred": "ciberseguridad",
+          "proba": {
+            "academico": 0.244,
+            "ciberseguridad": 0.383,
+            "consulta_general": 0.107,
+            "personal": 0.043,
+            "programacion": 0.145,
+            "redaccion": 0.079
+          }
+        },
+        "errores": [
+          {
+            "id": "c08",
+            "real": "ciberseguridad",
+            "pred": "personal"
+          },
+          {
+            "id": "c09",
+            "real": "ciberseguridad",
+            "pred": "programacion"
+          },
+          {
+            "id": "c10",
+            "real": "ciberseguridad",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "g01",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g02",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g03",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g05",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g06",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g07",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g08",
+            "real": "consulta_general",
+            "pred": "personal"
+          },
+          {
+            "id": "p04",
+            "real": "programacion",
+            "pred": "personal"
+          },
+          {
+            "id": "p09",
+            "real": "programacion",
+            "pred": "personal"
+          },
+          {
+            "id": "p10",
+            "real": "programacion",
+            "pred": "academico"
+          },
+          {
+            "id": "a08",
+            "real": "academico",
+            "pred": "personal"
+          },
+          {
+            "id": "a09",
+            "real": "academico",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "a10",
+            "real": "academico",
+            "pred": "programacion"
+          },
+          {
+            "id": "r10",
+            "real": "redaccion",
+            "pred": "programacion"
+          },
+          {
+            "id": "q09",
+            "real": "personal",
+            "pred": "consulta_general"
+          }
+        ]
+      },
+      "v2": {
+        "modelo": "models\\topic_clf.joblib",
+        "f1_macro": 0.8313,
+        "accuracy": 0.8333,
+        "accuracy_frontera": 0.7857,
+        "accuracy_positivos": 0.875,
+        "f1_por_clase": {
+          "programacion": 0.842,
+          "academico": 0.706,
+          "redaccion": 0.842,
+          "ciberseguridad": 0.909,
+          "consulta_general": 0.8,
+          "personal": 0.889
+        },
+        "matriz_confusion": {
+          "labels": [
+            "programacion",
+            "academico",
+            "redaccion",
+            "ciberseguridad",
+            "consulta_general",
+            "personal"
+          ],
+          "valores": [
+            [
+              8,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              6,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              8,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              10,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              10,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              2,
+              8
+            ]
+          ]
+        },
+        "tarjeta_grafica": {
+          "pred": "consulta_general",
+          "proba": {
+            "academico": 0.044,
+            "ciberseguridad": 0.049,
+            "consulta_general": 0.857,
+            "personal": 0.001,
+            "programacion": 0.009,
+            "redaccion": 0.04
+          }
+        },
+        "errores": [
+          {
+            "id": "p03",
+            "real": "programacion",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "p10",
+            "real": "programacion",
+            "pred": "academico"
+          },
+          {
+            "id": "a02",
+            "real": "academico",
+            "pred": "programacion"
+          },
+          {
+            "id": "a05",
+            "real": "academico",
+            "pred": "redaccion"
+          },
+          {
+            "id": "a08",
+            "real": "academico",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "a10",
+            "real": "academico",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "r01",
+            "real": "redaccion",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "r08",
+            "real": "redaccion",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "q03",
+            "real": "personal",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "q06",
+            "real": "personal",
+            "pred": "consulta_general"
+          }
+        ]
+      },
+      "v2_tfidf": {
+        "modelo": "models\\topic_tfidf.joblib",
+        "f1_macro": 0.8319,
+        "accuracy": 0.8333,
+        "accuracy_frontera": 0.7857,
+        "accuracy_positivos": 0.875,
+        "f1_por_clase": {
+          "programacion": 0.737,
+          "academico": 0.842,
+          "redaccion": 1.0,
+          "ciberseguridad": 0.857,
+          "consulta_general": 0.737,
+          "personal": 0.818
+        },
+        "matriz_confusion": {
+          "labels": [
+            "programacion",
+            "academico",
+            "redaccion",
+            "ciberseguridad",
+            "consulta_general",
+            "personal"
+          ],
+          "valores": [
+            [
+              7,
+              1,
+              0,
+              0,
+              0,
+              2
+            ],
+            [
+              1,
+              8,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              10,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              9,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              2,
+              7,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              9
+            ]
+          ]
+        },
+        "tarjeta_grafica": {
+          "pred": "consulta_general",
+          "proba": {
+            "academico": 0.299,
+            "ciberseguridad": 0.099,
+            "consulta_general": 0.471,
+            "personal": 0.013,
+            "programacion": 0.047,
+            "redaccion": 0.07
+          }
+        },
+        "errores": [
+          {
+            "id": "c09",
+            "real": "ciberseguridad",
+            "pred": "programacion"
+          },
+          {
+            "id": "g02",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g05",
+            "real": "consulta_general",
+            "pred": "ciberseguridad"
+          },
+          {
+            "id": "g08",
+            "real": "consulta_general",
+            "pred": "personal"
+          },
+          {
+            "id": "p04",
+            "real": "programacion",
+            "pred": "personal"
+          },
+          {
+            "id": "p09",
+            "real": "programacion",
+            "pred": "personal"
+          },
+          {
+            "id": "p10",
+            "real": "programacion",
+            "pred": "academico"
+          },
+          {
+            "id": "a05",
+            "real": "academico",
+            "pred": "programacion"
+          },
+          {
+            "id": "a09",
+            "real": "academico",
+            "pred": "consulta_general"
+          },
+          {
+            "id": "q09",
+            "real": "personal",
+            "pred": "consulta_general"
+          }
+        ]
+      }
+    }
+  },
+  "topic_v2": {
+    "datos": {
+      "archivo": "ml/data/topic_synthetic_v2.csv",
+      "n": 900,
+      "por_clase": 150,
+      "grupos": 407,
+      "guia": "ml/LABELING.md"
+    },
+    "cv": {
+      "esquema": "GroupKFold(5) por base/plantilla",
+      "tfidf": {
+        "C": 3.0,
+        "f1_macro": 0.7927,
+        "std": 0.0239,
+        "f1_por_clase_oof": {
+          "programacion": 0.826,
+          "academico": 0.824,
+          "redaccion": 0.947,
+          "ciberseguridad": 0.739,
+          "consulta_general": 0.642,
+          "personal": 0.885
+        }
+      },
+      "embeddings": {
+        "C": 10.0,
+        "f1_macro": 0.8592,
+        "std": 0.0188,
+        "f1_macro_oof": 0.8674,
+        "f1_por_clase_oof": {
+          "programacion": 0.86,
+          "academico": 0.824,
+          "redaccion": 0.938,
+          "ciberseguridad": 0.808,
+          "consulta_general": 0.821,
+          "personal": 0.954
+        }
+      },
+      "grid_tfidf": [
+        {
+          "C": 0.3,
+          "f1": 0.7769
+        },
+        {
+          "C": 1,
+          "f1": 0.7905
+        },
+        {
+          "C": 3,
+          "f1": 0.7927
+        },
+        {
+          "C": 10,
+          "f1": 0.7901
+        },
+        {
+          "C": 30,
+          "f1": 0.7873
+        }
+      ],
+      "grid_embeddings": [
+        {
+          "C": 0.1,
+          "f1": 0.8321
+        },
+        {
+          "C": 0.3,
+          "f1": 0.8439
+        },
+        {
+          "C": 1,
+          "f1": 0.8499
+        },
+        {
+          "C": 3,
+          "f1": 0.855
+        },
+        {
+          "C": 10,
+          "f1": 0.8592
+        },
+        {
+          "C": 30,
+          "f1": 0.8562
+        }
+      ]
+    },
+    "v1_sobre_v2_sin_bases_v1": {
+      "n": 575,
+      "embeddings": {
+        "f1_macro": 0.7602,
+        "f1_por_clase": {
+          "programacion": 0.796,
+          "academico": 0.775,
+          "redaccion": 0.916,
+          "ciberseguridad": 0.61,
+          "consulta_general": 0.507,
+          "personal": 0.958
+        }
+      },
+      "tfidf": {
+        "f1_macro": 0.7453,
+        "f1_por_clase": {
+          "programacion": 0.864,
+          "academico": 0.764,
+          "redaccion": 0.942,
+          "ciberseguridad": 0.579,
+          "consulta_general": 0.516,
+          "personal": 0.807
+        }
+      }
+    },
+    "umbral_confianza": {
+      "umbral": 0.61,
+      "cobertura": 0.8544,
+      "f1_macro_aceptadas": 0.9254,
+      "f1_macro_todas": 0.8674,
+      "criterio": "max F1 macro de las aceptadas con cobertura ≥ 85%; predicciones out-of-fold de la CV sobre v2 (sin el probe set)"
+    },
+    "probe": {
+      "v2": {
+        "f1_macro": 0.8313,
+        "accuracy_frontera": 0.7857,
+        "tarjeta_grafica": "consulta_general"
+      },
+      "v2_tfidf": {
+        "f1_macro": 0.8319,
+        "accuracy_frontera": 0.7857,
+        "tarjeta_grafica": "consulta_general"
+      }
+    },
+    "figuras": [
+      "ml/reports/topic_v1_vs_v2_cv.png",
+      "ml/reports/topic_v2_umbral_confianza.png",
+      "ml/reports/topic_probe_confusion_v1.png",
+      "ml/reports/topic_probe_confusion_v2.png"
+    ]
   }
 }

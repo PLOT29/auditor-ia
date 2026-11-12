@@ -94,10 +94,23 @@ def embedding_lr(C: float = 1.0):
 
 
 # ------------------------------------------------------------------ datos
-def load_topic_train() -> pd.DataFrame:
-    df = pd.read_csv(DATA / "topic_synthetic.csv")
-    df["group"] = df["source"].str.split(":").str[1]  # id de la base (para GroupKFold)
+def load_topic_train(version: str = "v1") -> pd.DataFrame:
+    """Sintéticos de tema. v1 = Fase 4A (notebooks); v2 = Fase 4C (train_topic_v2.py)."""
+    df = pd.read_csv(DATA / f"topic_synthetic_{version}.csv")
+    # Grupo para GroupKFold: v1 "synthetic:<base>:<variante>"; v2 "v2:<categoria>:<grupo>:<variante>"
+    parts = df["source"].str.split(":")
+    df["group"] = parts.str[2] if version == "v2" else parts.str[1]
     return df
+
+
+def load_topic_probe() -> pd.DataFrame:
+    """Probe set de 60 casos difíciles (Fase 4C). SOLO para evaluar al final:
+    nunca para entrenar ni para elegir hiperparámetros o umbrales."""
+    return pd.read_csv(DATA / "topic_probe.csv", dtype=str).fillna("")
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def load_topic_test_real() -> pd.DataFrame | None:

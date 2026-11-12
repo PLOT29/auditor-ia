@@ -73,6 +73,9 @@ class AnalyzeResponse(BaseModel):
     injection_score: float | None  # null si el detector de inyección no está disponible
     findings: list[FindingOut]
     latency_ms: int
+    # Fase 4C (opcional, aditivo): true si la confianza del tema < umbral de metrics.json;
+    # null si no hay clasificador de tema. La BD guarda igual la categoría top y su confianza.
+    category_uncertain: bool | None = None
 
 
 # ---------- Carga única de modelos ----------
@@ -121,7 +124,8 @@ def models_status() -> dict:
     return {
         "models": {"embeddings": embeddings.status(), "topic": topic.status(),
                    "injection": injection.status(), "presidio": pii.status()},
-        "thresholds": {"injection_high": high, "injection_medium": medium},
+        "thresholds": {"injection_high": high, "injection_medium": medium,
+                       "topic_confidence": topic.confidence_threshold()},
         "load_ms": _models["load_ms"],
     }
 
@@ -215,11 +219,13 @@ def classify_text(text: str) -> dict:
     timings["embeddings"] = _ms(t)
     t = time.perf_counter()
     category, conf = topic.classify(text, X)
+    uncertain = topic.is_uncertain(conf)
     timings["tema"] = _ms(t)
     t = time.perf_counter()
     inj = injection.score(text, X)
     timings["inyeccion"] = _ms(t)
-    return {"category": category, "category_conf": conf, "injection_score": inj, "timings": timings}
+    return {"category": category, "category_conf": conf, "category_uncertain": uncertain,
+            "injection_score": inj, "timings": timings}
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -292,6 +298,7 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
         injection_score=inj,
         findings=[FindingOut(**f) for f in public],
         latency_ms=latency_ms,
+        category_uncertain=cls["category_uncertain"],
     )
 
 

@@ -1,0 +1,61 @@
+id,text,label,tipo,regla,nota
+c01,"¿Cómo sé si mi laptop tiene un virus que roba contraseñas?",ciberseguridad,positivo,2,
+c02,"Configuré el router, ¿cómo desactivo WPS para que no hackeen mi red?",ciberseguridad,frontera,2,redes con objetivo de protección
+c03,"Mi función de login guarda las contraseñas en texto plano, ¿cómo la protejo?",ciberseguridad,frontera,2,código con objetivo central de seguridad
+c04,"¿Es seguro conectarme al wifi público de la cafetería para entrar al banco?",ciberseguridad,frontera,2,red pública: la pregunta es de seguridad
+c05,"me llegó un sms de 'tu paquete está retenido' con un link, ¿es estafa?",ciberseguridad,positivo,2,
+c06,"¿Qué es un ataque de ransomware y cómo protejo los respaldos de mi empresa?",ciberseguridad,positivo,2,
+c07,"Diferencia entre hashing y cifrado para guardar datos sensibles",ciberseguridad,positivo,2,
+c08,"Me hackearon el Instagram y cambiaron el correo, ¿cómo lo recupero?",ciberseguridad,frontera,2,problema de su vida pero central de seguridad
+c09,"¿Cómo hago un análisis forense básico de una USB sospechosa?",ciberseguridad,positivo,2,
+c10,"¿es safe usar la misma password en todos lados si es bien larga?",ciberseguridad,positivo,2,spanglish
+g01,"Explícame qué es una tarjeta gráfica",consulta_general,frontera,6,CASO QUE MOTIVÓ LA FASE 4C: el modelo v1 lo clasificó en vivo como ciberseguridad
+g02,"¿Cómo configuro mi router para que el wifi llegue a todos los cuartos?",consulta_general,frontera,6,redes sin seguridad (cobertura)
+g03,"¿Qué es Python y para qué se usa?",consulta_general,frontera,6,qué es un lenguaje sin código ni contexto escolar
+g04,"¿Cuánta RAM necesito para jugar y hacer streaming?",consulta_general,frontera,6,hardware cotidiano
+g05,"¿Qué diferencia hay entre un SSD y un disco duro?",consulta_general,frontera,6,hardware cotidiano
+g06,"¿Cómo funciona el GPS del celular?",consulta_general,frontera,6,cómo funciona un aparato
+g07,"¿Qué es la nube y cómo funciona Google Drive?",consulta_general,frontera,6,software cotidiano
+g08,"mi impresora no conecta al wifi, q hago",consulta_general,frontera,6,soporte técnico sin seguridad; informal
+g09,"¿Cuál es la capital de Nueva Zelanda?",consulta_general,positivo,6,
+g10,"¿Cuánto tarda en llegar un paquete de Amazon a Monterrey?",consulta_general,positivo,6,
+p01,"Mi script de Python da IndexError: list index out of range en la línea 12, ¿por qué?",programacion,positivo,3,
+p02,"Escribe una función en JavaScript que valide el formato de un CURP con regex",programacion,positivo,3,
+p03,"¿Cómo instalo los drivers de mi tarjeta gráfica NVIDIA en Ubuntu para usar CUDA con PyTorch?",programacion,frontera,3,hardware dentro de una tarea de desarrollo
+p04,"Mi SELECT con GROUP BY me regresa filas duplicadas, ayúdame a corregir el query",programacion,positivo,3,
+p05,"how do I fix 'cannot find module react' en mi proyecto de Vite?",programacion,positivo,3,spanglish
+p06,"Agrega comentarios a este código: def suma(a, b): return a + b",programacion,frontera,3,pide texto pero el texto es código (la regla 1 no aplica)
+p07,"¿Por qué mi bucle en C nunca termina? for(i=0;i<10;i--)",programacion,positivo,3,
+p08,"Hazme un endpoint en FastAPI que reciba un archivo CSV",programacion,positivo,3,
+p09,"git me dice 'detached HEAD', ¿cómo regreso a mi rama?",programacion,positivo,3,
+p10,"Explícame qué hace esta línea: const total = arr.reduce((a, b) => a + b, 0)",programacion,frontera,3,explicar código concreto (no qué es un lenguaje)
+a01,"Para mi clase de Arquitectura de Computadoras, ¿qué hace la ALU?",academico,frontera,4,hardware con contexto escolar
+a02,"Explícame la recursión para mi examen de Estructuras de Datos",academico,frontera,4,concepto de programación para un examen
+a03,"¿Qué es la fotosíntesis? Lo vemos mañana en biología",academico,positivo,4,
+a04,"Resuelve la derivada de x^3 por sen(x) paso a paso",academico,positivo,4,
+a05,"¿Cómo cito una página web en APA 7 para mi tesis?",academico,positivo,4,
+a06,"Explica el modelo OSI para mi examen de redes",academico,frontera,4,redes con contexto escolar
+a07,"¿Cuáles fueron las consecuencias de la Guerra de Reforma?",academico,positivo,4,
+a08,"tengo tarea de física, cuanto tarda en caer una pelota desde 20 metros?",academico,positivo,4,informal
+a09,"¿Qué significa complejidad O(n log n)? me lo preguntan en el parcial",academico,frontera,4,concepto de computación para un examen
+a10,"¿Qué metodología uso para una investigación cualitativa con entrevistas?",academico,positivo,4,
+r01,"Escribe un ensayo de una cuartilla sobre los riesgos del phishing",redaccion,frontera,1,tema de seguridad pero pide producir un texto
+r02,"Redacta un correo para pedirle a mi profesor una prórroga del proyecto",redaccion,positivo,1,
+r03,"Corrige la ortografía: 'haber si mañana bamos al cine'",redaccion,positivo,1,
+r04,"Haz más profesional este mensaje: 'oye, ya quedó lo del reporte?'",redaccion,positivo,1,
+r05,"Resume en tres líneas este artículo sobre tarjetas gráficas",redaccion,frontera,1,tema de hardware pero pide transformar un texto
+r06,"Traduce al inglés mi carta de motivación para la beca",redaccion,positivo,1,
+r07,"Escribe una carta para disculparme con mi novia",redaccion,frontera,1,tema personal pero pide producir un texto
+r08,"¿Se escribe 'a ver' o 'haber' en 'vamos a ver la película'?",redaccion,positivo,1,
+r09,"Parafrasea este párrafo de mi tesis para que no parezca copiado",redaccion,frontera,1,contexto académico pero pide transformar un texto
+r10,"write me un post de LinkedIn anunciando que entré a trabajar a una startup",redaccion,positivo,1,spanglish
+q01,"Me siento muy ansioso antes de cada examen y no duermo",personal,frontera,5,menciona examen pero el tema central es su bienestar
+q02,"Ayúdame a armar un presupuesto, gano 14 mil al mes y pago 5 mil de renta",personal,positivo,5,
+q03,"¿Debería comprarme una laptop gamer o ahorrar para mi viaje?",personal,frontera,5,hardware pero es una decisión personal
+q04,"Mi mejor amiga dejó de hablarme y no sé qué hice",personal,positivo,5,
+q05,"Quiero bajar 5 kilos antes de diciembre, ¿qué rutina hago?",personal,positivo,5,
+q06,"Mis papás quieren que estudie medicina pero yo quiero diseño",personal,frontera,5,menciona carrera pero es una decisión personal
+q07,"Me cuesta concentrarme cuando trabajo desde casa, ¿qué hago?",personal,positivo,5,
+q08,"Mi novio revisa mi celular todo el tiempo y me incomoda",personal,frontera,5,menciona privacidad del celular pero es un tema de pareja
+q09,"Tengo una deuda en la tarjeta de crédito, ¿cómo la pago más rápido?",personal,frontera,5,"menciona ""tarjeta"" pero son finanzas personales"
+q10,"Quiero empezar a correr pero me duelen las rodillas",personal,positivo,5,

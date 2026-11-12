@@ -37,7 +37,7 @@ def prompts(n: int, seed: int = 42) -> list[str]:
     import injection_es
 
     rng = random.Random(seed)
-    with (ML / "data" / "topic_synthetic.csv").open(encoding="utf-8") as f:
+    with (ML / "data" / "topic_synthetic_v1.csv").open(encoding="utf-8") as f:
         topic = [r["text"] for r in csv.DictReader(f)]
     pool = (rng.sample(topic, 20) + rng.sample(injection_es.POSITIVOS, 8) + rng.sample(injection_es.NEGATIVOS, 8) + [
         f"Corrige este código: client = OpenAI(api_key='{FAKE_KEY}')",

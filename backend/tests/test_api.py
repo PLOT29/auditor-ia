@@ -34,7 +34,7 @@ def test_health(client):
 def test_analyze_clean_prompt(client):
     data = post(client, "Explícame qué es un firewall")
     assert set(data) == {"id", "risk", "category", "category_confidence",
-                         "injection_score", "findings", "latency_ms"}
+                         "injection_score", "findings", "latency_ms", "category_uncertain"}
     assert data["risk"] == "bajo"
     assert data["findings"] == []
     assert data["category"] in ("programacion", "academico", "redaccion", "ciberseguridad",

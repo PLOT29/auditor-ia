@@ -35,7 +35,8 @@ def test_client_latency_accepted_and_logged(client, caplog):
     })
     assert r.status_code == 200
     assert set(r.json()) == {"id", "risk", "category", "category_confidence",
-                             "injection_score", "findings", "latency_ms"}  # respuesta sin cambios
+                             "injection_score", "findings", "latency_ms",
+                             "category_uncertain"}  # 4C: único campo nuevo (opcional)
     assert "cliente=0.42ms" in caplog.text
     assert "decision=cancelado" in caplog.text
     assert F.OPENAI_KEY not in caplog.text
