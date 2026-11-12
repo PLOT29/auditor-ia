@@ -67,9 +67,12 @@ El sistema opera **solo en el navegador de quien lo instala y con su consentimie
 │   detectors/injection.py (embeddings + clasificador)              │
 │   risk.py                (reglas de agregación → bajo/medio/alto) │
 │ db.py → SQLite (texto ENMASCARADO)                                │
+│ analytics.py → consultas de solo lectura (panel y dashboard)      │
+│ events_bus.py → GET /events (SSE, resúmenes SIN texto)            │
 └──────────────────────────────────────────────────────────────────┘
         ▼
-[dashboard/app.py — Streamlit, refresco cada 3 s]
+[GET /panel — Centro de control (Fase 5B), en vivo por SSE]
+[dashboard/app.py — Streamlit, respaldo, refresco cada 3 s]
 ```
 
 **Decisión clave (explicar en el reporte):** el bloqueo **no puede esperar al backend**, porque el evento de envío debe cancelarse de forma síncrona. Por eso hay **dos capas**: regex local inmediata (bloqueo) + análisis ML en backend (clasificación y estadística).
@@ -101,7 +104,11 @@ auditor-ia/
 │   ├── db.py
 │   ├── risk.py
 │   ├── masking.py
+│   ├── analytics.py       # consultas de estadística (solo lectura), compartidas panel ↔ dashboard (5B)
+│   ├── events_bus.py      # bus en memoria para GET /events (SSE) (5B)
+│   ├── panel/             # centro de control: index.html, panel.css, panel.js, vendor/echarts (5B)
 │   ├── detectors/
+│   │   ├── catalog.py     # catálogo de tipos (5A.1)
 │   │   ├── secrets.py
 │   │   ├── pii.py
 │   │   ├── topic.py
@@ -114,7 +121,8 @@ auditor-ia/
 │   ├── evaluate.ipynb
 │   └── models/            # .joblib
 ├── dashboard/
-│   └── app.py
+│   ├── app.py             # respaldo en Streamlit
+│   └── queries.py         # shim: reexporta backend/analytics.py
 └── docs/
     ├── arquitectura.png
     └── capturas/
@@ -177,6 +185,11 @@ Respuesta:
 }
 ```
 `GET /stats` → agregados para el dashboard. `GET /health` → `{"ok": true, "models": {...}, "thresholds": {...}}` (qué modelos cargaron y umbrales vigentes; la extensión solo lee `ok`).
+
+**Fase 5B (aditivo):**
+- `GET /stats?detalle=1&inicio=AAAA-MM-DD&fin=AAAA-MM-DD&plataformas=chatgpt,claude&origen=ambos|extension|import` agrega `panel` (sin tocar los campos de siempre): `kpis` (actual, anterior y delta, con `evitados` y `censurados`), `exposicion`, `sankey`, `mapa_calor`, `tendencia` (por riesgo), `tipos_hallazgo`, `motivos`, `hallazgo` (frase), `recientes` (últimos 30 eventos), `rango_datos` y `nombres_tipos`. Días de la Ciudad de México; por defecto los últimos 14. `inicio > fin` → 422. Nunca incluye texto de prompts.
+- `GET /events` (Server-Sent Events): `retry: 3000`, un `event: hola` al conectar, un `event: prompt` por cada evento que guarda `/analyze` y `: ping` cada 15 s. Cada `prompt` lleva solo `id, ts, hora, plataforma, riesgo, motivo, tipos, categoria, decision, bloqueado, latencia_ms, simulado, publicado_ms` — **sin texto ni valores, ni siquiera enmascarados**. Cola en memoria por cliente (100; un cliente lento pierde lo más viejo y `/analyze` nunca se bloquea). `?limit=N` cierra tras N eventos (tests, curl).
+- `GET /panel` → `/panel/` (estáticos de `backend/panel/`). `/panel` y `/events` responden **403** a cualquier cliente que no sea local (además de que uvicorn escucha en 127.0.0.1), y el panel se sirve con `Content-Security-Policy: default-src 'self'; connect-src 'self'…`.
 
 **Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Por eso `injection_score` admite `null`.
 
@@ -250,10 +263,25 @@ Umbrales finales (Fase 4B):
 
 **Regla de oro:** el texto original **nunca** se escribe en disco ni en logs.
 
-### 5.6 Dashboard (Streamlit) — Fase 5
+### 5.6 Centro de control (Fase 5B) y dashboard de respaldo (Fase 5)
+
+#### Centro de control — pantalla principal de la demo
+Abrir **http://localhost:8000/panel** con el backend corriendo (`python -m uvicorn main:app` desde `backend/`). Es una página propia (`backend/panel/`: `index.html`, `panel.css`, `panel.js`) servida por el backend, pensada para proyector a 1080p: sin scroll en la vista principal, tipografía grande, alto contraste y los tokens de Centinela (§5.1), cifras en monoespaciada con dígitos tabulares.
+- **Datos:** `GET /stats?detalle=1` (mismo SQL que el dashboard, `backend/analytics.py`, conexión de solo lectura), `GET /health` cada 10 s y `GET /events` (SSE). El panel **nunca escribe en la BD** ni recibe texto de prompts (lo verifica `tests/test_panel.py`).
+- **Gráficas:** Apache ECharts 6.0.0 **copiada al repo** (`backend/panel/vendor/echarts/`, Apache-2.0, con `LICENSE`, `NOTICE` y las licencias BSD de zrender y d3; SHA-256 en su `README.md`). Sin CDN ni peticiones externas: la demo funciona sin internet, y la CSP del panel (`default-src 'self'`) bloquearía cualquier origen externo aunque se agregara por error.
+- **Cabecera:** escudo, estado del backend, de los modelos y del feed, reloj, rango de fechas (7 d / 14 d / 30 d / todo o fechas libres) y **Modo presentación** (activo por defecto; tipografía más grande y sin detalles técnicos como ids y latencias). El panel no muestra texto de prompts en ningún modo: para revisar texto enmascarado está el dashboard de respaldo con su modo presentación apagado.
+- **KPIs** (contadores animados, con la variación frente al periodo anterior): prompts · % con datos sensibles (riesgo medio + alto) · bloqueos evitados (`cancelado` + `censurado`) · censurados · plataforma principal (y tema top).
+- **Índice de exposición (0–100), en un medidor:** `IE = 100 × (0.5 × eventos de riesgo medio + 1 × eventos de riesgo alto) ÷ total de eventos del periodo`. 0 = ningún prompt con riesgo; 50 = todos de riesgo medio (o la mitad de riesgo alto); 100 = todos de riesgo alto. Bandas: 0–20 baja (verde), 20–50 moderada (ámbar), 50–100 alta (rojo). La fórmula y los conteos aparecen en el tooltip «i».
+- **Feed en vivo** (columna derecha): cada evento entra con animación en cuanto llega por SSE, con franja de color **e icono y texto** por riesgo (● bajo, ◆ medio, ▲ alto), plataforma, hora, tema, motivo, chips de hallazgo y decisión. Un bloqueo produce un destello rojo breve en el borde de la pantalla. Si se cae el SSE, el indicador pasa a «Feed reconectando…» y vuelve solo (sin recargar). Los eventos de `test.html` (`platform: "test"`) aparecen en el feed como «Prueba» pero nunca cuentan en las estadísticas. Latencia medida de `/analyze` a feed: 76–150 ms de punta a punta (el pipeline toma 32–109 ms); de la publicación SSE al feed, 1–5 ms.
+- **Gráficas:** Sankey plataforma → tema → riesgo · mapa de calor día × hora (CDMX) · tendencia diaria apilada por riesgo · barras de tipos de hallazgo (rojo = secreto, ámbar = dato personal) · dona de motivo del riesgo (secreto / dato personal (PII) / inyección / término propio; un evento puede contar en varios).
+- **Frase de hallazgo** (la de la Fase 5), con las cifras resaltadas. Estados vacíos («Sin datos en este periodo») y de error (aviso si falla `/stats`, reintento cada 10 s; si ECharts no cargara, KPIs y feed siguen funcionando).
+- **Accesibilidad:** contraste AA sobre los tokens oscuros, foco visible, controles con teclado, riesgo con icono y texto además del color, `prefers-reduced-motion` (sin contadores animados, entradas ni destello animado).
+- **Modo demo:** con `?demo=1` aparece «Simular», que inyecta 5 eventos **falsos** al feed (bloqueo de API key, correo + teléfono, uno sin riesgo, AWS censurado, inyección), marcados «SIMULADO» con borde punteado. No llama al backend ni escribe en la BD; sirve para ensayar o como respaldo si falla la red.
+
+#### Dashboard de respaldo (Streamlit) — Fase 5
 Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.py` (alternativa: `python dashboard/run.py`). Se abre en http://127.0.0.1:8501.
 
-- **Estructura:** `dashboard/queries.py` concentra TODO el SQL, como funciones puras (filtros → DataFrames) sobre una conexión SQLite de **solo lectura** (`mode=ro`). `dashboard/app.py` es solo interfaz. `dashboard/.streamlit/config.toml` fija `server.address = 127.0.0.1` y `browser.gatherUsageStats = false` (RNF-03), además del tema claro para proyector.
+- **Estructura:** `backend/analytics.py` concentra TODO el SQL de estadística (antes `dashboard/queries.py`, que ahora es un *shim* que lo reexporta), como funciones puras (filtros → DataFrames) sobre una conexión SQLite de **solo lectura** (`mode=ro`); lo comparten el dashboard y `/stats?detalle=1`. `dashboard/app.py` es solo interfaz. `dashboard/.streamlit/config.toml` fija `server.address = 127.0.0.1` y `browser.gatherUsageStats = false` (RNF-03), además del tema claro para proyector.
 - **Privacidad:** Streamlit toma `dashboard/.streamlit/config.toml` (comprobado con Streamlit 1.67 lanzando desde la raíz del repo). Como defensa adicional, si la telemetría estuviera activa o el servidor no escuchara solo en localhost, `app.py` **no muestra datos** y explica cómo lanzarlo; `run.py` fuerza ambas opciones por línea de comandos.
 - **Filtros (barra lateral, no se refrescan):** rango de fechas (días de la Ciudad de México), plataforma (ChatGPT/Claude/Gemini; `test` nunca aparece), origen (extensión / importado / ambos) y **Modo presentación**, activado por defecto, que oculta TODO texto de prompts.
 - **KPIs, con la variación frente al periodo anterior de la misma duración:** total de prompts · % con datos sensibles (riesgo medio + alto, que incluye detecciones de inyección) · envíos bloqueados (cancelados vs. enviados de todos modos) · plataforma más usada · tema más frecuente.
@@ -280,6 +308,7 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 - **RF-11** (5A) Censurar: reemplazar los hallazgos por marcadores en el campo antes de enviar, con verificación.
 - **RF-12** (5A) Diccionario propio de términos confidenciales que nunca salen de la extensión.
 - **RF-13** (5A) Aviso al pegar textos grandes (umbral configurable).
+- **RF-15** (5B) Centro de control en `/panel` con feed en vivo (SSE), KPIs, índice de exposición y gráficas, sin recursos externos.
 - **RF-14** (5A.1) Detección local ampliada: Stripe, AWS por contexto, Bearer, URIs con credenciales, asignaciones `.env`/YAML/JSON, DNI/NIE y dirección de vivienda, con los mismos tipos en el backend.
 
 ### No funcionales
@@ -329,13 +358,13 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 
 ## 8. Guion de la demo (≈ 5 min)
 
-**Preparación:** backend corriendo, dashboard abierto en segunda pantalla, extensión activa, BD con ≥ 150 prompts reales de las 2 semanas. Video de respaldo grabado por si falla la red.
+**Preparación:** backend corriendo, **centro de control (http://localhost:8000/panel) en la segunda pantalla** con el modo presentación activo (el dashboard de Streamlit queda como respaldo), extensión activa, BD con ≥ 150 prompts reales de las 2 semanas. Video de respaldo grabado por si falla la red; si falla en vivo, abrir `http://localhost:8000/panel?demo=1` y usar «Simular».
 
 **Golpe 1 — "Te estoy leyendo" (1 min)**
 1. Abrir ChatGPT frente a la audiencia.
 2. Escribir: *"Explícame qué es un firewall"* → Enter.
 3. Aparece `✅ Sin riesgo · académico · ChatGPT`.
-4. Señalar el dashboard: el contador sube en vivo.
+4. Señalar el centro de control: el evento entra en el feed en vivo (≈ 0.1 s) y el contador de prompts sube.
 5. Frase: *"Todo lo que le escribes a una IA puede ser capturado y clasificado."*
 
 **Golpe 2 — "Te salvé" (1.5 min)**
@@ -348,7 +377,7 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 6. (Opcional) Agregar "Proyecto Fénix" al diccionario en el popup y escribirlo: banner "un término propio"; en la BD aparece `<TERMINO_PROPIO>`.
 
 **Golpe 3 — "Así usas la IA" (1.5 min)**
-1. Dashboard con los datos reales de 2 semanas: plataforma más usada, temas, mapa de calor, % de prompts con datos sensibles.
+1. Centro de control con los datos reales de 2 semanas: KPIs, índice de exposición (explicar la fórmula con el tooltip), Sankey plataforma → tema → riesgo, mapa de calor y % de prompts con datos sensibles. (En el golpe 2, el bloqueo ya habrá hecho destellar el borde en rojo y sumado un «bloqueo evitado».)
 2. Frase con el hallazgo real: *"El X % de mis prompts contenían datos personales y no me había dado cuenta."*
 
 **Remate — "Ahora usted" (1 min)**

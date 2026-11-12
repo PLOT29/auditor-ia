@@ -14,24 +14,30 @@ PII solo con regex) y /health lo reporta.
 """
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import json
 import logging
 import threading
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_serializer
 
+import analytics
 import config
 import db
 import masking
 import risk
 from detectors import catalog, embeddings, injection, pii, secrets, topic
+from events_bus import bus
 
 log = logging.getLogger("auditor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -160,11 +166,31 @@ app = FastAPI(title="Auditor de Prompts", version="0.4.0", lifespan=lifespan)
 # leer /stats ni mandar JSON a /analyze (el preflight falla). Ver test_cors.py.
 
 
+PANEL_DIR = Path(__file__).resolve().parent / "panel"
+LOOPBACK = {"127.0.0.1", "::1", "localhost", "testclient"}  # "testclient" = TestClient de los tests
+# Fase 5B · el centro de control solo pide cosas a su propio origen (RNF-03): el navegador bloquea
+# cualquier petición, script, fuente o imagen de otro sitio aunque alguien la agregara al HTML.
+PANEL_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+             "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+LOCAL_ONLY_PREFIXES = ("/panel", "/events")
+
+
 @app.middleware("http")
 async def latency_log(request: Request, call_next):
-    """Loguea método, ruta, estado y latencia total. Nunca el cuerpo."""
+    """Loguea método, ruta, estado y latencia total. Nunca el cuerpo.
+
+    Fase 5B: /panel y /events solo responden a clientes locales (además de que uvicorn escucha en
+    127.0.0.1) y el panel se sirve con una CSP que prohíbe cualquier origen externo."""
     t0 = time.perf_counter()
+    path = request.url.path
+    if path.startswith(LOCAL_ONLY_PREFIXES) and (request.client is None or request.client.host not in LOOPBACK):
+        return JSONResponse(status_code=403, content={"detail": "solo localhost"})
     response = await call_next(request)
+    if path.startswith("/panel"):
+        response.headers["Content-Security-Policy"] = PANEL_CSP
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cache-Control"] = "no-cache"
     ms = (time.perf_counter() - t0) * 1000
     response.headers["X-Process-Time-Ms"] = f"{ms:.1f}"
     log.info("%s %s -> %s %.1fms", request.method, request.url.path, response.status_code, ms)
@@ -247,7 +273,23 @@ def classify_text(text: str) -> dict:
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze(req: AnalyzeRequest) -> AnalyzeResponse:
-    return process(req)
+    resp = process(req)
+    publish_event(req, resp)
+    return resp
+
+
+def publish_event(req: AnalyzeRequest, resp: AnalyzeResponse) -> None:
+    """Fase 5B: emite al feed en vivo (/events) el resumen SIN texto del evento recién guardado."""
+    try:
+        ev = analytics.event_summary(
+            id=resp.id, ts=(req.timestamp or datetime.now(timezone.utc)).isoformat(), platform=req.platform,
+            risk=resp.risk, category=resp.category, category_conf=resp.category_confidence,
+            types=[f.type for f in resp.findings], blocked=req.blocked, decision=req.user_decision,
+            latency_ms=resp.latency_ms, threshold=topic.confidence_threshold())
+        ev["publicado_ms"] = round(time.time() * 1000, 1)  # para medir /analyze → feed en el panel
+        bus.publish(ev)
+    except Exception as e:  # noqa: BLE001  — el feed nunca debe romper /analyze
+        log.warning("no se pudo publicar el evento id=%s en /events: %s", resp.id, type(e).__name__)
 
 
 def sha256_of(text: str) -> str:
@@ -320,9 +362,77 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
 
 
 @app.get("/stats")
-def stats(desde: datetime | None = None) -> dict:
-    """Agregados. `?desde=<ISO-8601>` (opcional, Fase 5A): solo eventos desde ese instante."""
-    return db.get_stats(since=desde.isoformat() if desde else None)
+def stats(
+    desde: datetime | None = None,
+    detalle: bool = False,
+    inicio: date | None = None,
+    fin: date | None = None,
+    plataformas: str | None = Query(default=None, max_length=64),
+    origen: Literal["ambos", "extension", "import"] = "ambos",
+) -> dict:
+    """Agregados. `?desde=<ISO-8601>` (opcional, Fase 5A): solo eventos desde ese instante.
+
+    Fase 5B (aditivo): con `?detalle=1` agrega `panel` — KPIs con el periodo anterior, índice de
+    exposición, Sankey, mapa de calor, tendencia por riesgo, tipos de hallazgo, motivos, frase de
+    hallazgo y últimos eventos — calculados por analytics.py (el mismo SQL del dashboard, conexión de
+    SOLO LECTURA) con los filtros `inicio`/`fin` (días de la Ciudad de México; por defecto los últimos
+    14), `plataformas` (chatgpt,claude,gemini) y `origen`. Nunca incluye texto de prompts.
+    """
+    out = db.get_stats(since=desde.isoformat() if desde else None)
+    if detalle:
+        today = datetime.now(analytics.TZ).date()
+        end = fin or today
+        start = inicio or (end - timedelta(days=13))
+        if start > end:
+            raise HTTPException(status_code=422, detail="inicio debe ser anterior o igual a fin")
+        plats = tuple(p for p in (plataformas or ",".join(analytics.PLATFORMS)).split(",") if p in analytics.PLATFORMS)
+        f = analytics.Filters(start=start, end=end, platforms=plats, source=origen)
+        out["panel"] = analytics.panel(db.db_path(), f, topic.confidence_threshold())
+    return out
+
+
+@app.get("/events")
+async def events(request: Request, limit: int | None = Query(default=None, ge=1, le=1000)):
+    """Fase 5B · Server-Sent Events: un `event: prompt` por cada evento que /analyze guarda.
+
+    Solo resúmenes SIN texto (ver analytics.event_summary). `retry: 3000` hace que EventSource
+    reconecte solo; cada 15 s sin eventos se manda un comentario `: ping` para mantener viva la
+    conexión. `limit` (opcional) cierra el flujo tras N eventos (tests, depuración con curl).
+    """
+    q = bus.subscribe()
+
+    async def stream():
+        sent = 0
+        try:
+            yield "retry: 3000\n\n"
+            yield f"event: hola\ndata: {json.dumps({'clientes': bus.subscribers})}\n\n"
+            while True:
+                try:
+                    ev = await asyncio.wait_for(q.get(), timeout=15)
+                except asyncio.TimeoutError:
+                    if await request.is_disconnected():
+                        break
+                    yield ": ping\n\n"
+                    continue
+                yield f"id: {ev['id']}\nevent: prompt\ndata: {json.dumps(ev, ensure_ascii=False)}\n\n"
+                sent += 1
+                if limit and sent >= limit:
+                    break
+        finally:
+            bus.unsubscribe(q)
+
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.get("/panel", include_in_schema=False)
+def panel_root() -> RedirectResponse:
+    return RedirectResponse(url="/panel/", status_code=307)
+
+
+# Centro de control (Fase 5B): archivos estáticos de backend/panel/ (index.html, panel.css, panel.js y
+# vendor/echarts). Solo lectura; nunca escribe en la BD.
+app.mount("/panel/", StaticFiles(directory=PANEL_DIR, html=True), name="panel")
 
 
 @app.get("/health")

@@ -115,7 +115,22 @@ python ml/make_ce2_set.py                # regenera ml/data/ce2_prompts_normales
 
 Ambas corren también dentro de `python -m pytest` (`test_patterns_parity.py`).
 
-## Dashboard (Fase 5)
+## Centro de control (Fase 5B) — pantalla principal de la demo
+
+Con el backend corriendo, abre **http://localhost:8000/panel**. Muestra KPIs, índice de exposición,
+gráficas (Sankey, mapa de calor, tendencia, tipos de hallazgo, motivos) y un feed en vivo por SSE
+(`/events`). Todo es local: ECharts va copiado en `backend/panel/vendor/echarts/` y la página no pide
+nada fuera de `localhost`, así que funciona sin internet. Nunca muestra texto de prompts ni escribe en la BD.
+
+- `http://localhost:8000/panel?demo=1` agrega el botón **Simular** (5 eventos falsos solo en pantalla).
+- Proyector: pantalla completa (F11) a 1920×1080; el «Modo presentación» viene activo.
+
+```bash
+curl -N http://127.0.0.1:8000/events          # ver el feed en crudo (Ctrl+C para salir)
+curl -s "http://127.0.0.1:8000/stats?detalle=1&inicio=2026-11-01&fin=2026-11-12"
+```
+
+## Dashboard de respaldo (Fase 5)
 
 ```powershell
 conda activate auditor

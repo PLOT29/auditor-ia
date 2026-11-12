@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Centinela · Centro de control</title>
+  <!--
+    Centro de control de Centinela (Fase 5B). Servido por el backend en http://localhost:8000/panel.
+    Solo pide cosas a su propio origen (CSP: default-src 'self'): /stats, /health, /events (SSE) y
+    vendor/echarts. Nunca recibe ni muestra texto de prompts. ?demo=1 muestra el botón «Simular».
+  -->
+  <link rel="stylesheet" href="panel.css">
+  <script src="vendor/echarts/echarts.min.js" defer></script>
+  <script src="panel.js" defer></script>
+</head>
+<body class="presentacion">
+<div class="flash" aria-hidden="true"></div>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg class="shield" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2.2 19.6 5v6.1c0 5-3.2 8.9-7.6 10.7C7.6 20 4.4 16.1 4.4 11.1V5Z" />
+        <path class="glyph" d="M8.6 12.1l2.3 2.3 4.6-4.9" />
+      </svg>
+      <div>
+        <h1>Centinela</h1>
+        <p class="sub">Centro de control · DLP para IA</p>
+      </div>
+    </div>
+
+    <div class="status" aria-live="polite">
+      <span class="pill" id="st-backend"><span class="dot"></span><span class="txt">Backend…</span></span>
+      <span class="pill" id="st-models" title=""><span class="dot"></span><span class="txt">Modelos…</span></span>
+      <span class="pill" id="st-feed"><span class="dot"></span><span class="txt">Feed…</span></span>
+    </div>
+
+    <div class="controls">
+      <div class="range" role="group" aria-label="Rango de fechas">
+        <button type="button" class="chip-btn" data-days="7">7 d</button>
+        <button type="button" class="chip-btn" data-days="14">14 d</button>
+        <button type="button" class="chip-btn" data-days="30">30 d</button>
+        <button type="button" class="chip-btn" data-days="todo">Todo</button>
+        <label class="sr" for="f-inicio">Desde</label>
+        <input type="date" id="f-inicio">
+        <span aria-hidden="true">→</span>
+        <label class="sr" for="f-fin">Hasta</label>
+        <input type="date" id="f-fin">
+      </div>
+      <label class="switch" title="Activo: tipografía grande y sin detalles técnicos. El panel nunca muestra texto de prompts.">
+        <input type="checkbox" id="presentacion" checked>
+        <span class="track" aria-hidden="true"></span>
+        <span>Modo presentación</span>
+      </label>
+      <button type="button" class="btn" id="simular" hidden>Simular</button>
+      <time class="clock mono" id="clock" aria-label="Hora actual">--:--:--</time>
+    </div>
+  </header>
+
+  <div class="alert" id="alert" role="alert" hidden></div>
+
+  <main class="main">
+    <section class="kpis" aria-label="Indicadores del periodo">
+      <article class="kpi"><h2>Prompts</h2><p class="num mono" id="k-total" data-fmt="int">0</p><p class="delta mono" id="d-total"></p></article>
+      <article class="kpi"><h2>Con datos sensibles</h2><p class="num mono" id="k-pct" data-fmt="pct">0 %</p><p class="delta mono" id="d-pct"></p></article>
+      <article class="kpi danger"><h2>Bloqueos evitados</h2><p class="num mono" id="k-evitados" data-fmt="int">0</p><p class="delta mono" id="d-evitados"></p></article>
+      <article class="kpi"><h2>Censurados</h2><p class="num mono" id="k-censurados" data-fmt="int">0</p><p class="delta mono" id="d-censurados"></p></article>
+      <article class="kpi"><h2>Plataforma principal</h2><p class="num" id="k-plataforma">—</p><p class="delta" id="d-plataforma"></p></article>
+    </section>
+
+    <section class="card exposure" aria-labelledby="t-exp">
+      <header class="card-h">
+        <h2 id="t-exp">Índice de exposición</h2>
+        <button type="button" class="info" id="exp-info" aria-describedby="exp-tip" aria-label="¿Cómo se calcula?">i</button>
+        <div class="tip" id="exp-tip" role="tooltip"></div>
+      </header>
+      <div class="chart" id="c-gauge" role="img" aria-label="Índice de exposición"></div>
+      <p class="exp-label" id="exp-label"></p>
+    </section>
+
+    <section class="card headline" aria-labelledby="t-hall">
+      <h2 id="t-hall">Hallazgo</h2>
+      <p class="frase" id="frase">Cargando…</p>
+      <p class="meta" id="periodo"></p>
+    </section>
+
+    <section class="card sankey" aria-labelledby="t-sankey">
+      <h2 id="t-sankey">Plataforma → tema → riesgo</h2>
+      <div class="chart" id="c-sankey" role="img" aria-label="Flujo de prompts por plataforma, tema y riesgo"></div>
+    </section>
+
+    <section class="card heat" aria-labelledby="t-heat">
+      <h2 id="t-heat">Cuándo usas la IA <span class="muted">(día × hora, CDMX)</span></h2>
+      <div class="chart" id="c-heat" role="img" aria-label="Mapa de calor por día y hora"></div>
+    </section>
+
+    <section class="card trend" aria-labelledby="t-trend">
+      <h2 id="t-trend">Tendencia diaria por riesgo</h2>
+      <div class="chart" id="c-trend" role="img" aria-label="Prompts por día apilados por riesgo"></div>
+    </section>
+
+    <section class="card types" aria-labelledby="t-types">
+      <h2 id="t-types">Tipos de hallazgo</h2>
+      <div class="chart" id="c-types" role="img" aria-label="Tipos de hallazgo más comunes"></div>
+    </section>
+
+    <section class="card motives" aria-labelledby="t-mot">
+      <h2 id="t-mot">Motivo del riesgo</h2>
+      <div class="chart" id="c-motives" role="img" aria-label="Eventos de riesgo por motivo"></div>
+    </section>
+  </main>
+
+  <aside class="feed" aria-labelledby="t-feed">
+    <header class="feed-h">
+      <h2 id="t-feed"><span class="live-dot" aria-hidden="true"></span>En vivo</h2>
+      <span class="muted" id="feed-count"></span>
+    </header>
+    <ol class="feed-list" id="feed" aria-live="polite" aria-relevant="additions"></ol>
+    <p class="empty" id="feed-empty">Esperando eventos… Escribe en ChatGPT, Claude o Gemini con la extensión activa.</p>
+  </aside>
+</div>
+</body>
+</html>
