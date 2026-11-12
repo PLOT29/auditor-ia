@@ -1,19 +1,22 @@
 /*
- * patterns.js — Capa 1 (DLP local, SÍNCRONO).
+ * patterns.js — Centinela · detección LOCAL y SÍNCRONA (Capa 1).
  *
- * Mismo set de regex que backend/detectors/secrets.py y misma máscara que
- * backend/masking.py. Si cambias uno, cambia el otro. La paridad se verifica con
+ * - Secretos: mismas regex que backend/detectors/secrets.py.
+ * - PII (correo, teléfono MX, CURP, RFC): mismas regex que backend/detectors/pii_patterns.py.
+ * - Diccionario propio: términos confidenciales del usuario (solo en chrome.storage.local).
+ * - Máscaras iguales a backend/masking.py y marcadores de censura ([CORREO_OCULTO]…).
+ * Paridad verificada con:
  *   node extension/test/patterns.test.js
  *   python -m pytest backend/tests/test_patterns_parity.py
- * usando los casos de extension/test/secret_cases.json.
  *
- * Semántica: todas las regex son ASCII (`\b`, `\d`, `\s`), igual que el backend
- * con re.ASCII. Los índices start/end son de JavaScript (unidades UTF-16).
+ * Semántica ASCII explícita en ambos lados (Python con re.ASCII). Índices start/end en
+ * unidades UTF-16 (JavaScript).
  *
- * PRIVACIDAD: los valores en claro solo existen dentro de estas funciones;
- * hacia afuera salen {type, masked, start, end}. Nunca hagas console.log del texto.
+ * PRIVACIDAD: los valores en claro solo existen dentro de estas funciones y en las llamadas
+ * que los piden explícitamente (censura local). Hacia afuera viajan {type, masked}. Nunca
+ * hagas console.log del texto ni de los términos del diccionario.
  *
- * Se carga en content.js (window) y en background.js (importScripts) y en Node.
+ * Se carga en content.js (window), en background.js (importScripts) y en Node (tests).
  */
 (function (root) {
   "use strict";
@@ -42,8 +45,7 @@
     return luhnOk(digits);
   }
 
-  // Orden = prioridad (igual que secrets.PATTERNS). `group` = grupo con el valor.
-  // Flag `d` donde hay grupo: da los índices exactos del grupo.
+  // Orden = prioridad (igual que secrets.PATTERNS). `group` = grupo con el valor (flag d).
   const PATTERNS = [
     {
       type: "private_key",
@@ -64,39 +66,96 @@
     // (?<!\d[.,]) — no es la parte fraccionaria de un decimal (0.4111..., 3,1415...).
     { type: "credit_card", re: /(?<![\d-])(?<!\d[.,])\d(?:[ -]?\d){12,18}(?![\d-])/g, validator: cardOk },
   ];
+  const SECRET_TYPES = new Set(PATTERNS.map((p) => p.type));
 
   // ---------------------------------------------------------------- PII
-  // Solo para ENMASCARAR la cola offline (background.js) — la PII no bloquea.
-  // Aproximación de backend/detectors/pii.py (el backend sigue siendo la referencia).
+  // MISMAS expresiones que backend/detectors/pii_patterns.py (re.ASCII | IGNORECASE).
   const STATES =
     "AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE";
-  const DATE = "\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])";
-  const PII_RULES = [
-    { type: "email", re: /(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b/g },
-    {
-      type: "curp",
-      re: new RegExp(`\\b[A-Z][AEIOUX][A-Z]{2}${DATE}[HM](?:${STATES})[B-DF-HJ-NP-TV-Z]{3}[A-Z\\d]\\d\\b`, "gi"),
-    },
-    { type: "rfc", re: new RegExp(`(?<![\\wÑñ&])[A-ZÑ&]{3,4}${DATE}[A-Z\\d]{2}[A\\d]\\b`, "gi") },
-    {
-      type: "phone_mx",
-      re: /(?<![\w+])(?:\+?52[\s.-]?)?(?:1[\s.-]?)?(?:\(\d{2,3}\)|\d{2,3})[\s.-]?\d{3,4}[\s.-]?\d{4}(?!\d)/g,
-      validator: phoneOk,
-    },
-  ];
+  const DATE = "[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])";
+  const WORD = "A-Za-z0-9_";
+  const LETTER_ES = "ÁÉÍÓÚÜÑáéíóúüñ";
+  const SP = "[ \\t\\n\\r\\f\\v.\\-]";
 
   function phoneOk(value) {
-    let digits = value.replace(/\D/g, "");
-    if (value.trimStart().startsWith("+") || digits.length > 10) {
+    let digits = value.replace(/[^0-9]/g, "");
+    if (value.startsWith("+") || digits.length > 10) {
       if (digits.startsWith("52")) digits = digits.slice(2);
       if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
     }
     return digits.length === 10;
   }
 
+  const PII_RULES = [
+    {
+      type: "email",
+      re: new RegExp(`(?<![${WORD}.+\\-])[A-Za-z0-9._%+\\-]+@[A-Za-z0-9\\-]+(?:\\.[A-Za-z0-9\\-]+)*\\.[A-Za-z]{2,}(?![${WORD}])`, "g"),
+    },
+    {
+      type: "curp",
+      re: new RegExp(`(?<![${WORD}])[A-Z][AEIOUX][A-Z]{2}${DATE}[HM](?:${STATES})[B-DF-HJ-NP-TV-Z]{3}[A-Z0-9][0-9](?![${WORD}])`, "gi"),
+    },
+    { type: "rfc", re: new RegExp(`(?<![${WORD}${LETTER_ES}&])[A-ZÑñ&]{3,4}${DATE}[A-Z0-9]{2}[A0-9](?![${WORD}])`, "gi") },
+    {
+      type: "phone_mx",
+      re: new RegExp(`(?<![${WORD}+])(?:\\+?52${SP}?)?(?:1${SP}?)?(?:\\([0-9]{2,3}\\)|[0-9]{2,3})${SP}?[0-9]{3,4}${SP}?[0-9]{4}(?![0-9])`, "g"),
+      validator: phoneOk,
+    },
+  ];
+  const PII_TYPES = new Set(PII_RULES.map((p) => p.type));
+
+  // ------------------------------------------------------- diccionario propio
+  const DICT_TYPE = "termino_propio";
+  const DICT_MAX = 50;
+
+  /** Pliega un carácter (minúsculas, sin acentos) conservando la longitud del texto. */
+  function foldChar(c) {
+    const f = c.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    return f.length === 1 ? f : c.toLowerCase().length === 1 ? c.toLowerCase() : c;
+  }
+
+  function fold(text) {
+    let out = "";
+    for (const c of text) out += c.length === 1 ? foldChar(c) : c; // pares sustitutos: intactos
+    return out;
+  }
+
+  function escapeRe(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /** Normaliza la lista del usuario: sin vacíos ni repetidos, máx. 50. */
+  function normalizeDictionary(terms) {
+    const seen = new Set();
+    const out = [];
+    for (const raw of terms || []) {
+      const t = String(raw).trim().replace(/\s+/g, " ");
+      const k = fold(t);
+      if (t.length < 2 || seen.has(k)) continue;
+      seen.add(k);
+      out.push(t);
+      if (out.length >= DICT_MAX) break;
+    }
+    return out;
+  }
+
+  const dictCache = { key: null, re: null };
+
+  function dictRegex(terms) {
+    const list = normalizeDictionary(terms);
+    const key = list.join("\u0000");
+    if (dictCache.key !== key) {
+      // Más largos primero, para que "proyecto fénix" gane sobre "fénix".
+      const alts = list.map(fold).sort((a, b) => b.length - a.length).map(escapeRe);
+      dictCache.key = key;
+      dictCache.re = alts.length ? new RegExp(`(?<![\\p{L}\\p{N}_])(?:${alts.join("|")})(?![\\p{L}\\p{N}_])`, "gu") : null;
+    }
+    return dictCache.re;
+  }
+
   // ------------------------------------------------------------ máscara
   const FIXED_PREFIX = { anthropic_key: "sk-ant-", openai_key: "sk-", google_api_key: "AIza", jwt: "eyJ" };
-  const FULLY_HIDDEN = new Set(["password", "private_key"]);
+  const FULLY_HIDDEN = new Set(["password", "private_key", "person", "address", DICT_TYPE]);
 
   /** Igual que masking.mask_value() del backend. */
   function maskValue(type, value) {
@@ -127,8 +186,36 @@
     return out;
   }
 
+  // Marcadores visibles de "Censurar" (lo que queda escrito en el campo del chat).
+  const CENSOR_MARKERS = {
+    openai_key: "[API_KEY_OCULTA]",
+    anthropic_key: "[API_KEY_OCULTA]",
+    google_api_key: "[API_KEY_OCULTA]",
+    aws_access_key: "[CLAVE_AWS_OCULTA]",
+    github_token: "[TOKEN_OCULTO]",
+    jwt: "[TOKEN_OCULTO]",
+    private_key: "[CLAVE_PRIVADA_OCULTA]",
+    password: "[CONTRASENA_OCULTA]",
+    credit_card: "[TARJETA_OCULTA]",
+    email: "[CORREO_OCULTO]",
+    phone_mx: "[TELEFONO_OCULTO]",
+    curp: "[CURP_OCULTA]",
+    rfc: "[RFC_OCULTO]",
+    [DICT_TYPE]: "[TERMINO_OCULTO]",
+  };
+  const censorMarker = (type) => CENSOR_MARKERS[type] || "[DATO_OCULTO]";
+
+  /** Texto con cada hallazgo reemplazado por su marcador de censura. */
+  function censorText(text, findings) {
+    let out = text;
+    for (const f of [...findings].sort((a, b) => b.start - a.start)) {
+      out = out.slice(0, f.start) + censorMarker(f.type) + out.slice(f.end);
+    }
+    return out;
+  }
+
   // ----------------------------------------------------------- motor
-  function run(rules, text, taken, source) {
+  function run(rules, text, taken, group) {
     const found = [];
     for (const rule of rules) {
       rule.re.lastIndex = 0;
@@ -142,7 +229,7 @@
         const value = text.slice(start, end);
         if (rule.validator && !rule.validator(value)) continue;
         if (taken.some((t) => t.start < end && start < t.end)) continue;
-        const f = { type: rule.type, masked: maskValue(rule.type, value), start, end, source };
+        const f = { type: rule.type, masked: maskValue(rule.type, value), start, end, source: group };
         taken.push(f);
         found.push(f);
       }
@@ -150,16 +237,33 @@
     return found.sort((a, b) => a.start - b.start);
   }
 
-  /**
-   * Secretos en `text`, síncrono.
-   * @returns {{type: string, masked: string, start: number, end: number}[]}
-   */
-  function detectSecrets(text) {
-    if (!text) return [];
-    return run(PATTERNS, text, [], "secret").map(({ type, masked, start, end }) => ({ type, masked, start, end }));
+  function runDictionary(text, terms, taken) {
+    const re = dictRegex(terms);
+    if (!re) return [];
+    const folded = fold(text);
+    const found = [];
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(folded)) !== null) {
+      const start = m.index;
+      const end = start + m[0].length;
+      if (taken.some((t) => t.start < end && start < t.end)) continue;
+      const f = { type: DICT_TYPE, masked: STARS, start, end, source: "dict" }; // nunca el término
+      taken.push(f);
+      found.push(f);
+    }
+    return found;
   }
 
-  /** Secretos + PII (sin solapes), con `source`. Para enmascarar la cola offline. */
+  const strip = ({ type, masked, start, end }) => ({ type, masked, start, end });
+
+  /** Secretos en `text`. @returns {{type, masked, start, end}[]} */
+  function detectSecrets(text) {
+    if (!text) return [];
+    return run(PATTERNS, text, [], "secret").map(strip);
+  }
+
+  /** Secretos + PII por regex (sin solapes), con `source`. Igual que secrets + pii.detect_regex. */
   function detectSensitive(text) {
     if (!text) return [];
     const taken = [];
@@ -168,12 +272,34 @@
     return [...secrets, ...pii].sort((a, b) => a.start - b.start);
   }
 
+  /**
+   * Evaluación completa para el escudo en vivo y la decisión de envío:
+   * secretos → PII → diccionario propio, sin solapes. `source`: secret | pii | dict.
+   */
+  function evaluate(text, opts = {}) {
+    if (!text) return [];
+    const taken = [];
+    const secrets = run(PATTERNS, text, taken, "secret");
+    const pii = run(PII_RULES, text, taken, "pii");
+    const dict = runDictionary(text, opts.dictionary, taken);
+    return [...secrets, ...pii, ...dict].sort((a, b) => a.start - b.start);
+  }
+
   const api = {
     detectSecrets,
     detectSensitive,
+    evaluate,
     maskValue,
     maskText,
+    censorText,
+    censorMarker,
+    normalizeDictionary,
+    fold,
     luhnOk,
+    SECRET_TYPES: [...SECRET_TYPES],
+    PII_TYPES: [...PII_TYPES],
+    DICT_TYPE,
+    DICT_MAX,
     PATTERN_TYPES: PATTERNS.map((p) => p.type),
   };
   root.AuditorPatterns = api;

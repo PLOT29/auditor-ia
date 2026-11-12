@@ -45,7 +45,7 @@ def py_secrets(text):
 
 def py_sensitive(text):
     found = secrets.detect(text)
-    found += pii.detect(text, taken=found)
+    found += pii.detect_regex(text, taken=found)  # regex puras: lo que replica patterns.js (sin Presidio)
     return [
         {"type": f.type, "masked": masking.mask_value(f.type, f.value),
          "start": utf16(text, f.start), "end": utf16(text, f.end)}

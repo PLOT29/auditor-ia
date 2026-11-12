@@ -52,6 +52,9 @@
     <button type="button" data-sample="password">contraseña: …</button>
     <button type="button" data-sample="card">Tarjeta de prueba</button>
     <button type="button" data-sample="fp">Falso positivo (sk-ip)</button>
+    <button type="button" data-sample="dict">Término propio («Proyecto Fénix»)</button>
+    <button type="button" data-sample="mix">Secreto + correo</button>
+    <button type="button" id="big-paste">Simular pegado de 4 000 caracteres</button>
     <button type="button" id="new-chat">Nuevo chat (botón que no envía)</button>
   </div>
 
@@ -87,6 +90,9 @@
     password: "Conéctate con usuario=admin y contraseña: Fake" + "1234!",
     card: "Cobra a la tarjeta 4111 1111 1111 1111", // tarjeta de prueba Visa
     fp: "¿Qué hace el parámetro sk-ip y el módulo desk-ip-configuration-for-routers?",
+    // Agrega «Proyecto Fénix» al diccionario propio en el popup para probarlo.
+    dict: "Prepara la minuta de la reunión del PROYECTO FENIX para el lunes",
+    mix: "Mi correo es demo.fake@gmail.com y la key es sk-" + "proj-" + "DEMO" + "FAKE".repeat(5) + "abcd",
   };
   const strict = document.getElementById("strict");
   const ignored = (e) => strict.checked && !e.isTrusted;
@@ -139,6 +145,18 @@
       el.focus();
     })
   );
+  // Pegado grande: evento paste con DataTransfer (como el del sistema) + inserción del texto.
+  document.getElementById("big-paste").addEventListener("click", () => {
+    const el = lastFocused;
+    const chunk = "Párrafo de prueba con datos falsos demo.fake@gmail.com y texto de relleno. ";
+    const big = chunk.repeat(Math.ceil(4000 / chunk.length)).slice(0, 4000);
+    el.focus();
+    const dt = new DataTransfer();
+    dt.setData("text/plain", big);
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    if (el.tagName === "TEXTAREA") el.value += big; else el.innerText += big;
+    el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  });
   document.getElementById("new-chat").addEventListener("click", () => {
     log.innerHTML = ""; sent = 0; count.textContent = "0";
   });

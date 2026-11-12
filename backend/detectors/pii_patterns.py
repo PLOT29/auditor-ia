@@ -1,6 +1,10 @@
 """Regex de PII mexicana (fuente única). Las usan:
   - detectors/pii.py         → detección solo-regex (fallback y baseline de pii_eval)
   - detectors/presidio_es.py → recognizers propios de Presidio (CURP, RFC, teléfono MX)
+  - extension/patterns.js    → MISMAS expresiones (paridad verificada en test_patterns_parity.py)
+
+Semántica ASCII explícita (Fase 5A): `re.ASCII` + clases escritas a mano (`Ñ`/`ñ` y vocales
+acentuadas incluidas literalmente), para que Python y JavaScript den exactamente lo mismo.
 """
 from __future__ import annotations
 
@@ -9,23 +13,29 @@ import re
 _STATES = (
     "AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE"
 )
-_DATE = r"\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
+_DATE = r"[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12][0-9]|3[01])"
+_WORD = "A-Za-z0-9_"
+_LETTER_ES = "ÁÉÍÓÚÜÑáéíóúüñ"
+_SP = r"[ \t\n\r\f\v.\-]"  # separadores de teléfono (espacios ASCII, punto, guion)
+_A = re.ASCII
+_AI = re.ASCII | re.IGNORECASE
 
-EMAIL_RE = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b")
+EMAIL_RE = re.compile(
+    rf"(?<![{_WORD}.+\-])[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{{2,}}(?![{_WORD}])", _A)
 CURP_RE = re.compile(
-    rf"\b[A-Z][AEIOUX][A-Z]{{2}}{_DATE}[HM](?:{_STATES})[B-DF-HJ-NP-TV-Z]{{3}}[A-Z\d]\d\b",
-    re.IGNORECASE,
-)
-RFC_RE = re.compile(rf"\b[A-ZÑ&]{{3,4}}{_DATE}[A-Z\d]{{2}}[A\d]\b", re.IGNORECASE)
+    rf"(?<![{_WORD}])[A-Z][AEIOUX][A-Z]{{2}}{_DATE}[HM](?:{_STATES})[B-DF-HJ-NP-TV-Z]{{3}}[A-Z0-9][0-9](?![{_WORD}])",
+    _AI)
+RFC_RE = re.compile(
+    rf"(?<![{_WORD}{_LETTER_ES}&])[A-ZÑñ&]{{3,4}}{_DATE}[A-Z0-9]{{2}}[A0-9](?![{_WORD}])", _AI)
 # Candidato de teléfono; se valida después que tenga 10 dígitos nacionales.
 PHONE_RE = re.compile(
-    r"(?<![\w+])(?:\+?52[\s.-]?)?(?:1[\s.-]?)?(?:\(\d{2,3}\)|\d{2,3})[\s.-]?\d{3,4}[\s.-]?\d{4}(?!\d)"
-)
+    rf"(?<![{_WORD}+])(?:\+?52{_SP}?)?(?:1{_SP}?)?(?:\([0-9]{{2,3}}\)|[0-9]{{2,3}}){_SP}?[0-9]{{3,4}}{_SP}?[0-9]{{4}}(?![0-9])",
+    _A)
 
 
 def phone_ok(value: str) -> bool:
-    digits = re.sub(r"\D", "", value)
-    if value.lstrip().startswith("+") or len(digits) > 10:
+    digits = re.sub(r"[^0-9]", "", value)
+    if value.startswith("+") or len(digits) > 10:
         if digits.startswith("52"):
             digits = digits[2:]
         if len(digits) == 11 and digits.startswith("1"):  # prefijo móvil antiguo

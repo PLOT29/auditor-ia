@@ -35,7 +35,7 @@ def compute_risk(findings: list[dict], injection_score: float | None,
         medium = m if medium is None else medium
     sources = {f.get("source") for f in findings}
     has_secret = bool(sources & {"secret", "client"})
-    has_pii = "pii" in sources
+    has_pii = bool(sources & {"pii", "client_pii"})  # client_pii: PII/término propio visto solo por la extensión
     inj = injection_score if injection_score is not None else -1.0
 
     if has_secret or inj >= high:

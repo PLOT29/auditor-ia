@@ -1,10 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "Auditor de Prompts (DLP para IA)",
-  "short_name": "Auditor IA",
-  "version": "0.2.0",
-  "version_name": "0.2.0-dev (incluye localhost:5500 para test.html)",
-  "description": "Captura y clasifica localmente los prompts enviados a ChatGPT, Claude y Gemini. Proyecto académico IBERO.",
+  "name": "Centinela · DLP para IA",
+  "short_name": "Centinela",
+  "version": "0.5.0",
+  "version_name": "0.5.0-dev (incluye localhost:5500 para test.html)",
+  "description": "Evalúa localmente lo que escribes en ChatGPT, Claude y Gemini y evita fugas de secretos y datos personales. Proyecto académico IBERO.",
+  "icons": {
+    "16": "icons/centinela-16.png",
+    "32": "icons/centinela-32.png",
+    "48": "icons/centinela-48.png",
+    "128": "icons/centinela-128.png"
+  },
   "permissions": ["storage"],
   "host_permissions": [
     "https://chatgpt.com/*",
@@ -16,8 +22,12 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Auditor de Prompts",
-    "default_popup": "popup.html"
+    "default_title": "Centinela",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/centinela-16.png",
+      "32": "icons/centinela-32.png"
+    }
   },
   "content_scripts": [
     {
@@ -26,12 +36,12 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*"
       ],
-      "js": ["patterns.js", "content.js"],
+      "js": ["patterns.js", "ui.js", "content.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["http://localhost:5500/*", "http://127.0.0.1:5500/*"],
-      "js": ["patterns.js", "content.js"],
+      "js": ["patterns.js", "ui.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

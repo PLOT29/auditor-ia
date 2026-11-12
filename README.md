@@ -45,7 +45,7 @@ En Windows, si el texto lleva acentos, la terminal puede no mandarlo en UTF-8
 (error `There was an error parsing the body`). Guarda el JSON en un archivo
 UTF-8 y usa `--data-binary @body.json`. La extensión no tiene este problema.
 
-## Extensión (Chrome, Manifest V3)
+## Extensión «Centinela» (Chrome, Manifest V3)
 
 1. Abre `chrome://extensions` y activa **Modo de desarrollador**.
 2. **Cargar extensión sin empaquetar** → elige la carpeta `extension/`.
@@ -69,11 +69,13 @@ Archivos:
 | Archivo | Papel |
 |---|---|
 | `manifest.json` | Permisos: `storage` + hosts de las 3 plataformas y `localhost:8000` |
-| `patterns.js` | Mismas regex y máscara que el backend (`test_patterns_parity.py` las compara con Node) |
-| `content.js` | Captura en fase de captura (Enter / clic en Enviar), deduplicación, etiqueta en Shadow DOM |
+| `patterns.js` | Secretos + PII (correo, teléfono, CURP, RFC) con las mismas regex que el backend, diccionario propio y censura (`test_patterns_parity.py` las compara con Node) |
+| `content.js` | Escudo en vivo, políticas por tipo (bloquear / advertir / permitir), modal y banner, censura en el campo, pegado grande |
+| `ui.js` | Componentes de Centinela (escudo, banner, modal, tarjetas) en un Shadow DOM cerrado, sin recursos externos |
+| `icons/` | Escudo de Centinela (PNG para la barra de Chrome) |
 | `background.js` | **Único** lugar con `fetch` al backend (timeout 3 s) |
-| `overlay.css` | Estilos de la etiqueta (dentro del Shadow DOM) |
-| `popup.html/js` | Interruptor de monitoreo (y de bloqueo, deshabilitado hasta Fase 3) |
+| `overlay.css` | Estilos de Centinela (tokens oscuros, `prefers-reduced-motion`) |
+| `popup.html/js` | Estado, resumen de hoy, interruptores, políticas por tipo, diccionario propio, umbral de pegado y acceso al centro de control |
 
 ### Modo bloqueo (Fase 3)
 

@@ -37,6 +37,7 @@ log = logging.getLogger("auditor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 MAX_TEXT_LEN = 100_000
+CLIENT_PII_TYPES = {"email", "phone_mx", "curp", "rfc", "person", "address", "termino_propio"}
 
 
 # ---------- Modelos (contrato de la API) ----------
@@ -53,7 +54,9 @@ class AnalyzeRequest(BaseModel):
     timestamp: datetime | None = None
     client_findings: list[ClientFinding] = Field(default_factory=list)
     blocked: bool = False
-    user_decision: Literal["enviado", "cancelado", "no_aplica"] = "no_aplica"
+    # Fase 5A (aditivo): "censurado" = se reemplazaron los hallazgos por marcadores y se envió el texto
+    # censurado (es el que llega aquí); "advertido" = política "advertir" y el usuario envió igual.
+    user_decision: Literal["enviado", "cancelado", "no_aplica", "censurado", "advertido"] = "no_aplica"
     # Fase 3 (opcional): latencia de la decisión de bloqueo en content.js (CE-6).
     # Solo se loguea; no se guarda (el esquema de la BD no cambia).
     client_latency_ms: float | None = Field(default=None, ge=0, le=60_000)
@@ -178,7 +181,10 @@ def _safe_client_findings(client: list[ClientFinding], server_types: set[str]) -
         if cf.type in server_types:
             continue
         masked = cf.masked if masking.STARS in cf.masked else masking.STARS
-        out.append({"type": cf.type, "masked": masked, "source": "client"})
+        # Fase 5A: PII y términos propios que solo vio el cliente cuentan como PII (riesgo medio), no
+        # como secreto. El término propio nunca llega: solo el tipo "termino_propio" y "****".
+        source = "client_pii" if cf.type in CLIENT_PII_TYPES else "client"
+        out.append({"type": cf.type, "masked": masked, "source": source})
     return out
 
 
@@ -303,8 +309,9 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
 
 
 @app.get("/stats")
-def stats() -> dict:
-    return db.get_stats()
+def stats(desde: datetime | None = None) -> dict:
+    """Agregados. `?desde=<ISO-8601>` (opcional, Fase 5A): solo eventos desde ese instante."""
+    return db.get_stats(since=desde.isoformat() if desde else None)
 
 
 @app.get("/health")

@@ -129,12 +129,20 @@ auditor-ia/
 - **El fetch al backend se hace SOLO desde `background.js`** (evita bloqueos CORS / Private Network Access).
 - Captura de texto genérica: `textarea` **o** elemento `[contenteditable="true"]` con foco / más cercano al botón de envío. No depender de clases CSS específicas.
 - Detección de plataforma por `location.hostname`.
-- **Etiqueta flotante** (esquina inferior derecha, 5 s, apilable):
-  - `✅ Sin riesgo · <categoría> · <plataforma>`
-  - `⚠️ Riesgo medio · contiene <tipo PII> · <categoría>`
-  - `⛔ Riesgo alto · contiene <tipo secreto> · <categoría>`
-- **Modal de bloqueo:** muestra el tipo de secreto y el valor enmascarado. Botones: «Cancelar» (default) y «Enviar de todos modos». Si el usuario confirma, se reenvía el mensaje y se registra `user_decision = "enviado"`.
-- Popup de la extensión: interruptor ON/OFF del monitoreo y del modo bloqueo.
+- **Identidad (Fase 5A): "Centinela".** Escudo propio (SVG original), estilo oscuro. Tokens: fondo `#0B1020`, superficie `#131A2E`, borde `#24304D`, texto `#E6EAF2`, acento `#22D3EE`, seguro `#34D399`, advertencia `#FBBF24`, peligro `#F87171`. Fuentes del sistema (Segoe UI; Cascadia Code/Consolas para datos). Toda la UI vive en **un Shadow DOM cerrado** (`extension/ui.js` + `overlay.css`), sin recursos externos (RNF-03); respeta `prefers-reduced-motion`, con foco visible y navegable por teclado.
+- **Escudo en vivo:** indicador junto al campo activo (esquina inferior derecha del campo, posicionado con `getBoundingClientRect`; si no hay campo, la de la ventana). Al escribir o pegar evalúa el texto **localmente** con debounce de 150 ms: verde (nada), ámbar (PII o diccionario propio), rojo (secreto). Al pasar el cursor o enfocarlo muestra los tipos con valores enmascarados y la acción de cada uno. Sin llamadas al backend al teclear. Costo medido: p95 1.5–2 ms con 5 000 caracteres y 50 términos (meta < 10 ms).
+- **Detección local (`patterns.js`):** secretos + correo, teléfono MX, CURP y RFC con las MISMAS regex que el backend (paridad verificada en `test_patterns_parity.py` y `patterns.test.js`) + diccionario propio.
+- **Políticas por tipo** (popup → `chrome.storage.local`, leídas en memoria): `bloquear` · `advertir` · `permitir`. Por defecto: secretos = bloquear; correo, teléfono, CURP y RFC = advertir; diccionario propio = advertir. El interruptor "Aplicar políticas" apagado equivale a "permitir" para todo (solo monitoreo).
+- **Advertir (flujo que no pierde ni duplica mensajes, RNF-06):** un banner no modal sobre el campo ("Tu mensaje incluye un CURP") con «Censurar», «Enviar así» y «Editar».
+  - Si el banner ya estaba visible para esos mismos hallazgos, un Enter o clic real **envía** (el usuario ya fue avisado) y se registra `advertido`; no hay reenvío nuestro, así que no puede duplicarse.
+  - Si el usuario intenta enviar antes de verlo (p. ej. Enter antes de los 150 ms), se detiene **ese** envío una sola vez y aparece el banner con el foco en «Censurar». El texto queda intacto.
+  - «Censurar» reemplaza los datos por marcadores en el campo y **no envía**; «Editar» (o Escape) cierra el banner y selecciona el dato; «Enviar así» reenvía con la estrategia verificada del modal.
+- **Modal de bloqueo:** muestra el fragmento alrededor de cada hallazgo con el valor **enmascarado y resaltado** (los demás hallazgos de la ventana también enmascarados). Acciones: «Cancelar» (default, también Escape) · «Censurar y enviar» · «Enviar de todos modos» → `cancelado` / `censurado` / `enviado`.
+- **Censura en el campo:** cada hallazgo se reemplaza por un marcador (`[API_KEY_OCULTA]`, `[CORREO_OCULTO]`, `[CURP_OCULTA]`, `[TERMINO_OCULTO]`…). Estrategia: seleccionar el valor (textarea: `setSelectionRange`; contenteditable: un `Range` sobre los nodos de texto) y `document.execCommand("insertText")`, que genera `beforeinput`/`input` reales que procesan los frameworks (ProseMirror, Quill…). En textarea, si falla, `setRangeText` + `input`. **Siempre se verifica** después que el campo ya no contiene ningún valor detectado; solo entonces se envía. Si falla, no se envía nada: se copia la versión censurada al portapapeles y, en ese sitio, el botón pasa a «Copiar versión censurada» (se recuerda en `chrome.storage.local`). Verificado en `test.html` (textarea y contenteditable); en ChatGPT, Claude y Gemini queda pendiente de la prueba manual.
+- **Diccionario propio:** hasta 50 términos confidenciales (popup), sin distinguir mayúsculas ni acentos, palabra completa; solo en `chrome.storage.local`. Al backend llega el tipo `termino_propio` (`masked: "****"`) y el texto con el término reemplazado por `<TERMINO_PROPIO>`: **el término nunca sale de la extensión**.
+- **Pegado grande:** al pegar más de 3 000 caracteres (umbral configurable en el popup) aparece un aviso discreto con el tamaño y los tipos detectados. No bloquea.
+- **Etiqueta flotante:** tarjeta con franja de color por riesgo, chips por hallazgo (valor enmascarado), categoría, plataforma y latencia; animación breve de entrada y salida.
+- **Popup:** estado del backend, resumen de hoy (prompts, advertencias, censurados y bloqueos; `background.js` lo pide a `GET /stats?desde=`), interruptores, políticas por tipo, diccionario, umbral de pegado y botón "Abrir centro de control" (`http://localhost:8000/panel`, Fase 5B).
 
 ### 5.2 Contrato de la API
 
@@ -146,12 +154,13 @@ auditor-ia/
   "timestamp": "ISO-8601",
   "client_findings": [{"type": "openai_key", "masked": "sk-****abcd"}],
   "blocked": true,
-  "user_decision": "enviado | cancelado | no_aplica",
+  "user_decision": "enviado | cancelado | no_aplica | censurado | advertido",
   "client_latency_ms": 0.4
 }
 ```
 - `client_latency_ms` (opcional, Fase 3): latencia de la decisión de bloqueo en `content.js` (CE-6). Solo se loguea; no se guarda en la BD.
 - `platform` acepta además `"test"` para `extension/test/test.html` (solo desarrollo).
+- **Fase 5A (aditivo):** `user_decision` acepta `"censurado"` (se reemplazaron los hallazgos por marcadores y se envió el texto censurado: es el que recibe el backend) y `"advertido"` (política "advertir" y el usuario envió igual). La columna es TEXT: sin cambio de esquema. Los hallazgos que solo ve el cliente se marcan `source: "client"` (secretos → riesgo alto) o `source: "client_pii"` (PII y `termino_propio` → riesgo medio). `GET /stats?desde=<ISO-8601>` (opcional) limita los agregados a partir de ese instante.
 
 Respuesta:
 ```json
@@ -257,6 +266,11 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 - **RF-06** Persistir cada evento enmascarado en SQLite.
 - **RF-07** Mostrar estadísticas en un dashboard que se actualice en vivo.
 - **RF-08** Permitir activar/desactivar monitoreo y bloqueo desde el popup.
+- **RF-09** (5A) Escudo en vivo: evaluación local al escribir/pegar, sin backend.
+- **RF-10** (5A) Políticas por tipo de hallazgo: bloquear / advertir / permitir.
+- **RF-11** (5A) Censurar: reemplazar los hallazgos por marcadores en el campo antes de enviar, con verificación.
+- **RF-12** (5A) Diccionario propio de términos confidenciales que nunca salen de la extensión.
+- **RF-13** (5A) Aviso al pegar textos grandes (umbral configurable).
 
 ### No funcionales
 - **RNF-01** Bloqueo local en < 50 ms (imperceptible).
@@ -265,6 +279,8 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 - **RNF-04** Ningún secreto ni PII en claro en disco o logs.
 - **RNF-05** Si el backend está caído, la extensión sigue bloqueando secretos (degradación elegante) y muestra `Backend no disponible`.
 - **RNF-06** El uso normal del chat no se rompe (no duplicar mensajes, no perder texto).
+- **RNF-07** (5A) Evaluación en vivo < 10 ms con textos de 5 000 caracteres.
+- **RNF-08** (5A) La UI en la página no carga recursos externos (CDN, fuentes remotas) y es accesible: foco visible, teclado, `prefers-reduced-motion`.
 
 ---
 
@@ -313,11 +329,12 @@ Cómo levantarlo: `conda activate auditor` y luego `streamlit run dashboard/app.
 5. Frase: *"Todo lo que le escribes a una IA puede ser capturado y clasificado."*
 
 **Golpe 2 — "Te salvé" (1.5 min)**
-1. Pegar: *"Corrige este código: `client = OpenAI(api_key='sk-proj-DEMO…')`"* (key falsa preparada).
-2. Enter → **el mensaje NO se envía**. Aparece el modal rojo: `⛔ Detectada API key de OpenAI (sk-****DEMO). ¿Enviar de todos modos?`
-3. Cancelar. Mostrar en el dashboard el evento `bloqueado / cancelado`, con la key enmascarada.
+1. Pegar: *"Corrige este código: `client = OpenAI(api_key='sk-proj-DEMO…')`"* (key falsa preparada). **El escudo de Centinela se pone rojo antes de enviar**; al pasar el cursor muestra `API key de OpenAI sk-****abcd · bloquear`.
+2. Enter → **el mensaje NO se envía**. Aparece el modal "Posible fuga de información" con el fragmento y la key **enmascarada y resaltada**.
+3. «Censurar y enviar» → en el campo queda `[API_KEY_OCULTA]` y se envía esa versión. (Alternativa: «Cancelar» y mostrar el evento `bloqueado / cancelado` en el dashboard.)
 4. Frase: *"El dato nunca salió de mi computadora. Esto es DLP."*
-5. Repetir rápido en Claude con un correo + CURP falsos → `⚠️ Riesgo medio`.
+5. Repetir rápido en Claude con un correo + CURP falsos → escudo ámbar y banner "Tu mensaje incluye un correo y un CURP" → «Enviar así» → `⚠️ Riesgo medio`.
+6. (Opcional) Agregar "Proyecto Fénix" al diccionario en el popup y escribirlo: banner "un término propio"; en la BD aparece `<TERMINO_PROPIO>`.
 
 **Golpe 3 — "Así usas la IA" (1.5 min)**
 1. Dashboard con los datos reales de 2 semanas: plataforma más usada, temas, mapa de calor, % de prompts con datos sensibles.

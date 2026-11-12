@@ -1,75 +1,102 @@
 /*
- * content.js — se inyecta en chatgpt.com, claude.ai, gemini.google.com
- * (y en localhost:5500 para test.html, solo en desarrollo).
+ * content.js — Centinela en chatgpt.com, claude.ai, gemini.google.com
+ * (y localhost:5500 para test.html, solo en desarrollo). Fase 5A.
  *
- * Flujo (SPEC §3):
- *   1. Listeners en FASE DE CAPTURA sobre window (corren antes que los de la página).
- *   2. Lee el texto del textarea / contenteditable ANTES de que la página lo limpie.
- *   3. Capa 1: detectSecrets() local y SÍNCRONO.
- *        └─ shouldBlock() → preventDefault + stopImmediatePropagation + stopPropagation
- *           → modal «Cancelar» / «Enviar de todos modos». El texto queda en el input.
- *   4. Manda el payload a background.js → backend → etiqueta flotante.
+ * 1. Escudo en vivo: al escribir o pegar (debounce 150 ms) evalúa el texto LOCALMENTE
+ *    (patterns.evaluate) — sin backend — y pinta el escudo: verde / ámbar / rojo.
+ * 2. Políticas por tipo (popup → chrome.storage, en memoria): bloquear / advertir / permitir.
+ * 3. Al enviar (Enter o clic, fase de captura, decisión SÍNCRONA):
+ *      bloquear  → se cancela el envío y se abre el modal: Cancelar · Censurar y enviar · Enviar de todos modos.
+ *      advertir  → si el banner ya estaba visible para esos mismos hallazgos, el envío sigue (el usuario
+ *                  ya fue avisado) y se registra "advertido". Si no lo había visto (p. ej. pulsó Enter antes
+ *                  de los 150 ms), se cancela ESE envío una sola vez y aparece el banner.
+ *      permitir  → sigue normal.
+ * 4. Diccionario propio: los términos solo existen aquí y en chrome.storage.local. Al backend llega
+ *    el tipo "termino_propio" y el texto con el término reemplazado por <TERMINO_PROPIO>.
+ * 5. Pegado grande (> umbral, default 3 000): aviso discreto con tamaño y tipos detectados.
  *
- * PRIVACIDAD: el texto y los valores reales de los secretos NUNCA se imprimen en
- * consola ni se guardan. Solo se loguean métricas (ms, nº de hallazgos).
+ * FLUJO "ADVERTIR" (RNF-06: no perder ni duplicar):
+ *   - Nunca se borra texto: «Editar» solo cierra el banner y devuelve el foco; «Censurar» solo reemplaza
+ *     los hallazgos por marcadores y verifica el resultado; no envía.
+ *   - Solo se reenvía de forma programática con «Enviar así», con la misma estrategia verificada que
+ *     el modal (bypassOnce + verificación de que el editor se vació). Un Enter real del usuario con el
+ *     banner visible pasa una sola vez: no hay reenvío nuestro, así que no puede duplicarse.
  *
- * ---------------------------------------------------------------------------
- * REENVÍO tras «Enviar de todos modos» (SPEC §11, RNF-06)
- *   Estrategia A: button.click() sobre el botón de enviar (el clicado, o el más
- *                 cercano al editor). Evento isTrusted=false.
- *   Estrategia B: si no hay botón o A no envió, KeyboardEvent keydown Enter
- *                 despachado en el editor (isTrusted=false).
- *   Tras cada intento se verifica que la página haya vaciado el editor (≤ 1.5 s);
- *   solo entonces se registra user_decision="enviado". Si ninguna funciona, se
- *   arma un bypass MANUAL de 10 s para el mismo texto y se pide al usuario que
- *   presione Enviar otra vez (evento real → siempre funciona).
+ * CENSURA EN EL CAMPO (modal «Censurar y enviar» y banner «Censurar»):
+ *   - textarea: setSelectionRange + execCommand("insertText"); si falla, setRangeText + evento input.
+ *   - contenteditable (ProseMirror / Quill / Lexical…): se ubica el valor en los nodos de texto, se
+ *     selecciona con un Range y se usa execCommand("insertText"), que genera beforeinput/input reales
+ *     que el framework procesa como si el usuario escribiera.
+ *   - SIEMPRE se verifica después que el campo ya no contenga ningún valor detectado. Si falla, no se
+ *     envía: se copia la versión censurada al portapapeles y, en ese sitio, el botón pasa a ser
+ *     «Copiar versión censurada» (se recuerda en chrome.storage.local).
+ *   Estrategia por plataforma (actualizar tras la prueba manual):
+ *     test.html (textarea y contenteditable) → execCommand insertText ✔ verificado.
+ *     ChatGPT / Claude / Gemini → PENDIENTE de validar en vivo (la verificación protege igual).
  *
- *   Resultado por plataforma (actualizar tras la prueba manual):
- *     test.html  → A (button.click) ✔ verificado. B ✔ verificado. Con «Ignorar
- *                  eventos no confiables» activo: A y B fallan → bypass manual ✔.
- *     ChatGPT    → A esperado (botón React data-testid="send-button"). PENDIENTE.
- *     Claude     → A esperado (botón React aria-label "Send message"). PENDIENTE.
- *     Gemini     → A esperado (botón Angular aria-label "Send message"). PENDIENTE.
- *   La consola muestra "[auditor] reenviado con <estrategia>" para documentarlo.
- * ---------------------------------------------------------------------------
+ * PRIVACIDAD: el texto, los valores detectados y los términos del diccionario nunca se imprimen ni se
+ * guardan. Solo se loguean métricas (ms, conteos).
  */
 (() => {
   "use strict";
 
-  if (window.__auditorIaLoaded) return; // evita doble inyección
-  window.__auditorIaLoaded = true;
+  if (window.__centinelaLoaded) return;
+  window.__centinelaLoaded = true;
 
   const P = globalThis.AuditorPatterns;
+  const UI = globalThis.CentinelaUI;
+  UI.init(chrome.runtime.getURL("overlay.css"));
 
   // ---------------------------------------------------------------- config
   const DEDUP_MS = 500;
-  const LABEL_MS = 5000;
-  const MAX_LABELS = 5;
-  const BYPASS_MS = 2000; // bypassOnce expira si no se usa
-  const MANUAL_BYPASS_MS = 10000; // ventana para que el usuario reintente a mano
-  const VERIFY_MS = 1500; // espera a que la página vacíe el editor tras reenviar
+  const BYPASS_MS = 2000;
+  const MANUAL_BYPASS_MS = 10000;
+  const VERIFY_MS = 1500;
+  const DEBOUNCE_MS = 150;
   const EDITOR_SELECTOR =
     'textarea, [contenteditable="true"], [contenteditable=""], [contenteditable="plaintext-only"]';
   const BUTTON_SELECTOR = 'button, [role="button"], input[type="submit"]';
-  // Se busca en aria-label / title / data-testid / texto del botón (sin clases CSS).
   const SEND_HINT = /send|enviar|submit/i;
-  const OWN_HOSTS = "auditor-ia-overlay, auditor-ia-modal";
 
   const PLATFORM = detectPlatform(location.hostname);
+  const PLATFORM_NAMES = { chatgpt: "ChatGPT", claude: "Claude", gemini: "Gemini", test: "Prueba" };
 
-  // Ajustes en MEMORIA: la decisión de bloqueo es síncrona y no puede esperar a
-  // storage.get(). Hasta que llega el valor guardado rige el default seguro (ON).
-  const DEFAULT_SETTINGS = { monitoring: true, blocking: true };
-  const settings = { ...DEFAULT_SETTINGS };
-  chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS)).then((s) => Object.assign(settings, s));
+  const DEFAULT_POLICIES = Object.fromEntries([
+    ...P.SECRET_TYPES.map((t) => [t, "bloquear"]),
+    ...P.PII_TYPES.map((t) => [t, "advertir"]),
+    [P.DICT_TYPE, "advertir"],
+  ]);
+  const DEFAULT_SETTINGS = {
+    monitoring: true,
+    blocking: true,
+    policies: DEFAULT_POLICIES,
+    dictionary: [],
+    pasteThreshold: 3000,
+    censorFallbackHosts: [],
+  };
+
+  // Ajustes en MEMORIA: la decisión de envío es síncrona y no puede esperar a storage.get().
+  const settings = structuredClone(DEFAULT_SETTINGS);
+  function applySettings(s) {
+    for (const k of Object.keys(DEFAULT_SETTINGS)) {
+      if (!(k in s)) continue;
+      settings[k] = k === "policies" ? { ...DEFAULT_POLICIES, ...(s[k] || {}) } : s[k] ?? DEFAULT_SETTINGS[k];
+    }
+    settings.dictionary = P.normalizeDictionary(settings.dictionary);
+    live.refresh();
+  }
+  chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS)).then(applySettings);
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    for (const key of Object.keys(DEFAULT_SETTINGS)) {
-      if (key in changes) settings[key] = changes[key].newValue ?? DEFAULT_SETTINGS[key];
-    }
+    const s = {};
+    for (const [k, v] of Object.entries(changes)) s[k] = v.newValue ?? DEFAULT_SETTINGS[k];
+    applySettings(s);
   });
+
   const monitoringOn = () => settings.monitoring !== false;
-  const blockingOn = () => monitoringOn() && settings.blocking !== false; // monitoreo OFF ⇒ bloqueo OFF
+  const policiesOn = () => monitoringOn() && settings.blocking !== false; // "Modo bloqueo" = aplicar políticas
+  const policyFor = (type) => (policiesOn() ? settings.policies[type] || DEFAULT_POLICIES[type] || "advertir" : "permitir");
+  const RANK = { permitir: 0, advertir: 1, bloquear: 2 };
 
   function detectPlatform(host) {
     if (host === "chatgpt.com" || host.endsWith(".chatgpt.com")) return "chatgpt";
@@ -79,21 +106,29 @@
     return "desconocida";
   }
 
+  /** Hallazgos con su acción según la política. */
+  function evaluate(text) {
+    return P.evaluate(text, { dictionary: settings.dictionary }).map((f) => ({ ...f, action: policyFor(f.type) }));
+  }
+
+  const maxAction = (findings) =>
+    findings.reduce((a, f) => (RANK[f.action] > RANK[a] ? f.action : a), "permitir");
+  const signature = (findings) => findings.map((f) => `${f.type}:${f.masked}:${f.action}`).join("|");
+
   // ---------------------------------------------------------- editores
-  /** Devuelve el editor (textarea o raíz contenteditable) que contiene `node`. */
   function editorFrom(node) {
     if (!(node instanceof Element)) return null;
     if (node.tagName === "TEXTAREA") return node;
     if (node.isContentEditable) {
-      let host = node;
-      while (host.parentElement && host.parentElement.isContentEditable) host = host.parentElement;
-      return host;
+      let h = node;
+      while (h.parentElement && h.parentElement.isContentEditable) h = h.parentElement;
+      return h;
     }
     return null;
   }
 
   function isVisible(el) {
-    if (!el.isConnected || el.getClientRects().length === 0) return false;
+    if (!el || !el.isConnected || el.getClientRects().length === 0) return false;
     const cs = getComputedStyle(el);
     return cs.visibility !== "hidden" && cs.display !== "none";
   }
@@ -103,18 +138,19 @@
     return (raw || "").replace(/ /g, " ").trim();
   }
 
-  // Último editor con foco: al hacer clic en "Enviar" el foco pasa al botón.
   let lastEditor = null;
   document.addEventListener(
     "focusin",
     (e) => {
       const ed = editorFrom(e.composedPath()[0]);
-      if (ed) lastEditor = ed;
+      if (ed) {
+        lastEditor = ed;
+        live.schedule(ed, 0);
+      }
     },
     true
   );
 
-  /** Sube por los ancestros de `start` y devuelve el primer conjunto no vacío. */
   function nearest(start, selector, map) {
     let node = start.parentElement;
     for (let depth = 0; node && depth < 10; depth++, node = node.parentElement) {
@@ -124,47 +160,162 @@
     return [];
   }
 
-  /** Editor más cercano al botón; si hay varios, el último con foco. */
   function findEditorNear(button) {
     const editors = nearest(button, EDITOR_SELECTOR, editorFrom);
     if (editors.length) return lastEditor && editors.includes(lastEditor) ? lastEditor : editors[0];
     return lastEditor && isVisible(lastEditor) ? lastEditor : null;
   }
 
-  /**
-   * Botón de enviar del MISMO composer que `editor` (para reenviar tras un bloqueo
-   * por Enter). Se descarta cualquier botón cuyo editor más cercano sea otro: si
-   * no, se podría disparar el envío de un composer distinto.
-   */
   function findSendButtonNear(editor) {
     const candidates = nearest(editor, BUTTON_SELECTOR, sendButtonFrom);
     return candidates.find((btn) => nearest(btn, EDITOR_SELECTOR, editorFrom).includes(editor)) || null;
   }
 
-  /** ¿`target` es (o está dentro de) un botón de "Enviar" habilitado? */
   function sendButtonFrom(target) {
-    if (!(target instanceof Element)) return null;
-    if (target.closest(OWN_HOSTS)) return null;
+    if (!(target instanceof Element) || UI.isOwn(target)) return null;
     const btn = target.closest(BUTTON_SELECTOR);
     if (!btn) return null;
     if (btn.disabled || btn.getAttribute("aria-disabled") === "true") return null;
-    const label = [
-      btn.getAttribute("aria-label"),
-      btn.getAttribute("title"),
-      btn.getAttribute("data-testid"),
-      btn.value,
-      (btn.textContent || "").trim().slice(0, 40),
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const label = [btn.getAttribute("aria-label"), btn.getAttribute("title"), btn.getAttribute("data-testid"),
+      btn.value, (btn.textContent || "").trim().slice(0, 40)].filter(Boolean).join(" ");
     if (SEND_HINT.test(label)) return btn;
     if (btn.type === "submit" && btn.form && btn.form.querySelector(EDITOR_SELECTOR)) return btn;
     return null;
   }
 
+  // ------------------------------------------------- escudo en vivo + banner
+  const live = (() => {
+    let timer = null;
+    let editor = null;
+    let current = { findings: [], sig: "", text: "" };
+    let dismissedSig = null; // «Editar»: no volver a mostrar el banner para los mismos hallazgos
+
+    function schedule(ed, delay = DEBOUNCE_MS) {
+      editor = ed;
+      clearTimeout(timer);
+      timer = setTimeout(run, delay);
+    }
+
+    function run() {
+      if (!editor || !isVisible(editor)) {
+        UI.shield.hide();
+        UI.banner.hide();
+        return;
+      }
+      if (!monitoringOn()) {
+        UI.shield.update({ rect: editor.getBoundingClientRect(), state: "off", items: [] });
+        UI.banner.hide();
+        return;
+      }
+      const text = readText(editor);
+      const t0 = performance.now();
+      const findings = evaluate(text);
+      const ms = performance.now() - t0;
+      const sig = signature(findings);
+      current = { findings, sig, text };
+      const state = findings.some((f) => f.source === "secret") ? "danger" : findings.length ? "warn" : "ok";
+      UI.shield.update({ rect: editor.getBoundingClientRect(), state, items: findings, ms });
+      const warn = findings.filter((f) => f.action === "advertir");
+      if (warn.length && maxAction(findings) === "advertir" && dismissedSig !== signature(warn)) {
+        if (!UI.banner.visible() || bannerSig !== signature(warn)) showBanner(editor, findings, false);
+      } else if (!warn.length || maxAction(findings) !== "advertir") {
+        UI.banner.hide();
+        bannerSig = null;
+      }
+      if (ms > 10) console.debug(`[centinela] evaluación lenta: ${ms.toFixed(1)}ms len=${text.length}`);
+    }
+
+    function reposition() {
+      if (editor && isVisible(editor) && current) run();
+    }
+
+    let raf = 0;
+    const onMove = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        reposition();
+      });
+    };
+    window.addEventListener("scroll", onMove, { capture: true, passive: true });
+    window.addEventListener("resize", onMove, { passive: true });
+
+    return {
+      schedule,
+      refresh: () => editor && schedule(editor, 0),
+      dismiss: (sig) => (dismissedSig = sig),
+      resetDismiss: () => (dismissedSig = null),
+      get editor() { return editor; },
+    };
+  })();
+
+  document.addEventListener(
+    "input",
+    (e) => {
+      const ed = editorFrom(e.composedPath()[0]);
+      if (ed) live.schedule(ed);
+    },
+    true
+  );
+
+  let bannerSig = null;
+
+  const WITH_ARTICLE = {
+    email: "un correo", phone_mx: "un teléfono", curp: "un CURP", rfc: "un RFC", termino_propio: "un término propio",
+    openai_key: "una API key", anthropic_key: "una API key", google_api_key: "una API key", aws_access_key: "una clave de AWS",
+    github_token: "un token", jwt: "un token", private_key: "una clave privada", password: "una contraseña", credit_card: "una tarjeta",
+  };
+
+  function warnMessage(findings) {
+    const items = [...new Set(findings.filter((f) => f.action === "advertir").map((f) => WITH_ARTICLE[f.type] || UI.typeName(f.type)))];
+    const list = items.length > 1 ? `${items.slice(0, -1).join(", ")} y ${items.at(-1)}` : items[0];
+    return `Tu mensaje incluye ${list}`;
+  }
+
+  function showBanner(editor, findings, focus, ctx = null) {
+    const warn = findings.filter((f) => f.action === "advertir");
+    bannerSig = signature(warn);
+    UI.banner.show({
+      rect: editor.getBoundingClientRect(),
+      message: warnMessage(findings),
+      censorLabel: censorUnsupported() ? "Copiar censurado" : "Censurar",
+      focus,
+      onCensor: async () => {
+        UI.banner.hide();
+        bannerSig = null;
+        const text = readText(editor);
+        const fs = evaluate(text).filter((f) => f.action === "advertir");
+        const res = await censorInField(editor, text, fs);
+        if (res.ok) {
+          UI.toast({ level: "info", title: "Datos censurados en el campo", text: "Revisa el mensaje y envíalo cuando quieras." });
+        } else {
+          await copyCensored(text, fs);
+        }
+        live.schedule(editor, 0);
+      },
+      onSend: () => {
+        UI.banner.hide();
+        bannerSig = null;
+        const text = readText(editor);
+        const fs = evaluate(text);
+        resend({ editor, button: null, text, findings: fs, decisionMs: 0 }, "advertido");
+      },
+      onEdit: () => {
+        UI.banner.hide();
+        live.dismiss(bannerSig);
+        bannerSig = null;
+        const text = readText(editor);
+        const first = evaluate(text).find((f) => f.action === "advertir");
+        focusEnd(editor);
+        if (first) selectValue(editor, text.slice(first.start, first.end));
+      },
+    });
+  }
+
   // ------------------------------------------------------------ captura
   window.addEventListener("keydown", onKeyDown, true);
   window.addEventListener("click", onClick, true);
+  document.addEventListener("paste", onPaste, true);
 
   function cancelEvent(e) {
     e.preventDefault();
@@ -173,30 +324,39 @@
   }
 
   function onKeyDown(e) {
-    if (modal.isOpen()) {
+    if (fromCentinela(e)) return; // teclas dentro del modal/banner: las maneja ui.js
+    if (UI.modal.isOpen()) {
       if (e.key === "Escape") {
         cancelEvent(e);
-        modal.cancel();
+        UI.modal.cancel();
         return;
       }
-      // Mientras el modal está abierto se ignoran nuevos Enter de envío en el editor.
       if (e.key === "Enter" && editorFrom(e.composedPath()[0])) cancelEvent(e);
+      return;
+    }
+    if (e.key === "Escape" && UI.banner.visible() && editorFrom(e.composedPath()[0])) {
+      UI.banner.hide();
+      live.dismiss(bannerSig);
+      bannerSig = null;
       return;
     }
     if (!monitoringOn()) return;
     if (e.key !== "Enter" || e.shiftKey || e.altKey) return;
-    if (e.isComposing || e.keyCode === 229) return; // composición IME
+    if (e.isComposing || e.keyCode === 229) return;
     const editor = editorFrom(e.composedPath()[0]);
     if (!editor) return;
     intercept(e, editor, null, "enter");
   }
 
+  // Eventos que nacen en la capa de Centinela (sus propios botones) nunca son "enviar" de la página.
+  const fromCentinela = (e) => e.composedPath().some((n) => UI.isOwn(n));
+
   function onClick(e) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || fromCentinela(e)) return;
     const btn = sendButtonFrom(e.composedPath()[0]);
     if (!btn) return;
-    if (modal.isOpen()) {
-      cancelEvent(e); // el backdrop lo cubre todo, pero por si acaso
+    if (UI.modal.isOpen()) {
+      cancelEvent(e);
       return;
     }
     if (!monitoringOn()) return;
@@ -205,27 +365,36 @@
     intercept(e, editor, btn, "click");
   }
 
-  // ---------------------------------------------------- modo bloqueo
-  /** Decisión síncrona: ¿hay que cancelar este envío? */
-  function shouldBlock(text, findings = P ? P.detectSecrets(text) : []) {
-    return blockingOn() && findings.length > 0;
+  function onPaste(e) {
+    if (!monitoringOn()) return;
+    const editor = editorFrom(e.composedPath()[0]);
+    if (!editor) return;
+    const pasted = (e.clipboardData && e.clipboardData.getData("text/plain")) || "";
+    const limit = Number(settings.pasteThreshold) || DEFAULT_SETTINGS.pasteThreshold;
+    if (pasted.length <= limit) return;
+    const t0 = performance.now();
+    const fs = evaluate(pasted);
+    const ms = performance.now() - t0;
+    const types = [...new Set(fs.map((f) => UI.typeName(f.type)))];
+    UI.toast({
+      level: fs.some((f) => f.source === "secret") ? "alto" : fs.length ? "medio" : "info",
+      title: `Pegaste ${pasted.length.toLocaleString("es-MX")} caracteres`,
+      text: types.length ? `Detectado: ${types.join(", ")}` : `Sin datos sensibles · ${ms.toFixed(0)} ms`,
+    });
   }
 
-  /**
-   * bypassOnce: deja pasar UN envío con exactamente este texto (el reenvío tras
-   * «Enviar de todos modos»). Se consume en el siguiente envío y expira solo.
-   */
-  let bypass = null; // { text, until, manual, ctx }
+  // --------------------------------------------------------- bypassOnce
+  let bypass = null; // { text, until, manual, ctx, decision }
 
-  function armBypass(text, ms, manual = false, ctx = null) {
-    const b = { text, until: performance.now() + ms, manual, ctx };
+  function armBypass(text, ms, manual = false, ctx = null, decision = "enviado") {
+    const b = { text, until: performance.now() + ms, manual, ctx, decision };
     bypass = b;
     if (manual) {
       setTimeout(() => {
-        if (bypass !== b) return; // ya se usó
+        if (bypass !== b) return;
         bypass = null;
         report(buildPayload(ctx, true, "cancelado"), { blocked: true });
-        showLabel("alto", `⛔ Envío bloqueado · ${typesText(ctx.findings)} · reenvío expirado`);
+        UI.card({ level: "alto", title: "Envío bloqueado · reenvío expirado", chips: findingChips(ctx.findings) });
       }, ms + 50);
     }
   }
@@ -237,8 +406,8 @@
     return performance.now() <= b.until ? b : null;
   }
 
-  // Deduplicación Enter + clic del mismo envío (solo envíos NO bloqueados).
-  let lastSend = null; // { text, t } — solo en memoria
+  // ------------------------------------------------------- decisión de envío
+  let lastSend = null;
 
   function intercept(e, editor, button, trigger) {
     const t0 = performance.now();
@@ -247,93 +416,282 @@
 
     const b = takeBypass(text);
     if (b) {
-      // Reenvío autorizado: se deja pasar a la página sin volver a bloquear.
-      if (b.manual) finishSendAnyway(b.ctx, `manual (${trigger}, isTrusted=${e.isTrusted})`);
+      if (b.manual) finishSend(b.ctx, `manual (${trigger}, isTrusted=${e.isTrusted})`, b.decision);
       return;
     }
 
-    // Capa 1 — decisión síncrona (CE-6: < 50 ms).
-    const findings = P ? P.detectSecrets(text) : [];
-    const block = shouldBlock(text, findings);
+    const findings = evaluate(text);
+    const action = maxAction(findings);
     const decisionMs = performance.now() - t0;
+    const ctx = { editor, button, text, findings, decisionMs, trigger };
 
-    if (block) {
+    if (action === "bloquear") {
       cancelEvent(e);
-      console.info(
-        `[auditor] BLOQUEADO ${trigger} platform=${PLATFORM} secretos=${findings.length} ` +
-          `decision=${decisionMs.toFixed(2)}ms`
-      );
-      modal.open({ editor, button, text, findings, decisionMs, trigger });
+      console.info(`[centinela] BLOQUEADO ${trigger} platform=${PLATFORM} hallazgos=${findings.length} decision=${decisionMs.toFixed(2)}ms`);
+      openBlockModal(ctx);
       return;
     }
-
-    if (lastSend && lastSend.text === text && t0 - lastSend.t < DEDUP_MS) return;
-    const mark = { text, t: t0 };
-    lastSend = mark;
-    setTimeout(() => {
-      if (lastSend === mark) lastSend = null; // no retener el texto
-    }, DEDUP_MS * 2);
-
-    console.debug(
-      `[auditor] ${trigger} platform=${PLATFORM} len=${text.length} ` +
-        `secretos_locales=${findings.length} decision=${decisionMs.toFixed(2)}ms`
-    );
-    report(buildPayload({ text, findings, decisionMs }, false, "no_aplica"), { findings });
+    if (action === "advertir") {
+      const warnSig = signature(findings.filter((f) => f.action === "advertir"));
+      if (!(UI.banner.visible() && bannerSig === warnSig)) {
+        cancelEvent(e); // el usuario aún no vio el aviso: se detiene ESTE envío una vez, el texto queda intacto
+        live.resetDismiss();
+        showBanner(editor, findings, true, ctx);
+        console.info(`[centinela] ADVERTIDO (detenido una vez) ${trigger} decision=${decisionMs.toFixed(2)}ms`);
+        return;
+      }
+      UI.banner.hide();
+      bannerSig = null;
+      return sendNow(ctx, "advertido");
+    }
+    sendNow(ctx, "no_aplica");
   }
 
-  function buildPayload(ctx, blocked, decision) {
+  function sendNow(ctx, decision) {
+    const { text, decisionMs, trigger } = ctx;
+    if (lastSend && lastSend.text === text && performance.now() - lastSend.t < DEDUP_MS) return;
+    const mark = { text, t: performance.now() };
+    lastSend = mark;
+    setTimeout(() => {
+      if (lastSend === mark) lastSend = null;
+    }, DEDUP_MS * 2);
+    console.debug(`[centinela] ${trigger} platform=${PLATFORM} len=${text.length} hallazgos=${ctx.findings.length} decision=${decisionMs.toFixed(2)}ms`);
+    report(buildPayload(ctx, decision === "advertido", decision), { findings: ctx.findings, decision });
+  }
+
+  /** Payload para el backend. El término propio NUNCA viaja: se reemplaza por <TERMINO_PROPIO>. */
+  function buildPayload(ctx, flagged, decision, textOverride = null) {
+    const text = textOverride ?? ctx.text;
+    const dict = textOverride ? [] : ctx.findings.filter((f) => f.type === P.DICT_TYPE);
     return {
-      text: ctx.text,
+      text: dict.length ? P.maskText(text, dict) : text,
       platform: PLATFORM,
       timestamp: new Date().toISOString(),
       client_findings: ctx.findings.map(({ type, masked }) => ({ type, masked })),
-      blocked,
+      blocked: decision === "advertido" ? false : flagged,
       user_decision: decision,
-      client_latency_ms: Math.round(ctx.decisionMs * 100) / 100,
+      client_latency_ms: Math.round((ctx.decisionMs || 0) * 100) / 100,
     };
   }
 
-  // -------------------------------------------- decisiones del modal
-  function onCancelled(ctx) {
-    focusEnd(ctx.editor); // el texto sigue intacto en el input
-    report(buildPayload(ctx, true, "cancelado"), { blocked: true });
-    showLabel("alto", `⛔ Envío bloqueado · ${typesText(ctx.findings)}`);
+  // ------------------------------------------------------------ modal
+  function fragment(text, findings, f, radius = 42) {
+    const from = Math.max(0, f.start - radius);
+    const to = Math.min(text.length, f.end + radius);
+    const piece = (a, b) => {
+      // Cualquier otro hallazgo dentro de la ventana también se muestra enmascarado.
+      let out = "";
+      let pos = a;
+      for (const g of findings) {
+        if (g === f || g.end <= a || g.start >= b) continue;
+        out += text.slice(pos, Math.max(pos, g.start)) + g.masked;
+        pos = Math.min(b, g.end);
+      }
+      return (out + text.slice(pos, b)).replace(/\s+/g, " ");
+    };
+    return {
+      type: f.type,
+      action: f.action,
+      masked: f.masked,
+      before: (from > 0 ? "…" : "") + piece(from, f.start),
+      after: piece(f.end, to) + (to < text.length ? "…" : ""),
+    };
   }
 
-  async function onSendAnyway(ctx) {
+  function censorUnsupported() {
+    return (settings.censorFallbackHosts || []).includes(location.hostname);
+  }
+
+  function openBlockModal(ctx) {
+    const shown = ctx.findings.filter((f) => f.action !== "permitir").slice(0, 4);
+    const extra = ctx.findings.length - shown.length;
+    UI.modal.open({
+      title: "Posible fuga de información",
+      intro: "Tu mensaje NO se envió. Centinela encontró datos que no deberían salir de tu computadora:",
+      items: shown.map((f) => fragment(ctx.text, ctx.findings, f)),
+      note: `${extra > 0 ? `y ${extra} hallazgo(s) más · ` : ""}Detectado localmente en ${ctx.decisionMs.toFixed(1)} ms. Nada se ha enviado.`,
+      censorLabel: censorUnsupported() ? "Copiar versión censurada" : "Censurar y enviar",
+      onCancel: () => {
+        focusEnd(ctx.editor);
+        report(buildPayload(ctx, true, "cancelado"), { blocked: true });
+        UI.card({ level: "alto", title: "Envío bloqueado", chips: findingChips(ctx.findings) });
+      },
+      onSend: () => resend(ctx, "enviado"),
+      onCensor: () => censorAndSend(ctx),
+    });
+  }
+
+  async function censorAndSend(ctx) {
+    const targets = ctx.findings.filter((f) => f.action !== "permitir");
+    if (censorUnsupported()) {
+      await copyCensored(ctx.text, targets);
+      report(buildPayload(ctx, true, "cancelado"), { blocked: true });
+      return;
+    }
+    const res = await censorInField(ctx.editor, ctx.text, targets);
+    if (!res.ok) {
+      rememberCensorFallback();
+      await copyCensored(ctx.text, targets);
+      report(buildPayload(ctx, true, "cancelado"), { blocked: true });
+      return;
+    }
+    // El campo ya no contiene ningún valor detectado: se envía la versión censurada.
+    resend({ ...ctx, text: res.text, censored: true }, "censurado");
+  }
+
+  // ------------------------------------------------------------ censura
+  /** Reemplaza cada hallazgo por su marcador DENTRO del campo y verifica el resultado. */
+  async function censorInField(editor, text, findings) {
+    const values = [...new Set(findings.map((f) => text.slice(f.start, f.end)))]; // solo en memoria
+    if (!values.length) return { ok: true, text };
+    const byValue = new Map(findings.map((f) => [text.slice(f.start, f.end), P.censorMarker(f.type)]));
+    let strategy = "insertText";
+    try {
+      for (const value of [...values].sort((a, b) => b.length - a.length)) {
+        const marker = byValue.get(value);
+        let guard = 0;
+        while (guard++ < 20) {
+          const done = editor.tagName === "TEXTAREA"
+            ? replaceInTextarea(editor, value, marker)
+            : replaceInContentEditable(editor, value, marker);
+          if (done === "none") break;
+          if (done === "fallback") strategy = "setRangeText";
+          if (done === false) throw new Error("no se pudo reemplazar");
+        }
+      }
+    } catch (_err) {
+      return { ok: false };
+    }
+    await new Promise((r) => setTimeout(r, 60)); // los frameworks actualizan el estado en el siguiente tick
+    const after = readText(editor);
+    const clean = !values.some((v) => after.includes(v)) && !values.some((v) => after.includes(v.replace(/\s+/g, " ")));
+    console.info(`[centinela] censura ${clean ? "verificada" : "FALLÓ"} estrategia=${strategy} hallazgos=${values.length}`);
+    return clean ? { ok: true, text: after } : { ok: false };
+  }
+
+  function replaceInTextarea(ta, value, marker) {
+    const i = ta.value.indexOf(value);
+    if (i < 0) return "none";
+    ta.focus();
+    ta.setSelectionRange(i, i + value.length);
+    if (document.execCommand("insertText", false, marker)) return true;
+    ta.setRangeText(marker, i, i + value.length, "end");
+    ta.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertReplacementText", data: marker }));
+    return "fallback";
+  }
+
+  /** Ubica `value` en los nodos de texto del editor (aunque cruce varios) y lo reemplaza con insertText. */
+  function replaceInContentEditable(root, value, marker) {
+    const range = rangeFor(root, value);
+    if (!range) return "none";
+    root.focus({ preventScroll: true });
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return document.execCommand("insertText", false, marker) ? true : false;
+  }
+
+  function rangeFor(root, value) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let flat = "";
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      nodes.push({ node: n, start: flat.length });
+      flat += n.data.replace(/ /g, " ");
+    }
+    let target = value;
+    let i = flat.indexOf(target);
+    if (i < 0) {
+      target = value.replace(/\n+/g, ""); // valores multilínea (PEM): los párrafos no dejan "\n" en el texto
+      i = flat.indexOf(target);
+    }
+    if (i < 0 || !target) return null;
+    const locate = (pos, isEnd) => {
+      for (let k = nodes.length - 1; k >= 0; k--) {
+        const { node, start } = nodes[k];
+        if (isEnd ? pos > start : pos >= start) return { node, offset: Math.min(node.data.length, pos - start) };
+      }
+      return null;
+    };
+    const a = locate(i, false);
+    const b = locate(i + target.length, true);
+    if (!a || !b) return null;
+    const range = document.createRange();
+    range.setStart(a.node, a.offset);
+    range.setEnd(b.node, b.offset);
+    return range;
+  }
+
+  function selectValue(editor, value) {
+    if (editor.tagName === "TEXTAREA") {
+      const i = editor.value.indexOf(value);
+      if (i >= 0) editor.setSelectionRange(i, i + value.length);
+      return;
+    }
+    const range = rangeFor(editor, value);
+    if (!range) return;
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  async function copyCensored(text, findings) {
+    const censored = P.censorText(text, findings);
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(censored);
+      copied = true;
+    } catch (_err) {
+      copied = false;
+    }
+    UI.card({
+      level: "medio",
+      title: copied ? "Versión censurada copiada" : "No se pudo editar el campo",
+      meta: [copied ? "Pégala en el chat en lugar del texto original. No se envió nada." : "Borra los datos a mano. No se envió nada."],
+      ttl: 9000,
+    });
+  }
+
+  function rememberCensorFallback() {
+    const hosts = new Set(settings.censorFallbackHosts || []);
+    hosts.add(location.hostname);
+    chrome.storage.local.set({ censorFallbackHosts: [...hosts] });
+  }
+
+  // ------------------------------------------------------------ reenvío
+  async function resend(ctx, decision) {
     const strategies = [];
-    const btn =
-      ctx.button && ctx.button.isConnected && sendButtonFrom(ctx.button) ? ctx.button : findSendButtonNear(ctx.editor);
+    const btn = ctx.button && ctx.button.isConnected && sendButtonFrom(ctx.button) ? ctx.button : findSendButtonNear(ctx.editor);
     if (btn) strategies.push(["button.click", () => btn.click()]);
     strategies.push(["enter", () => dispatchEnter(ctx.editor)]);
 
     for (const [name, fire] of strategies) {
       if (!ctx.editor.isConnected || readText(ctx.editor) !== ctx.text) break;
-      armBypass(ctx.text, BYPASS_MS);
+      armBypass(ctx.text, BYPASS_MS, false, null, decision);
       focusEnd(ctx.editor);
       fire();
       if (await editorCleared(ctx)) {
         bypass = null;
-        finishSendAnyway(ctx, `${name} (isTrusted=false)`);
+        finishSend(ctx, `${name} (isTrusted=false)`, decision);
         return;
       }
     }
     if (!ctx.editor.isConnected || readText(ctx.editor) !== ctx.text) {
-      // El editor cambió por otra causa: no arriesgar un envío doble.
       bypass = null;
-      finishSendAnyway(ctx, "desconocida");
+      finishSend(ctx, "desconocida", decision);
       return;
     }
-    // Ninguna estrategia programática funcionó: el usuario reintenta con un evento real.
-    armBypass(ctx.text, MANUAL_BYPASS_MS, true, ctx);
+    armBypass(ctx.text, MANUAL_BYPASS_MS, true, ctx, decision);
     focusEnd(ctx.editor);
-    showLabel("medio", "⚠️ La página no aceptó el reenvío automático · presiona Enviar otra vez (10 s)");
+    UI.card({ level: "medio", title: "Presiona Enviar otra vez", meta: ["La página no aceptó el reenvío automático (10 s)."] });
   }
 
-  function finishSendAnyway(ctx, strategy) {
-    console.info(`[auditor] reenviado con ${strategy} platform=${PLATFORM}`);
-    report(buildPayload(ctx, true, "enviado"), { blocked: true });
-    showLabel("medio", `⚠️ Enviado con secreto · ${typesText(ctx.findings)}`);
+  function finishSend(ctx, strategy, decision) {
+    console.info(`[centinela] reenviado con ${strategy} platform=${PLATFORM} decision=${decision}`);
+    const flagged = decision !== "advertido";
+    report(buildPayload(ctx, flagged, decision, ctx.censored ? ctx.text : null), { blocked: flagged, findings: ctx.findings, decision });
+    const titles = { enviado: "Enviado con datos sensibles", censurado: "Enviado censurado", advertido: "Enviado con advertencia" };
+    UI.card({ level: decision === "censurado" ? "bajo" : "medio", title: titles[decision] || "Enviado", chips: findingChips(ctx.findings) });
   }
 
   function dispatchEnter(editor) {
@@ -342,7 +700,6 @@
     editor.dispatchEvent(new KeyboardEvent("keyup", init));
   }
 
-  /** true si la página vació (o reemplazó) el editor: señal de que sí envió. */
   function editorCleared(ctx) {
     return new Promise((resolve) => {
       const t0 = performance.now();
@@ -355,7 +712,7 @@
   }
 
   function focusEnd(editor) {
-    if (!editor.isConnected) return;
+    if (!editor || !editor.isConnected) return;
     editor.focus({ preventScroll: true });
     if (editor.tagName !== "TEXTAREA") {
       const sel = window.getSelection();
@@ -367,244 +724,63 @@
     }
   }
 
-  // ------------------------------------------------------- backend
-  function report(payload, { blocked = false, findings = [] } = {}) {
-    try {
-      chrome.runtime.sendMessage({ type: "analyze", payload }, (resp) => {
-        const failed = chrome.runtime.lastError || !resp || resp.error;
-        if (blocked) {
-          // La etiqueta del bloqueo ya se mostró; solo avisar si el backend no está.
-          if (failed) {
-            showLabel("gris", resp && resp.queued
-              ? "⚪ Backend no disponible · evento guardado para reintento"
-              : "⚪ Backend no disponible");
-          }
-          return;
-        }
-        if (failed) showUnavailable(findings);
-        else showResult(resp);
-      });
-    } catch (_err) {
-      // "Extension context invalidated": se recargó la extensión sin refrescar la página.
-      showLabel("gris", "⚪ Extensión recargada · refresca la página");
-    }
+  // ------------------------------------------------------- backend + tarjetas
+  const CATEGORY_NAMES = {
+    programacion: "programación", academico: "académico", redaccion: "redacción", ciberseguridad: "ciberseguridad",
+    consulta_general: "consulta general", personal: "personal",
+  };
+
+  function findingChips(findings) {
+    return (findings || []).slice(0, 5).map((f) => ({
+      text: UI.typeName(f.type),
+      value: f.masked,
+      level: f.source === "secret" || f.source === "client" ? "danger" : "warn",
+    }));
   }
 
-  // ------------------------------------------------------- textos
-  const CATEGORY_NAMES = {
-    programacion: "programación",
-    academico: "académico",
-    redaccion: "redacción",
-    ciberseguridad: "ciberseguridad",
-    consulta_general: "consulta general",
-    personal: "personal",
-  };
-  const PLATFORM_NAMES = { chatgpt: "ChatGPT", claude: "Claude", gemini: "Gemini", test: "Prueba" };
-  const TYPE_NAMES = {
-    openai_key: "API key de OpenAI",
-    anthropic_key: "API key de Anthropic",
-    aws_access_key: "clave de AWS",
-    github_token: "token de GitHub",
-    google_api_key: "API key de Google",
-    jwt: "JWT",
-    private_key: "clave privada",
-    password: "contraseña",
-    credit_card: "tarjeta",
-    email: "correo",
-    phone_mx: "teléfono",
-    curp: "CURP",
-    rfc: "RFC",
-    person: "nombre",
-    address: "dirección",
-  };
-  const typeName = (t) => TYPE_NAMES[t] || t;
-  const typesText = (findings) => [...new Set(findings.map((f) => typeName(f.type)))].join(", ");
-
   function categoryName(resp) {
-    // Sin modelo (o con confianza 0) → "sin clasificar".
     if (!resp.category || !resp.category_confidence) return "sin clasificar";
     const name = CATEGORY_NAMES[resp.category] || resp.category;
-    // Fase 4C: confianza por debajo del umbral (campo opcional del backend).
     return resp.category_uncertain === true ? `tema incierto (¿${name}?)` : name;
   }
 
-  function findingsText(findings) {
-    const ordered = [...findings].sort((a, b) => (a.source === "pii") - (b.source === "pii"));
-    const parts = ordered.slice(0, 3).map((f) => `${typeName(f.type)} (${f.masked})`);
-    if (ordered.length > 3) parts.push(`+${ordered.length - 3} más`);
-    return parts.join(", ");
+  function report(payload, { blocked = false, findings = [], decision = null } = {}) {
+    try {
+      chrome.runtime.sendMessage({ type: "analyze", payload }, (resp) => {
+        const failed = chrome.runtime.lastError || !resp || resp.error;
+        if (decision === "advertido" && !failed) return showResult(resp);
+        if (blocked || decision === "advertido") {
+          if (failed) {
+            UI.card({ level: "gris", title: "Backend no disponible", meta: [resp && resp.queued ? "Evento guardado para reintento" : "El bloqueo local sigue activo"] });
+          }
+          return;
+        }
+        if (failed) {
+          UI.card({ level: "gris", title: "Backend no disponible", chips: findingChips(findings),
+            meta: ["Detección local activa", PLATFORM_NAMES[PLATFORM] || PLATFORM] });
+          return;
+        }
+        showResult(resp);
+      });
+    } catch (_err) {
+      UI.card({ level: "gris", title: "Extensión recargada", meta: ["Refresca la página"] });
+    }
   }
 
   function showResult(resp) {
-    const cat = categoryName(resp);
     const findings = resp.findings || [];
-    const inj = Number(resp.injection_score || 0);
-    const what = findings.length ? `contiene ${findingsText(findings)}` : `posible inyección (${inj.toFixed(2)})`;
-    if (resp.risk === "alto") showLabel("alto", `⛔ Riesgo alto · ${what} · ${cat}`);
-    else if (resp.risk === "medio") showLabel("medio", `⚠️ Riesgo medio · ${what} · ${cat}`);
-    else showLabel("bajo", `✅ Sin riesgo · ${cat} · ${PLATFORM_NAMES[PLATFORM] || PLATFORM}`);
+    const inj = resp.injection_score;
+    const titles = { alto: "Riesgo alto", medio: "Riesgo medio", bajo: "Sin riesgo" };
+    const chips = findingChips(findings);
+    if (!findings.length && inj != null && resp.risk !== "bajo") {
+      chips.push({ text: "Posible inyección", value: inj.toFixed(2), level: "danger" });
+    }
+    UI.card({
+      level: resp.risk,
+      title: titles[resp.risk] || resp.risk,
+      chips,
+      meta: [categoryName(resp), PLATFORM_NAMES[PLATFORM] || PLATFORM,
+        resp.rtt_ms != null ? `${resp.rtt_ms} ms` : resp.latency_ms != null ? `${resp.latency_ms} ms` : null],
+    });
   }
-
-  function showUnavailable(clientFindings) {
-    let msg = "⚪ Backend no disponible";
-    if (clientFindings && clientFindings.length) msg += ` · detectado localmente: ${findingsText(clientFindings)}`;
-    showLabel("gris", msg);
-  }
-
-  // ------------------------------------------------------- estilos
-  // Una sola hoja compartida por los dos Shadow DOM (etiquetas y modal).
-  const sheet = new CSSStyleSheet();
-  let cssReady = false;
-  const cssUrl = chrome.runtime.getURL("overlay.css");
-  fetch(cssUrl)
-    .then((r) => r.text())
-    .then((css) => {
-      sheet.replaceSync(css);
-      cssReady = true;
-    })
-    .catch(() => {});
-
-  function makeShadowHost(tag, hostCss) {
-    const host = document.createElement(tag);
-    host.style.cssText = `all:initial;position:fixed;z-index:2147483647;${hostCss}`;
-    const shadow = host.attachShadow({ mode: "closed" });
-    shadow.adoptedStyleSheets = [sheet];
-    if (!cssReady) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = cssUrl;
-      shadow.append(link);
-    }
-    return { host, shadow };
-  }
-
-  // ------------------------------------------------------- etiqueta
-  let labelHost = null;
-  let stack = null;
-
-  function ensureLabels() {
-    if (!labelHost) {
-      const { host, shadow } = makeShadowHost("auditor-ia-overlay", "right:16px;bottom:16px;pointer-events:none;");
-      labelHost = host;
-      stack = document.createElement("div");
-      stack.className = "stack";
-      stack.setAttribute("role", "status");
-      stack.setAttribute("aria-live", "polite");
-      shadow.append(stack);
-    }
-    // Las SPA a veces reemplazan el <body>; colgarlo de <html> es más estable.
-    if (!labelHost.isConnected || labelHost.nextSibling) document.documentElement.appendChild(labelHost);
-  }
-
-  function showLabel(level, message) {
-    ensureLabels();
-    const el = document.createElement("div");
-    el.className = `label ${level}`;
-    el.textContent = message; // textContent: nunca innerHTML con datos externos
-    el.title = "Auditor de Prompts · clic para cerrar";
-    el.addEventListener("click", () => dismiss(el));
-    stack.appendChild(el);
-    while (stack.children.length > MAX_LABELS) stack.firstElementChild.remove();
-    setTimeout(() => dismiss(el), LABEL_MS);
-  }
-
-  function dismiss(el) {
-    if (!el.isConnected || el.classList.contains("leaving")) return;
-    el.classList.add("leaving");
-    setTimeout(() => el.remove(), 250);
-  }
-
-  // --------------------------------------------------------- modal
-  const modal = (() => {
-    let host = null;
-    let ctx = null;
-    let cancelBtn = null;
-
-    function el(tag, cls, text) {
-      const n = document.createElement(tag);
-      if (cls) n.className = cls;
-      if (text != null) n.textContent = text;
-      return n;
-    }
-
-    function open(context) {
-      ctx = context;
-      const made = makeShadowHost("auditor-ia-modal", "inset:0;");
-      host = made.host;
-
-      const backdrop = el("div", "backdrop");
-      const box = el("div", "modal");
-      box.setAttribute("role", "alertdialog");
-      box.setAttribute("aria-modal", "true");
-      box.setAttribute("aria-labelledby", "aia-title");
-      box.setAttribute("aria-describedby", "aia-desc");
-
-      const title = el("h2", "title", "⛔ Posible fuga de información");
-      title.id = "aia-title";
-      const desc = el("p", "desc", "Tu mensaje NO se envió. Contiene datos que parecen secretos:");
-      desc.id = "aia-desc";
-
-      const list = el("ul", "findings");
-      for (const f of ctx.findings) {
-        const li = el("li");
-        li.append(el("span", "ftype", typeName(f.type)), el("code", "fmask", f.masked)); // solo enmascarado
-        list.append(li);
-      }
-
-      const note = el(
-        "p",
-        "note",
-        `Detectado localmente en ${ctx.decisionMs.toFixed(1)} ms. El dato no ha salido de tu computadora.`
-      );
-
-      const actions = el("div", "actions");
-      const sendBtn = el("button", "btn danger", "Enviar de todos modos");
-      sendBtn.type = "button";
-      cancelBtn = el("button", "btn primary", "Cancelar");
-      cancelBtn.type = "button";
-      sendBtn.addEventListener("click", sendAnyway);
-      cancelBtn.addEventListener("click", cancel);
-      actions.append(sendBtn, cancelBtn);
-
-      // Teclas dentro del modal: no llegan a los listeners (burbuja) de la página.
-      // Trampa de foco: Tab no sale del modal. (Escape lo maneja onKeyDown.)
-      backdrop.addEventListener("keydown", (e) => {
-        e.stopPropagation();
-        if (e.key !== "Tab") return;
-        e.preventDefault();
-        const order = [sendBtn, cancelBtn];
-        const i = order.indexOf(made.shadow.activeElement);
-        order[(i + (e.shiftKey ? -1 : 1) + order.length) % order.length].focus();
-      });
-
-      box.append(title, desc, list, note, actions);
-      backdrop.append(box);
-      made.shadow.append(backdrop);
-      document.documentElement.appendChild(host);
-      cancelBtn.focus(); // «Cancelar» es el default (Enter/Espacio lo activan)
-    }
-
-    function close() {
-      const c = ctx;
-      if (host) host.remove();
-      host = null;
-      ctx = null;
-      cancelBtn = null;
-      return c;
-    }
-
-    function cancel() {
-      const c = close();
-      if (c) onCancelled(c);
-    }
-
-    function sendAnyway() {
-      const c = close();
-      if (c) onSendAnyway(c);
-    }
-
-    return { open, cancel, isOpen: () => host !== null };
-  })();
-
-  ensureLabels();
 })();

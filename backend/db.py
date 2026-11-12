@@ -151,34 +151,38 @@ def insert_prompt(row: dict) -> int:
         return int(cur.lastrowid)
 
 
-def _counts(conn, column: str) -> dict:
+def _counts(conn, column: str, where: str = "", params: tuple = ()) -> dict:
     rows = conn.execute(
-        f"SELECT {column} AS k, COUNT(*) AS n FROM prompts GROUP BY {column} ORDER BY n DESC"
+        f"SELECT {column} AS k, COUNT(*) AS n FROM prompts {where} GROUP BY {column} ORDER BY n DESC", params
     ).fetchall()
     return {r["k"]: r["n"] for r in rows}
 
 
-def get_stats(recent_limit: int = 20) -> dict:
+def get_stats(recent_limit: int = 20, since: str | None = None) -> dict:
+    """Agregados para /stats. `since` (ISO-8601 con zona, opcional): solo eventos desde ese instante
+    (Fase 5A: el popup pide el resumen de hoy)."""
+    where, params = ("WHERE julianday(ts) >= julianday(?)", (since,)) if since else ("", ())
+    and_ = "AND" if since else "WHERE"
     with connect() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM prompts").fetchone()[0]
-        high = conn.execute("SELECT COUNT(*) FROM prompts WHERE risk = 'alto'").fetchone()[0]
-        blocked = conn.execute("SELECT COUNT(*) FROM prompts WHERE blocked = 1").fetchone()[0]
-        by_platform = _counts(conn, "platform")
-        by_category = _counts(conn, "category")
-        by_risk = _counts(conn, "risk")
-        by_decision = _counts(conn, "user_decision")
-        by_source = _counts(conn, "source")  # CE-11: lo importado se reporta aparte
+        total = conn.execute(f"SELECT COUNT(*) FROM prompts {where}", params).fetchone()[0]
+        high = conn.execute(f"SELECT COUNT(*) FROM prompts {where} {and_} risk = 'alto'", params).fetchone()[0]
+        blocked = conn.execute(f"SELECT COUNT(*) FROM prompts {where} {and_} blocked = 1", params).fetchone()[0]
+        by_platform = _counts(conn, "platform", where, params)
+        by_category = _counts(conn, "category", where, params)
+        by_risk = _counts(conn, "risk", where, params)
+        by_decision = _counts(conn, "user_decision", where, params)
+        by_source = _counts(conn, "source", where, params)  # CE-11: lo importado se reporta aparte
 
         risk_by_platform: dict = {}
         for r in conn.execute(
-            "SELECT platform, risk, COUNT(*) AS n FROM prompts GROUP BY platform, risk"
+            f"SELECT platform, risk, COUNT(*) AS n FROM prompts {where} GROUP BY platform, risk", params
         ):
             risk_by_platform.setdefault(r["platform"], {})[r["risk"]] = r["n"]
 
         latency = [
             r[0]
             for r in conn.execute(
-                "SELECT latency_ms FROM prompts WHERE latency_ms IS NOT NULL ORDER BY latency_ms"
+                f"SELECT latency_ms FROM prompts {where} {and_} latency_ms IS NOT NULL ORDER BY latency_ms", params
             )
         ]
         p95 = latency[min(len(latency) - 1, int(round(0.95 * (len(latency) - 1))))] if latency else None
@@ -196,12 +200,13 @@ def get_stats(recent_limit: int = 20) -> dict:
                 "user_decision": r["user_decision"],
             }
             for r in conn.execute(
-                "SELECT * FROM prompts WHERE risk IN ('alto', 'medio') ORDER BY id DESC LIMIT ?",
-                (recent_limit,),
+                f"SELECT * FROM prompts {where} {and_} risk IN ('alto', 'medio') ORDER BY id DESC LIMIT ?",
+                (*params, recent_limit),
             )
         ]
 
     return {
+        "desde": since,
         "total": total,
         "pct_riesgo_alto": round(100 * high / total, 2) if total else 0.0,
         "bloqueados": blocked,

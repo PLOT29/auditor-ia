@@ -21,7 +21,16 @@ const TIMEOUT_MS = 3000;
 const QUEUE_KEY = "pendingEvents";
 const QUEUE_MAX = 100;
 
-const DEFAULT_SETTINGS = { monitoring: true, blocking: true };
+// Políticas por defecto (Fase 5A): secretos = bloquear; PII y diccionario propio = advertir.
+const DEFAULT_POLICIES = Object.fromEntries([
+  ...self.AuditorPatterns.SECRET_TYPES.map((t) => [t, "bloquear"]),
+  ...self.AuditorPatterns.PII_TYPES.map((t) => [t, "advertir"]),
+  [self.AuditorPatterns.DICT_TYPE, "advertir"],
+]);
+const DEFAULT_SETTINGS = {
+  monitoring: true, blocking: true, policies: DEFAULT_POLICIES, dictionary: [], pasteThreshold: 3000,
+  censorFallbackHosts: [],
+};
 
 chrome.runtime.onInstalled.addListener(async () => {
   const current = await chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS));
@@ -138,6 +147,22 @@ async function health() {
   }
 }
 
+/** Resumen de hoy (hora local) para el popup: prompts, advertencias, censurados y bloqueos. */
+async function today() {
+  const midnight = new Date();
+  midnight.setHours(0, 0, 0, 0);
+  try {
+    const res = await fetchWithTimeout(`${BACKEND}/stats?desde=${encodeURIComponent(midnight.toISOString())}`);
+    if (!res.ok) return { ok: false };
+    const s = await res.json();
+    const d = s.por_decision || {};
+    return { ok: true, prompts: s.total, advertencias: d.advertido || 0, censurados: d.censurado || 0,
+             bloqueos: s.bloqueados };
+  } catch {
+    return { ok: false };
+  }
+}
+
 async function status() {
   const [h, { [QUEUE_KEY]: queue = [] }] = await Promise.all([health(), chrome.storage.local.get(QUEUE_KEY)]);
   if (h.ok && queue.length) flushQueue();
@@ -148,6 +173,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "analyze") {
     analyze(msg.payload).then(sendResponse);
     return true; // respuesta asíncrona
+  }
+  if (msg?.type === "today") {
+    today().then(sendResponse);
+    return true;
   }
   if (msg?.type === "health") {
     status().then(sendResponse);
