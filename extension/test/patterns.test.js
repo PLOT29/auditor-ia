@@ -18,20 +18,24 @@ const path = require("node:path");
 const P = require(path.join(__dirname, "..", "patterns.js"));
 
 const data = JSON.parse(fs.readFileSync(path.join(__dirname, "secret_cases.json"), "utf8"));
+const demo = JSON.parse(fs.readFileSync(path.join(__dirname, "demo_cases.json"), "utf8")).casos;
 
 if (process.argv.includes("--json")) {
   const out = {
     secret_cases: data.secret_cases.map((c) => P.detectSecrets(c.text)),
-    pii_cases: data.pii_cases.map((c) =>
-      P.detectSensitive(c.text).map(({ type, masked, start, end }) => ({ type, masked, start, end }))
-    ),
+    pii_cases: data.pii_cases.map((c) => P.detectSensitive(c.text)),
+    demo_cases: demo.map((c) => P.detectSensitive(c.texto)),
+    catalog: P.CATALOG,
+    default_policies: P.DEFAULT_POLICIES,
+    pii_types: P.PII_TYPES,
   };
   process.stdout.write(JSON.stringify(out));
   process.exit(0);
 }
 
 const same = (got, exp) =>
-  got.length === exp.length && got.every((g, i) => g.type === exp[i].type && g.masked === exp[i].masked);
+  got.length === exp.length &&
+  got.every((g, i) => g.type === exp[i].type && g.masked === exp[i].masked && g.valido === exp[i].valido);
 
 let failures = 0;
 function check(id, ok, detail) {
@@ -58,6 +62,31 @@ for (const c of data.pii_cases) {
   const masked = P.maskText(c.text, got);
   for (const g of got) check(c.id, !masked.includes(c.text.slice(g.start, g.end)), "maskText dejó un valor en claro");
 }
+
+// ------------------------------------------------- casos de demo (Fase 5A.1)
+// Cada escenario produce EXACTAMENTE los hallazgos y la acción esperados con las políticas por defecto,
+// y «Censurar» deja un texto sin nada que bloquear ni advertir.
+const withPolicy = (fs) => fs.map((f) => ({ ...f, action: P.DEFAULT_POLICIES[f.type] || "advertir" }));
+for (const c of demo) {
+  const got = withPolicy(P.evaluate(c.texto));
+  check(c.id, same(got, c.esperado),
+    `esperado ${JSON.stringify(c.esperado.map((e) => e.type))}, obtenido ${JSON.stringify(got.map((g) => `${g.type}:${g.masked}`))}`);
+  check(c.id, P.maxAction(got) === c.accion, `acción ${P.maxAction(got)} ≠ ${c.accion}`);
+  const censored = P.censorText(c.texto, got.filter((f) => f.action !== "permitir"));
+  for (const g of got) check(c.id, !censored.includes(c.texto.slice(g.start, g.end)), `censura dejó un ${g.type} en claro`);
+  check(c.id, P.evaluate(censored).length === 0, `el texto censurado aún tiene hallazgos: ${P.evaluate(censored).map((f) => f.type)}`);
+}
+const dniBad = P.evaluate(demo.find((c) => c.id === "caso-5-stripe-pii").texto).find((f) => f.type === "dni");
+check("modal-dni-invalido", P.findingLabel(dniBad) === "formato de DNI (letra de control no válida)", P.findingLabel(dniBad));
+check("modal-dni-valido", P.findingLabel(P.evaluate("DNI 12345678Z")[0]) === "DNI");
+const addr = P.evaluate(demo.find((c) => c.id === "caso-6a-direccion-completa").texto)[0];
+check("direccion-completa-enmascarada", /^Calle Fresno 128, Int\. 4, Col\. Santa María la Ribera, Alcaldía Cuauhtémoc, C\.P\. 06400$/
+  .test(demo.find((c) => c.id === "caso-6a-direccion-completa").texto.slice(addr.start, addr.end)), "el span no cubre la dirección completa");
+check("marcadores", ["bearer_token", "stripe_key", "stripe_webhook_secret", "uri_credentials", "dni", "address", "private_key"]
+  .map(P.censorMarker).join() === "[TOKEN_OCULTO],[STRIPE_KEY_OCULTA],[WEBHOOK_SECRET_OCULTO],[URI_CON_CREDENCIALES],[DNI_OCULTO],[DIRECCIÓN_OCULTA],[CLAVE_PRIVADA_OCULTA]");
+check("politicas-default", ["curp", "rfc", "dni", "nie", "address", "stripe_key", "bearer_token"].every((t) => P.DEFAULT_POLICIES[t] === "bloquear") &&
+  ["email", "phone_mx", "openai_org", "stripe_publishable_key", "termino_propio"].every((t) => P.DEFAULT_POLICIES[t] === "advertir") &&
+  !("person" in P.DEFAULT_POLICIES));
 
 // CE-6: latencia de la detección (la parte síncrona de la decisión de bloqueo).
 const texts = data.secret_cases.map((c) => c.text);
@@ -111,21 +140,33 @@ const ct = P.censorText(etext, ev);
 ok("censura-marcadores", ct === "Mi CURP [CURP_OCULTA], key [API_KEY_OCULTA] y el [TERMINO_OCULTO]", ct);
 ok("censura-sin-valores", P.evaluate(ct, { dictionary: ["proyecto fénix"] }).length === 0);
 
-// Escudo en vivo: evaluar 5 000 caracteres con 50 términos debe costar < 10 ms (p95).
+// Escudo en vivo: evaluar 5 000 caracteres con 50 términos debe costar < 10 ms (p95), también con
+// textos que ejercitan las reglas nuevas (casos de demo repetidos) y con textos ADVERSARIALES para la
+// heurística de direcciones y las asignaciones (muchas palabras con mayúscula, tokens largos sin espacios).
 const dict50 = Array.from({ length: 50 }, (_, i) => `confidencial${i}`);
-const base = "Hola, revisa este texto con datos demo.fake@gmail.com y 55 1234 5678. ";
-const t5k = base.repeat(Math.ceil(5000 / base.length)).slice(0, 5000);
-const times = [];
-for (let i = 0; i < 300; i++) {
-  const t0 = performance.now();
-  P.evaluate(t5k, { dictionary: dict50 });
-  times.push(performance.now() - t0);
+const fill = (s) => s.repeat(Math.ceil(5000 / s.length)).slice(0, 5000);
+const BENCH = {
+  "prosa con PII": fill("Hola, revisa este texto con datos demo.fake@gmail.com y 55 1234 5678. "),
+  "casos de demo": fill(demo.map((c) => c.texto).join("\n")),
+  "adversarial: Calle Calle…": fill("Calle Avenida Colonia Col. Alcaldía Municipio de Privada No. Int. Mz. Lt. "),
+  "adversarial: Mayúsculas": fill("Palabra Con Mayuscula Inicial Repetida Sin Numero "),
+  "adversarial: token largo": "A".repeat(2500) + "_TOKEN_" + "a".repeat(2493),
+  "adversarial: base64": fill("-----BEGIN RSA PRIVATE KEY-----\n" + "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=\n".repeat(20)),
+  "adversarial: URIs": fill("postgres://u:p@p@p@p@p@p@p@p@p@p@p@p "),
+};
+for (const [name, t] of Object.entries(BENCH)) {
+  const times = [];
+  for (let i = 0; i < 300; i++) {
+    const t0 = performance.now();
+    P.evaluate(t, { dictionary: dict50 });
+    times.push(performance.now() - t0);
+  }
+  times.sort((a, b) => a - b);
+  const p95 = times[Math.floor(0.95 * times.length)];
+  console.log(`Escudo en vivo · ${name.padEnd(26)} (${t.length} car, 50 términos): p50=${times[150].toFixed(2)}ms p95=${p95.toFixed(2)}ms máx=${times.at(-1).toFixed(2)}ms`);
+  ok(`escudo-menos-de-10ms · ${name}`, p95 < 10, `p95=${p95.toFixed(2)}ms`);
 }
-times.sort((a, b) => a - b);
-const p95 = times[Math.floor(0.95 * times.length)];
-console.log(`Escudo en vivo · evaluate(5 000 car, 50 términos): p50=${times[150].toFixed(2)}ms p95=${p95.toFixed(2)}ms máx=${times.at(-1).toFixed(2)}ms`);
-ok("escudo-menos-de-10ms", p95 < 10, `p95=${p95.toFixed(2)}ms`);
 
-const total = data.secret_cases.length + data.pii_cases.length + extra;
+const total = data.secret_cases.length + data.pii_cases.length + demo.length + extra;
 console.log(failures ? `\n✗ ${failures} fallo(s)` : `\n✓ ${total}/${total} casos OK`);
 process.exitCode = failures ? 1 : 0;

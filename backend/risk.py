@@ -1,8 +1,14 @@
 """Reglas de agregación de riesgo (SPEC §5.4).
 
-- Alto:  cualquier secreto (incluidos los del cliente) o injection_score ≥ umbral ALTO.
-- Medio: cualquier PII o injection_score ≥ umbral MEDIO.
+- Alto:  cualquier hallazgo de riesgo alto o injection_score ≥ umbral ALTO.
+- Medio: cualquier otro hallazgo o injection_score ≥ umbral MEDIO.
 - Bajo:  lo demás. injection_score = None (detector no disponible) no suma riesgo.
+
+Riesgo de cada hallazgo (Fase 5A.1, detectors/catalog.py): el de su tipo en el catálogo, que
+coincide con la política por defecto de la extensión → los tipos que BLOQUEAN (secretos, CURP,
+RFC, DNI, NIE y dirección heurística) son "alto"; los que ADVIERTEN (correo, teléfono, nombre,
+término propio, org- de OpenAI, pk_ de Stripe) son "medio". Excepción: una dirección que solo vio
+Presidio (fuente `pii_ner`) es "medio". Tipos desconocidos: por su fuente (secret/client → alto).
 
 Umbrales (Fase 4B):
 - ALTO  = umbral final del detector de inyección, leído de metrics.json
@@ -12,6 +18,7 @@ Umbrales (Fase 4B):
 from __future__ import annotations
 
 import config
+from detectors import catalog
 
 DEFAULT_HIGH = 0.80
 RANK = {"bajo": 0, "medio": 1, "alto": 2}
@@ -33,14 +40,12 @@ def compute_risk(findings: list[dict], injection_score: float | None,
         h, m = thresholds()
         high = h if high is None else high
         medium = m if medium is None else medium
-    sources = {f.get("source") for f in findings}
-    has_secret = bool(sources & {"secret", "client"})
-    has_pii = bool(sources & {"pii", "client_pii"})  # client_pii: PII/término propio visto solo por la extensión
+    levels = {catalog.finding_risk(f.get("type", ""), f.get("source")) for f in findings}
     inj = injection_score if injection_score is not None else -1.0
 
-    if has_secret or inj >= high:
+    if "alto" in levels or inj >= high:
         return "alto"
-    if has_pii or inj >= medium:
+    if levels or inj >= medium:
         return "medio"
     return "bajo"
 

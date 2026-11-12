@@ -65,3 +65,35 @@ def test_none_injection_adds_no_risk():
 def test_max_risk_never_lowers():
     assert risk.max_risk("alto", "bajo") == "alto"
     assert risk.max_risk("bajo", "medio") == "medio"
+
+
+# ---------------------------------------------------------------- Fase 5A.1
+def test_catalog_motives():
+    from detectors import catalog
+
+    assert catalog.motives(["openai_key", "email"], "alto") == ["secreto", "dato personal"]
+    assert catalog.motives(["termino_propio"], "medio") == ["término propio"]
+    assert catalog.motives([], "alto") == ["inyección"]  # riesgo sin hallazgos = inyección
+    assert catalog.motives([], "bajo") == []
+
+
+def test_risk_by_type():
+    import risk
+
+    r = lambda *fs: risk.compute_risk([{"type": t, "source": s} for t, s in fs], None, high=0.8, medium=0.5)
+    assert r(("stripe_key", "secret")) == "alto"
+    assert r(("stripe_publishable_key", "secret")) == "medio"  # pk_ es pública: solo advierte
+    assert r(("openai_org", "secret")) == "medio"
+    assert r(("dni", "pii")) == "alto" and r(("address", "pii")) == "alto"
+    assert r(("address", "pii_ner")) == "medio"  # dirección solo de Presidio
+    assert r(("person", "pii"), ("email", "pii")) == "medio"
+    assert r(("tipo_nuevo", "client")) == "alto" and r(("tipo_nuevo", "pii")) == "medio"
+
+
+def test_new_masks():
+    assert masking.mask_value("stripe_key", "sk_" + "live_FAKEFAKEFAKE1234abcd") == "sk_live_****abcd"
+    assert masking.mask_value("stripe_publishable_key", "pk_test_FAKE1234FAKE") == "pk_test_****FAKE"
+    assert masking.mask_value("stripe_webhook_secret", "wh" + "sec_FAKEfakeFAKEfake1234") == "whsec_****1234"
+    assert masking.mask_value("openai_org", "org-FAKEfake1234FAKEfake5678") == "org-****5678"
+    for t in ("uri_credentials", "secret_assignment", "address", "termino_propio"):
+        assert masking.mask_value(t, "FakePass2026!") == "****"

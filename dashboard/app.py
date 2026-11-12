@@ -32,11 +32,7 @@ PLATFORM_NAMES = {"chatgpt": "ChatGPT", "claude": "Claude", "gemini": "Gemini"}
 TOPIC_NAMES = {"programacion": "Programación", "academico": "Académico", "redaccion": "Redacción",
                "ciberseguridad": "Ciberseguridad", "consulta_general": "Consulta general", "personal": "Personal",
                Q.UNCERTAIN: "Incierto", Q.UNCLASSIFIED: "Sin clasificar"}
-TYPE_NAMES = {"openai_key": "API key OpenAI", "anthropic_key": "API key Anthropic", "aws_access_key": "Clave AWS",
-              "github_token": "Token GitHub", "google_api_key": "API key Google", "jwt": "JWT",
-              "private_key": "Clave privada", "password": "Contraseña", "credit_card": "Tarjeta",
-              "email": "Correo", "phone_mx": "Teléfono", "curp": "CURP", "rfc": "RFC", "person": "Nombre",
-              "address": "Dirección"}
+TYPE_NAMES = Q.TYPE_NAMES  # catálogo único (backend/detectors/catalog.py)
 FONT = dict(family="Segoe UI, Arial, sans-serif", size=15, color="#111827")
 
 st.set_page_config(page_title="Auditor de Prompts", page_icon="🛡️", layout="wide")

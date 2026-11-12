@@ -35,6 +35,10 @@
     .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
     .samples button { background: color-mix(in srgb, CanvasText 8%, Canvas); color: inherit; font-size: 12px; padding: 6px 10px; }
     .strict { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: -8px 0 20px; }
+    .demo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; margin: -8px 0 20px; }
+    .demo select { font: inherit; padding: 5px 8px; border-radius: 8px; max-width: 100%; }
+    .demo button { background: color-mix(in srgb, CanvasText 8%, Canvas); color: inherit; font-size: 12px; padding: 6px 10px; }
+    .demo .hint { opacity: .7; }
   </style>
 </head>
 <body>
@@ -47,7 +51,8 @@
 
   <div class="samples" aria-label="Ejemplos">
     <button type="button" data-sample="normal">Prompt normal</button>
-    <button type="button" data-sample="email">Correo + CURP falsos</button>
+    <button type="button" data-sample="email">Correo + teléfono falsos (advertir)</button>
+    <button type="button" data-sample="curp">CURP falsa (bloquear)</button>
     <button type="button" data-sample="key">API key falsa</button>
     <button type="button" data-sample="password">contraseña: …</button>
     <button type="button" data-sample="card">Tarjeta de prueba</button>
@@ -56,6 +61,15 @@
     <button type="button" data-sample="mix">Secreto + correo</button>
     <button type="button" id="big-paste">Simular pegado de 4 000 caracteres</button>
     <button type="button" id="new-chat">Nuevo chat (botón que no envía)</button>
+  </div>
+
+  <div class="demo">
+    <label for="demo-case">Casos de demo (5A.1):</label>
+    <select id="demo-case" aria-describedby="demo-hint">
+      <option value="">— elige un escenario simulado —</option>
+    </select>
+    <button type="button" id="demo-insert">Insertar</button>
+    <span id="demo-hint" class="hint"></span>
   </div>
 
   <label class="strict">
@@ -85,7 +99,8 @@
   const FAKE_KEY = "sk-" + "proj-" + "DEMO" + "FAKE".repeat(5) + "abcd";
   const SAMPLES = {
     normal: "Explícame qué es un firewall",
-    email: "Llena el formulario con demo.fake@gmail.com y CURP GOMJ800101HDFRRN09",
+    email: "Llena el formulario con demo.fake@gmail.com y el teléfono 55 1234 5678",
+    curp: "Llena el formulario con mi CURP GOMJ800101HDFRRN09",
     key: "Corrige este código: client = OpenAI(api_key='" + FAKE_KEY + "')",
     password: "Conéctate con usuario=admin y contraseña: Fake" + "1234!",
     card: "Cobra a la tarjeta 4111 1111 1111 1111", // tarjeta de prueba Visa
@@ -157,6 +172,36 @@
     if (el.tagName === "TEXTAREA") el.value += big; else el.innerText += big;
     el.dispatchEvent(new InputEvent("input", { bubbles: true }));
   });
+  // Casos de demo (Fase 5A.1): extension/test/demo_cases.json, mismos que usan los tests.
+  // Cada caso se inserta en el último campo enfocado; la pista dice qué debería pasar.
+  const demoSel = document.getElementById("demo-case");
+  const demoHint = document.getElementById("demo-hint");
+  let demoCases = [];
+  fetch("demo_cases.json")
+    .then((r) => r.json())
+    .then((d) => {
+      demoCases = d.casos;
+      for (const c of demoCases) {
+        const o = document.createElement("option");
+        o.value = c.id;
+        o.textContent = c.nombre;
+        demoSel.append(o);
+      }
+    })
+    .catch(() => { demoHint.textContent = "No se pudo leer demo_cases.json (sirve la carpeta con python -m http.server 5500)."; });
+  function insertDemo() {
+    const c = demoCases.find((x) => x.id === demoSel.value);
+    if (!c) return;
+    const el = lastFocused;
+    if (el.tagName === "TEXTAREA") el.value = c.texto; else el.innerText = c.texto;
+    el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+    el.focus();
+    const tipos = c.esperado.map((e) => e.type + (e.valido === false ? " (letra inválida)" : "")).join(", ") || "nada";
+    demoHint.textContent = `Esperado: ${tipos} → ${c.accion}`;
+  }
+  demoSel.addEventListener("change", insertDemo);
+  document.getElementById("demo-insert").addEventListener("click", insertDemo);
+
   document.getElementById("new-chat").addEventListener("click", () => {
     log.innerHTML = ""; sent = 0; count.textContent = "0";
   });

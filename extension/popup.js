@@ -2,17 +2,10 @@
 "use strict";
 
 const P = globalThis.AuditorPatterns;
-const NAMES = {
-  email: "Correo", phone_mx: "Teléfono", curp: "CURP", rfc: "RFC", termino_propio: "Diccionario propio",
-  openai_key: "API key OpenAI", anthropic_key: "API key Anthropic", aws_access_key: "Clave AWS",
-  github_token: "Token GitHub", google_api_key: "API key Google", jwt: "JWT", private_key: "Clave privada",
-  password: "Contraseña", credit_card: "Tarjeta",
-};
-const DEFAULT_POLICIES = Object.fromEntries([
-  ...P.SECRET_TYPES.map((t) => [t, "bloquear"]),
-  ...P.PII_TYPES.map((t) => [t, "advertir"]),
-  [P.DICT_TYPE, "advertir"],
-]);
+// Nombres y políticas por defecto: catálogo único de patterns.js (Fase 5A.1).
+const NAMES = Object.fromEntries(Object.keys(P.CATALOG).map((t) => [t, P.CATALOG[t].nombre]));
+NAMES[P.DICT_TYPE] = "Diccionario propio";
+const DEFAULT_POLICIES = P.DEFAULT_POLICIES;
 const DEFAULTS = { monitoring: true, blocking: true, policies: DEFAULT_POLICIES, dictionary: [], pasteThreshold: 3000 };
 const $ = (id) => document.getElementById(id);
 
@@ -62,8 +55,9 @@ function render(monitoring) {
   });
   $("blocking").addEventListener("change", () => chrome.storage.local.set({ blocking: $("blocking").checked }));
 
-  policyTable($("pol-pii"), [...P.PII_TYPES, P.DICT_TYPE], policies);
-  policyTable($("pol-secret"), P.SECRET_TYPES, policies);
+  const local = P.LOCAL_TYPES;
+  policyTable($("pol-pii"), local.filter((t) => P.categoryOf(t) !== "secreto"), policies);
+  policyTable($("pol-secret"), local.filter((t) => P.categoryOf(t) === "secreto"), policies);
 
   // Diccionario: se normaliza (sin vacíos ni repetidos, máx. 50) al guardar.
   const dict = $("dictionary");

@@ -142,6 +142,21 @@ def test_recent_alerts_text_only_when_asked(dbfile):
     assert t["texto"].str.len().max() <= 100
 
 
+def test_recent_alerts_have_motive(dbfile):
+    """Fase 5A.1: motivo legible por evento (secreto / dato personal / término propio / inyección)."""
+    a = Q.recent_alerts(dbfile, F, threshold=THR)
+    assert "motivo" in a.columns
+    allowed = {"secreto", "dato personal", "término propio", "inyección"}
+    for m in a["motivo"]:
+        assert m == "—" or set(m.split(", ")) <= allowed
+    assert any("secreto" in m for m in a["motivo"]) and any("dato personal" in m for m in a["motivo"])
+
+
+def test_type_names_come_from_catalog():
+    assert Q.TYPE_NAMES["address"] == "Dirección" and Q.TYPE_NAMES["stripe_key"] == "Clave secreta de Stripe"
+    assert {"dni", "nie", "address", "curp"} <= Q.PII_TYPES and "openai_key" not in Q.PII_TYPES
+
+
 def test_headline_only_numbers_and_names(dbfile):
     h = Q.headline(dbfile, F)
     assert h["total"] == 6 and h["pct_pii"] == pytest.approx(33.3)

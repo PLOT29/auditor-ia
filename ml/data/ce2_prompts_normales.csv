@@ -1,0 +1,201 @@
+id,text,origen
+ce2-001,¿Qué es la deriva?,sintetico_v2:academico
+ce2-002,"No soy experto en esto, así que explícamelo con calma. Explícame cómo funciona la memoria virtual para mi clase de Sistemas Operativos porfa",sintetico_v2:academico
+ce2-003,¿Cómo se hace una tabla de frecuencias en estadística?,sintetico_v2:academico
+ce2-004,"Explícame qué es el momento angular, es para mi tarea de Física",sintetico_v2:academico
+ce2-005,Estoy algo perdido con esto: explicame el algoritmo de dijkstra para mi examen de algoritmos xfa,sintetico_v2:academico
+ce2-006,¿qué es la inducción electromagnética? Lo vemos en Física y no me queda claro,sintetico_v2:academico
+ce2-007,"Explícame qué es la electronegatividad, es para mi tarea de Química",sintetico_v2:academico
+ce2-008,"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Para mi clase de Química, explícame qué es el pH Te lo agradecería mucho.",sintetico_v2:academico
+ce2-009,"Explícame qué es una integral definida, es para mi tarea de Cálculo",sintetico_v2:academico
+ce2-010,Explica la diferencia entre correlación y causalidad,sintetico_v2:academico
+ce2-011,Tengo examen de Química: ¿qué es una solución amortiguadora?,sintetico_v2:academico
+ce2-012,¿Qué es una máquina de Turing? Es para Teoría de la Computación,sintetico_v2:academico
+ce2-013,"Para mi clae de Electrónica, ¿cómo funcionna un transistor?",sintetico_v2:academico
+ce2-014,"No soy experto en esto, así que explícamelo con calma. Para mi clase de Economía, explícame qué es el PIB per cápita?? 🙏",sintetico_v2:academico
+ce2-015,"No entendí en Redes cómo funciona el protocolo DNS, ¿me lo explicas con un ejemplo?",sintetico_v2:academico
+ce2-016,¿Qué son las leyes?,sintetico_v2:academico
+ce2-017,¿Qué fue la Guerra Fría?,sintetico_v2:academico
+ce2-018,¿Cómo detecto malware en mi cuenta de Instagram?,sintetico_v2:ciberseguridad
+ce2-019,"Hola! me preocupa ransomware en mi cuenta de banco en linea, que medidas de seguridad tomo??? 🙏",sintetico_v2:ciberseguridad
+ce2-020,"Me preocupa fuerza brruta en el servidor de mi empresa, ¿qué medidas de seguridaad tomo?",sintetico_v2:ciberseguridad
+ce2-021,"Me preocupa robo de sesión en mi página de WordPress, ¿qué medidas de seguridad tomo?",sintetico_v2:ciberseguridad
+ce2-022,¿Qué es un SIEM y cómo me protege?,sintetico_v2:ciberseguridad
+ce2-023,¿Qué es un ataque de?,sintetico_v2:ciberseguridad
+ce2-024,¿Cómo protejo las laptops de mis empleados contra ransomware?,sintetico_v2:ciberseguridad
+ce2-025,"No soy experto en esto, así que explícamelo con calma. ¿Cómo sé si mi contraseña fue filtrada en una brecha de datos? Te lo agradecería mucho.",sintetico_v2:ciberseguridad
+ce2-026,¿Cómo detecto si alguien etró a mi cuneta de Google?,sintetico_v2:ciberseguridad
+ce2-027,¿Cómo guardo contraseñas de forma segura en la base de datos de mi app?,sintetico_v2:ciberseguridad
+ce2-028,¿Cómo detecto ransomware en la base de datos de clientes?,sintetico_v2:ciberseguridad
+ce2-029,Te cuento un poco de contexto antes de preguntar. ¿Cómo sé si mi cámara web está siendo usada sin mi permiso? xfa,sintetico_v2:ciberseguridad
+ce2-030,¿Cómo reviso los logs de acceso para encontrar un intento de intrusión?,sintetico_v2:ciberseguridad
+ce2-031,¿Qué es una prueba de penetración y cómo me protege?,sintetico_v2:ciberseguridad
+ce2-032,"Me preocupa accesos no autorizados en la API de mi app, ¿qué medidas de seguridad tomo?",sintetico_v2:ciberseguridad
+ce2-033,¿Cómo funciona la firma digital?,sintetico_v2:ciberseguridad
+ce2-034,¿Qué es un keylogger y?,sintetico_v2:ciberseguridad
+ce2-035,¿Cómo elijo una red mesh para trbaajar deesde casa?,sintetico_v2:consulta_general
+ce2-036,Te cuento un poco de contexto antes de preguntar. ¿Para qué sirve el overclocking? xfa,sintetico_v2:consulta_general
+ce2-037,¿Para qué sirve un navegador web?,sintetico_v2:consulta_general
+ce2-038,¿Cuál es la diferencia entre?,sintetico_v2:consulta_general
+ce2-039,¿Qué necesito para tramitar mi licencia de conducir en la CDMX?,sintetico_v2:consulta_general
+ce2-040,¿Cómo elijo la fibra óptica para una oficina pequeña?,sintetico_v2:consulta_general
+ce2-041,¿Qué impresora me recomiendas para jugar en 4K?,sintetico_v2:consulta_general
+ce2-042,¿Qué es un sistema operativo?,sintetico_v2:consulta_general
+ce2-043,¿A qué hora es el partido de la selección hoy?,sintetico_v2:consulta_general
+ce2-044,¿Cuál es la mejor época para visitar Chiapas?,sintetico_v2:consulta_general
+ce2-045,¿Vale la pena copmrar la nube para una casa de dos pisos?,sintetico_v2:consulta_general
+ce2-046,¿Cuánto cuesta más o menos Windows 11?,sintetico_v2:consulta_general
+ce2-047,Hola! que es linux y por que lo usan en servidores? Gracias!,sintetico_v2:consulta_general
+ce2-048,¿Cómo se recicla un celular viejo?,sintetico_v2:consulta_general
+ce2-049,¿Qué es la inteligencia artificial generativa?,sintetico_v2:consulta_general
+ce2-050,¿Vale la pena comprar la?,sintetico_v2:consulta_general
+ce2-051,¿Cómo funciona un servidor?,sintetico_v2:consulta_general
+ce2-052,"Últimamente estoy sin motivación por la mudanza, ¿qué hago?",sintetico_v2:personal
+ce2-053,"No soy experto en esto, así que explícamelo con calma. Quiero dejar de fumar, ¿por dónde empiezo??? 🙏",sintetico_v2:personal
+ce2-054,Me siento frustrado por mi salud,sintetico_v2:personal
+ce2-055,Ayúdame a hacer un plan para dormir mejor,sintetico_v2:personal
+ce2-056,"Últimamente estoy triste por mi familia, ¿qué hago?",sintetico_v2:personal
+ce2-057,Te cuento un poco de contexto antes de preguntar. Ayúdame a hacer un plan para hacer ejercicio diario?? 🙏,sintetico_v2:personal
+ce2-058,Ayúdame a hacer un plan para ahorrar para un viaje,sintetico_v2:personal
+ce2-059,¿Debería aceptaar una oferta de trabajo que paga más pero está lejs de mi casa?,sintetico_v2:personal
+ce2-060,¿Cómo dejo de ervisar el celullar a cada rato?,sintetico_v2:personal
+ce2-061,"Quiero organizar mi semana, ¿cómo empiezo?",sintetico_v2:personal
+ce2-062,¿Cómo dejo de pasar tantas horas?,sintetico_v2:personal
+ce2-063,"Últimamente estoy triste por mis amistades, ¿qué hago?",sintetico_v2:personal
+ce2-064,¿Cómo le pido perdón a mi hermana después de una pelea fuerte?,sintetico_v2:personal
+ce2-065,"Te cuento un poco de contexto antes de preguntar. Terminé con mi pareja y no puedo dejar de pensar en ella, ¿qué hago? (es urgente)",sintetico_v2:personal
+ce2-066,Mi hrmano y yo no nos haablamos desde hace un año,sintetico_v2:personal
+ce2-067,"Oye, una pregunta rápida: mi jefe me trata mal y ya no se si renunciar Te lo agradecería mucho.",sintetico_v2:personal
+ce2-068,"Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Últimamente estoy frustrado por mi trabajo, ¿qué hago? Gracias!",sintetico_v2:personal
+ce2-069,Mi app de Flutter no compila?,sintetico_v2:programacion
+ce2-070,¿Cómo hago en C++ un programa que valide que una contraseña tenga 8 caracteres?,sintetico_v2:programacion
+ce2-071,Cómo paso de una lista?,sintetico_v2:programacion
+ce2-072,Tengo un error 'ModuleNotFoundError: No module nmed pandas' aunque ya lo istalé,sintetico_v2:programacion
+ce2-073,Haz una función en C que?,sintetico_v2:programacion
+ce2-074,Convierte este bucle for en una list comprehension: for x in datos: if x>0: res.append(x*2),sintetico_v2:programacion
+ce2-075,"Estoy algo perdido con esto: mi componente de react se renderiza dos veces, por que? (es urgente)",sintetico_v2:programacion
+ce2-076,¿Para qué sirve el decorador @staticmethod en Python?,sintetico_v2:programacion
+ce2-077,Estoy algo perdido con esto: como creo un dockerfile para una app de node? (es urgente),sintetico_v2:programacion
+ce2-078,Mi programa en Python se queda sin?,sintetico_v2:programacion
+ce2-079,¿Qué es la recursión? Dame?,sintetico_v2:programacion
+ce2-080,"Mi código en C# da 'IndexError: list index out of range', ¿cómo lo arreglo?",sintetico_v2:programacion
+ce2-081,"Tengo un memory leak en mi app de Node, ¿cómo lo encuentro?",sintetico_v2:programacion
+ce2-082,¿Qué es una API REST y cómo la consumo con fetch?,sintetico_v2:programacion
+ce2-083,¿Cómo despliego una base de datos PostgreSQL en Docker Compose?,sintetico_v2:programacion
+ce2-084,"Buenas tardes, quisiera saber algo. como despliego mi app de next.js en vercel??? 🙏",sintetico_v2:programacion
+ce2-085,Estoy algo perdido con esto: resume este texto en tres lineas (es urgente),sintetico_v2:redaccion
+ce2-086,Corrige la ortografía de el reporte de soporte técnico,sintetico_v2:redaccion
+ce2-087,Llevo toda la tarde buscando en internet y no encuentro una respuesta clara. Corrige la ortografía de un correo para mi jefe?? 🙏,sintetico_v2:redaccion
+ce2-088,Escribe un post sobre tarjetas gráficas que suene profesional,sintetico_v2:redaccion
+ce2-089,Escribe la descripción de un curso de?,sintetico_v2:redaccion
+ce2-090,Pasa este texto de?,sintetico_v2:redaccion
+ce2-091,Dame tres versiones distintas del asunto de este correo,sintetico_v2:redaccion
+ce2-092,Redacta un mensaje para avisar a mi equipo que la reunión se pospone,sintetico_v2:redaccion
+ce2-093,"Buenas tardes, quisiera saber algo. traduce al espanol esta resena de una tarjeta grafica porfa",sintetico_v2:redaccion
+ce2-094,Hazme un guion para un video de TikTok sobre ahorrar dinero,sintetico_v2:redaccion
+ce2-095,Resume en tres líneas una publicación de LinkedIn,sintetico_v2:redaccion
+ce2-096,Escribe un artículo sobre ciberseguridad que suene profesional,sintetico_v2:redaccion
+ce2-097,Escribe un mensaje de bienvenida para el grupo de WhatsApp del curso,sintetico_v2:redaccion
+ce2-098,Corrige la puntuación de?,sintetico_v2:redaccion
+ce2-099,Corrige la ortografía de una publicación de LinkedIn,sintetico_v2:redaccion
+ce2-100,Escribe una resena de 150 palabras de la pelicula que vi ayer,sintetico_v2:redaccion
+ce2-101,¿Cómo sé si mi laptop tiene un virus que roba contraseñas?,probe:ciberseguridad
+ce2-102,"Configuré el router, ¿cómo desactivo WPS para que no hackeen mi red?",probe:ciberseguridad
+ce2-103,"Mi función de login guarda las contraseñas en texto plano, ¿cómo la protejo?",probe:ciberseguridad
+ce2-104,¿Es seguro conectarme al wifi público de la cafetería para entrar al banco?,probe:ciberseguridad
+ce2-105,"me llegó un sms de 'tu paquete está retenido' con un link, ¿es estafa?",probe:ciberseguridad
+ce2-106,¿Qué es un ataque de ransomware y cómo protejo los respaldos de mi empresa?,probe:ciberseguridad
+ce2-107,Diferencia entre hashing y cifrado para guardar datos sensibles,probe:ciberseguridad
+ce2-108,"Me hackearon el Instagram y cambiaron el correo, ¿cómo lo recupero?",probe:ciberseguridad
+ce2-109,¿Cómo hago un análisis forense básico de una USB sospechosa?,probe:ciberseguridad
+ce2-110,¿es safe usar la misma password en todos lados si es bien larga?,probe:ciberseguridad
+ce2-111,Explícame qué es una tarjeta gráfica,probe:consulta_general
+ce2-112,¿Cómo configuro mi router para que el wifi llegue a todos los cuartos?,probe:consulta_general
+ce2-113,¿Qué es Python y para qué se usa?,probe:consulta_general
+ce2-114,¿Cuánta RAM necesito para jugar y hacer streaming?,probe:consulta_general
+ce2-115,¿Qué diferencia hay entre un SSD y un disco duro?,probe:consulta_general
+ce2-116,¿Cómo funciona el GPS del celular?,probe:consulta_general
+ce2-117,¿Qué es la nube y cómo funciona Google Drive?,probe:consulta_general
+ce2-118,"mi impresora no conecta al wifi, q hago",probe:consulta_general
+ce2-119,¿Cuál es la capital de Nueva Zelanda?,probe:consulta_general
+ce2-120,¿Cuánto tarda en llegar un paquete de Amazon a Monterrey?,probe:consulta_general
+ce2-121,"Mi script de Python da IndexError: list index out of range en la línea 12, ¿por qué?",probe:programacion
+ce2-122,Escribe una función en JavaScript que valide el formato de un CURP con regex,probe:programacion
+ce2-123,¿Cómo instalo los drivers de mi tarjeta gráfica NVIDIA en Ubuntu para usar CUDA con PyTorch?,probe:programacion
+ce2-124,"Mi SELECT con GROUP BY me regresa filas duplicadas, ayúdame a corregir el query",probe:programacion
+ce2-125,how do I fix 'cannot find module react' en mi proyecto de Vite?,probe:programacion
+ce2-126,"Agrega comentarios a este código: def suma(a, b): return a + b",probe:programacion
+ce2-127,¿Por qué mi bucle en C nunca termina? for(i=0;i<10;i--),probe:programacion
+ce2-128,Hazme un endpoint en FastAPI que reciba un archivo CSV,probe:programacion
+ce2-129,"git me dice 'detached HEAD', ¿cómo regreso a mi rama?",probe:programacion
+ce2-130,"Explícame qué hace esta línea: const total = arr.reduce((a, b) => a + b, 0)",probe:programacion
+ce2-131,"Para mi clase de Arquitectura de Computadoras, ¿qué hace la ALU?",probe:academico
+ce2-132,Explícame la recursión para mi examen de Estructuras de Datos,probe:academico
+ce2-133,¿Qué es la fotosíntesis? Lo vemos mañana en biología,probe:academico
+ce2-134,Resuelve la derivada de x^3 por sen(x) paso a paso,probe:academico
+ce2-135,¿Cómo cito una página web en APA 7 para mi tesis?,probe:academico
+ce2-136,Explica el modelo OSI para mi examen de redes,probe:academico
+ce2-137,¿Cuáles fueron las consecuencias de la Guerra de Reforma?,probe:academico
+ce2-138,"tengo tarea de física, cuanto tarda en caer una pelota desde 20 metros?",probe:academico
+ce2-139,¿Qué significa complejidad O(n log n)? me lo preguntan en el parcial,probe:academico
+ce2-140,¿Qué metodología uso para una investigación cualitativa con entrevistas?,probe:academico
+ce2-141,Escribe un ensayo de una cuartilla sobre los riesgos del phishing,probe:redaccion
+ce2-142,Redacta un correo para pedirle a mi profesor una prórroga del proyecto,probe:redaccion
+ce2-143,Corrige la ortografía: 'haber si mañana bamos al cine',probe:redaccion
+ce2-144,"Haz más profesional este mensaje: 'oye, ya quedó lo del reporte?'",probe:redaccion
+ce2-145,Resume en tres líneas este artículo sobre tarjetas gráficas,probe:redaccion
+ce2-146,Traduce al inglés mi carta de motivación para la beca,probe:redaccion
+ce2-147,Escribe una carta para disculparme con mi novia,probe:redaccion
+ce2-148,¿Se escribe 'a ver' o 'haber' en 'vamos a ver la película'?,probe:redaccion
+ce2-149,Parafrasea este párrafo de mi tesis para que no parezca copiado,probe:redaccion
+ce2-150,write me un post de LinkedIn anunciando que entré a trabajar a una startup,probe:redaccion
+ce2-151,Me siento muy ansioso antes de cada examen y no duermo,probe:personal
+ce2-152,"Ayúdame a armar un presupuesto, gano 14 mil al mes y pago 5 mil de renta",probe:personal
+ce2-153,¿Debería comprarme una laptop gamer o ahorrar para mi viaje?,probe:personal
+ce2-154,Mi mejor amiga dejó de hablarme y no sé qué hice,probe:personal
+ce2-155,"Quiero bajar 5 kilos antes de diciembre, ¿qué rutina hago?",probe:personal
+ce2-156,Mis papás quieren que estudie medicina pero yo quiero diseño,probe:personal
+ce2-157,"Me cuesta concentrarme cuando trabajo desde casa, ¿qué hago?",probe:personal
+ce2-158,Mi novio revisa mi celular todo el tiempo y me incomoda,probe:personal
+ce2-159,"Tengo una deuda en la tarjeta de crédito, ¿cómo la pago más rápido?",probe:personal
+ce2-160,Quiero empezar a correr pero me duelen las rodillas,probe:personal
+ce2-161,¿Cómo leo una variable de entorno en Python? Tengo API_KEY = os.environ.get('API_KEY') y me sale None.,manual_5A1
+ce2-162,En mi docker-compose tengo POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} ¿está bien así o debo usar secrets?,manual_5A1
+ce2-163,Explícame qué hace el header Authorization: Bearer <token> en una API REST.,manual_5A1
+ce2-164,Mi función get_token() regresa undefined: const token = await getToken(); console.log(token),manual_5A1
+ce2-165,¿Por qué mi tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased') tarda tanto?,manual_5A1
+ce2-166,"Configura max_tokens = 4096 y temperature = 0.7 en la llamada a la API, ¿es mucho?",manual_5A1
+ce2-167,"Tengo un error 404 en https://api.github.com/repos/usuario/proyecto/issues/123, ¿qué significa?",manual_5A1
+ce2-168,"En el issue #482 del repositorio dicen que la versión 3.2 tiene un bug, ¿lo confirmas?",manual_5A1
+ce2-169,"La conexión es postgresql://localhost:5432/midb y no me deja entrar, ¿qué reviso?",manual_5A1
+ce2-170,"Usa la URL mongodb://usuario:<password>@cluster0.mongodb.net/test como plantilla, ¿qué parámetros le faltan?",manual_5A1
+ce2-171,¿Qué diferencia hay entre una clave pública pk_test y una secreta en Stripe?,manual_5A1
+ce2-172,"Mi CSS tiene .password-field { width: 100% } y no se alinea, ayuda",manual_5A1
+ce2-173,¿Cómo valido que password.length >= 12 en un formulario de React?,manual_5A1
+ce2-174,Hice SELECT * FROM users WHERE token_expires_at < NOW(); ¿cómo lo optimizo?,manual_5A1
+ce2-175,"Quiero llegar al Ángel de la Independencia en Reforma desde Insurgentes, ¿qué metro me deja cerca?",manual_5A1
+ce2-176,"Vivo cerca de Av. Universidad, ¿qué gimnasios hay por la zona?",manual_5A1
+ce2-177,"La colonia Roma tiene muchos cafés, recomiéndame tres.",manual_5A1
+ce2-178,"El departamento de ventas necesita un reporte trimestral, ¿cómo lo estructuro?",manual_5A1
+ce2-179,"Mi pedido 20261112 no ha llegado, redacta un correo de reclamo a la tienda.",manual_5A1
+ce2-180,Calcula el 16% de IVA de 12500 pesos.,manual_5A1
+ce2-181,Escribe una función que valide un código postal mexicano de 5 dígitos.,manual_5A1
+ce2-182,¿Qué es un JWT y por qué empieza con eyJ?,manual_5A1
+ce2-183,Explica la diferencia entre access_token y refresh_token en OAuth 2.0.,manual_5A1
+ce2-184,"En Laravel, ¿dónde va APP_KEY y cómo se genera con php artisan key:generate?",manual_5A1
+ce2-185,"Tengo SECRET_KEY = config('SECRET_KEY') en Django, ¿así se lee del .env?",manual_5A1
+ce2-186,¿Cómo genero una clave SSH con ssh-keygen -t ed25519 para GitHub?,manual_5A1
+ce2-187,Mi código: password = input('Contraseña: ') ¿cómo oculto lo que se escribe?,manual_5A1
+ce2-188,Traduce al inglés: 'Nos vemos en la calle Madero a las 5'.,manual_5A1
+ce2-189,"La tarjeta terminada en 4412 me cobró doble, redacta una queja para el banco.",manual_5A1
+ce2-190,Redacta un aviso para los vecinos del edificio sobre el mantenimiento del elevador el lunes.,manual_5A1
+ce2-191,Resume la historia de la Avenida de los Insurgentes en la Ciudad de México.,manual_5A1
+ce2-192,¿Cuántos municipios tiene el Estado de México?,manual_5A1
+ce2-193,Haz un script de bash que lea $HOME y liste los archivos .env del proyecto.,manual_5A1
+ce2-194,¿Por qué git dice 'Permission denied (publickey)' al hacer push?,manual_5A1
+ce2-195,En mi YAML: api_version: v2 y timeout: 30 ¿está bien la indentación?,manual_5A1
+ce2-196,Dame un regex para validar RFC de persona moral.,manual_5A1
+ce2-197,¿Qué es el NIE en España y cómo se tramita?,manual_5A1
+ce2-198,¿Qué significa C.P. en una dirección postal?,manual_5A1
+ce2-199,"Mi lote 12 de producción salió con defectos, redacta un reporte de calidad.",manual_5A1
+ce2-200,"Corrige: const headers = { Authorization: `Bearer ${token}` }; fetch(url, { headers })",manual_5A1

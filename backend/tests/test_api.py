@@ -52,10 +52,23 @@ def test_analyze_secret_is_high(client):
 
 
 def test_analyze_pii_is_medium(client):
-    data = post(client, f"Mi correo es {F.EMAIL} y mi CURP {F.CURP}", platform="claude")
+    data = post(client, f"Mi correo es {F.EMAIL} y mi tel {F.PHONE}", platform="claude")
     assert data["risk"] == "medio"
-    assert [f["type"] for f in data["findings"]] == ["email", "curp"]
+    assert [f["type"] for f in data["findings"]] == ["email", "phone_mx"]
     assert data["findings"][0]["masked"] == "o****@gmail.com"
+
+
+def test_analyze_official_id_is_high(client):
+    """Fase 5A.1: CURP/RFC/DNI/NIE y dirección heurística bloquean por default → riesgo alto."""
+    data = post(client, f"Mi correo es {F.EMAIL} y mi CURP {F.CURP}", platform="claude")
+    assert data["risk"] == "alto"
+    assert [f["type"] for f in data["findings"]] == ["email", "curp"]
+
+
+def test_dni_reports_control_letter_validity(client):
+    data = post(client, "DNI 12345678Z y otro 48291045X", platform="claude")
+    assert [(f["type"], f.get("valido")) for f in data["findings"]] == [("dni", True), ("dni", False)]
+    assert data["risk"] == "alto"
 
 
 def test_client_finding_not_seen_by_server_is_kept_and_sanitized(client):

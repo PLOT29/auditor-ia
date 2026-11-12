@@ -17,10 +17,16 @@ _PREFIXES = {
     "github_token": None,    # ghp_, gho_, github_pat_ ...
     "google_api_key": "AIza",
     "jwt": "eyJ",
+    "stripe_webhook_secret": "whsec_",
+    "openai_org": "org-",
+    "stripe_key": None,              # se calcula: sk_live_ / rk_test_ ...
+    "stripe_publishable_key": None,  # pk_live_ / pk_test_
 }
 
 # Tipos para los que NO se muestra ningún carácter del valor.
-_FULLY_HIDDEN = {"password", "private_key", "person", "address"}  # ni un pedazo del apellido o la calle
+# ni un pedazo del apellido, la calle o la contraseña de una URI / asignación.
+_FULLY_HIDDEN = {"password", "private_key", "person", "address", "uri_credentials", "secret_assignment",
+                 "termino_propio"}
 
 
 def _github_prefix(value: str) -> str:
@@ -41,6 +47,8 @@ def mask_value(type_: str, value: str) -> str:
         prefix = value[:4]
     elif type_ == "github_token":
         prefix = _github_prefix(value)
+    elif type_ in ("stripe_key", "stripe_publishable_key"):
+        prefix = value[: value.index("_", 3) + 1]
     else:
         prefix = _PREFIXES.get(type_) or ""
 

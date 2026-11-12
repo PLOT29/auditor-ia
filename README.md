@@ -69,7 +69,7 @@ Archivos:
 | Archivo | Papel |
 |---|---|
 | `manifest.json` | Permisos: `storage` + hosts de las 3 plataformas y `localhost:8000` |
-| `patterns.js` | Secretos + PII (correo, teléfono, CURP, RFC) con las mismas regex que el backend, diccionario propio y censura (`test_patterns_parity.py` las compara con Node) |
+| `patterns.js` | Catálogo de tipos (nombre, categoría, política por defecto, riesgo, marcador), secretos + PII (correo, teléfono, CURP, RFC, DNI, NIE, dirección heurística) con las mismas regex que el backend, diccionario propio y censura (`test_patterns_parity.py` las compara con Node) |
 | `content.js` | Escudo en vivo, políticas por tipo (bloquear / advertir / permitir), modal y banner, censura en el campo, pegado grande |
 | `ui.js` | Componentes de Centinela (escudo, banner, modal, tarjetas) en un Shadow DOM cerrado, sin recursos externos |
 | `icons/` | Escudo de Centinela (PNG para la barra de Chrome) |
@@ -79,8 +79,10 @@ Archivos:
 
 ### Modo bloqueo (Fase 3)
 
-- Si el prompt contiene un **secreto**, el envío se cancela en la fase de captura
-  (antes que cualquier listener de la página) y se abre un modal. La PII no bloquea.
+- Si el prompt contiene algo cuya política es **bloquear** (por defecto: secretos, CURP, RFC, DNI,
+  NIE y dirección de vivienda), el envío se cancela en la fase de captura (antes que cualquier
+  listener de la página) y se abre un modal. Correo, teléfono, `org-` de OpenAI, `pk_` de Stripe y
+  el diccionario propio solo **advierten** (banner).
 - «Cancelar» (default, también Escape) deja el texto en el input y registra
   `blocked:true, user_decision:"cancelado"`.
 - «Enviar de todos modos» reenvía con `button.click()` → si la página no lo acepta,
@@ -95,8 +97,20 @@ Archivos:
 ### Pruebas de la extensión (Node)
 
 ```bash
-node extension/test/patterns.test.js     # 59 casos + latencia CE-6
-node extension/test/background.test.js   # cola de reintento
+node extension/test/patterns.test.js     # 163 casos + 7 de demo + latencia CE-6 y escudo (< 10 ms)
+node extension/test/background.test.js   # cola de reintento + migración de políticas
+node extension/test/ce2_fp.js            # CE-2: falsos positivos de bloqueo en 200 prompts normales
+```
+
+`ce2_fp.js --patterns <otra/patterns.js>` mide otra versión (antes/después) y
+`--db C:uditor-datauditor.db` lo repite sobre el historial real (`text_masked`, solo conteos).
+
+**Casos de demo (Fase 5A.1):** `extension/test/demo_cases.json` (6 escenarios simulados, valores
+falsos). En `test.html`, el selector «Casos de demo» inserta cada uno en el último campo enfocado y
+muestra los hallazgos y la acción esperados.
+
+```bash
+python ml/make_ce2_set.py                # regenera ml/data/ce2_prompts_normales.csv
 ```
 
 Ambas corren también dentro de `python -m pytest` (`test_patterns_parity.py`).
@@ -117,11 +131,19 @@ que fuerza esas opciones.
 
 ## Qué detecta hoy
 
-- **Secretos (regex):** `openai_key`, `anthropic_key`, `aws_access_key`,
-  `github_token`, `google_api_key`, `jwt`, `private_key` (PEM), `password`
-  (`password=` / `contraseña:` …, solo el valor), `credit_card` (con Luhn).
-- **PII (regex):** `email`, `phone_mx`, `curp`, `rfc`.
-  Nombre de persona y dirección llegan en Fase 4 con Presidio.
+La lista completa (con política por defecto, riesgo y marcador) está en `backend/detectors/catalog.py`
+(= `CATALOG` de `extension/patterns.js`).
+
+- **Secretos (regex, bloquean):** `openai_key` (`sk-`, `sk-proj-`, `sk-svcacct-`, `sk-admin-`),
+  `anthropic_key`, `google_api_key`, `stripe_key` (`sk_`/`rk_` live/test), `stripe_webhook_secret`
+  (`whsec_`), `aws_access_key` (AKIA/ASIA + 16 o más), `aws_secret_key` (por contexto),
+  `github_token`, `jwt`, `bearer_token`, `uri_credentials` (solo la contraseña de
+  `esquema://usuario:contraseña@host`), `password`, `secret_assignment` (`*_SECRET=`, `api_key:`,
+  `dbPassword = "…"`…; ignora placeholders), `private_key` (bloque PEM completo), `credit_card` (Luhn).
+- **Identificadores (advierten):** `openai_org` (`org-…`), `stripe_publishable_key` (`pk_…`, públicas).
+- **Datos personales:** bloquean `curp`, `rfc`, `dni`, `nie` (con letra de control: `valido`) y
+  `address` (heurística local de señales: vía + número, Col., C.P., Alcaldía, Int., Mz./Lt.; hacen
+  falta 2 señales). Advierten `email`, `phone_mx` y `person` (este último solo en el backend, con Presidio).
 
 ## Privacidad
 

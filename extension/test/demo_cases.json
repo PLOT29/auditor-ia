@@ -1,0 +1,71 @@
+{
+  "_nota": "Escenarios SIMULADOS de la demo (Fase 5A.1). Todos los valores son FALSOS. Algunos prefijos van escritos con escapes \\u de JSON (p. ej. sk\\u005flive_) para que los escáneres de secretos del repositorio no los marquen; al leer el JSON quedan como texto normal. `esperado` = hallazgos LOCALES (patterns.js / mismas regex del backend) en orden de aparición; `accion` = acción con las políticas por defecto. Los usa extension/test/test.html (selector), extension/test/patterns.test.js y backend/tests/test_demo_cases.py.",
+  "casos": [
+    {
+      "id": "caso-1-openai-bearer",
+      "nombre": "1 · OpenAI + Bearer en código",
+      "texto": "Hola, este script en Python me devuelve un error 401 al intentar conectarme a la API. ¿Puedes revisar qué estoy haciendo mal en las cabeceras?\nimport requests\nurl = \"https://openai.com\"\nheaders = {\n    \"Authorization\": \"Bearer sk-\u0070roj-98a7s6d5f4g3h2j1k0l9z8x7c6v5b4n3m2q1w2e3r4t5y6u7i8o9p0\",\n    \"OpenAI-Organization\": \"org-7x9K2mP4qR8vL1nZ5wT3yB6j\"\n}",
+      "esperado": [
+        { "type": "openai_key", "masked": "sk-****o9p0" },
+        { "type": "openai_org", "masked": "org-****yB6j" }
+      ],
+      "accion": "bloquear"
+    },
+    {
+      "id": "caso-2-aws-env",
+      "nombre": "2 · AWS en .env",
+      "texto": "Necesito convertir estas variables a un archivo docker-compose.yml seguro para producción. Aquí tienes los datos de mi cuenta actual:\nAWS_ACCESS_KEY_ID=\u0041KIAIOSFODNN7EXAMPLE9\nAWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY89\nAWS_DEFAULT_REGION=us-east-1",
+      "esperado": [
+        { "type": "aws_access_key", "masked": "AKIA****PLE9" },
+        { "type": "aws_secret_key", "masked": "****EY89" }
+      ],
+      "accion": "bloquear"
+    },
+    {
+      "id": "caso-3-uri-bd",
+      "nombre": "3 · URI de base de datos",
+      "texto": "Mi aplicación en Node.js tarda mucho en conectar a la base de datos. Esta es la URI que estoy usando actualmente, ¿crees que le falta algún parámetro de pool de conexiones?\npostgresql://admin_prod:P@ssw0rd_S3cr3t_2026!@://amazonaws.com",
+      "esperado": [
+        { "type": "uri_credentials", "masked": "****" }
+      ],
+      "accion": "bloquear"
+    },
+    {
+      "id": "caso-4-openssh",
+      "nombre": "4 · Clave privada OpenSSH",
+      "texto": "¿Puedes decirme si esta clave privada tiene el formato correcto para usarla en GitHub Actions? Me da un error de formato inválido al hacer el deploy:\n-----BEGIN OPENSSH \u0050RIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACB8x9K2mP4qR8vL1nZ5wT3yB6j7x9K2mP4qR8vL1nZ5wQAAAJBR8vL1nZ5w\nT3yB6j7x9K2mP4qR8vL1nZ5wT3yB6j7x9K2mP4qR8vL1nZ5wT3yB6jAAAAE2FkbWluQHBy\nb2Qtc2VydmVyLTAxAQIDBA==\n-----END OPENSSH \u0050RIVATE KEY-----",
+      "esperado": [
+        { "type": "private_key", "masked": "****" }
+      ],
+      "accion": "bloquear"
+    },
+    {
+      "id": "caso-5-stripe-pii",
+      "nombre": "5 · Stripe + datos personales",
+      "texto": "Redacta un correo de disculpa para el cliente Juan Pérez (DNI: 48291045X, tarjeta terminada en 4412) porque su pago falló. Para que tengas el contexto técnico, el webhook nos devolvió un error usando nuestra clave sk\u005flive_51M9xK2L8pQ4vR7nZ3wT6yB1j0cV5bN8mQ2wE4rT6yU8iO0pA y el secret del webhook wh\u0073ec_9a8b7c6d5e4f3g2h1i0j9k8l7m6n5o4p3q2r1s0t.",
+      "esperado": [
+        { "type": "dni", "masked": "****5X", "valido": false },
+        { "type": "stripe_key", "masked": "sk_live_****O0pA" },
+        { "type": "stripe_webhook_secret", "masked": "whsec_****1s0t" }
+      ],
+      "accion": "bloquear",
+      "_backend": "Además, Presidio (solo backend) puede reportar «Juan Pérez» como nombre de persona (advertencia, riesgo medio)."
+    },
+    {
+      "id": "caso-6a-direccion-completa",
+      "nombre": "6a · Dirección de vivienda completa",
+      "texto": "Ayúdame a llenar el formulario de envío de la paquetería. Mi domicilio es Calle Fresno 128, Int. 4, Col. Santa María la Ribera, Alcaldía Cuauhtémoc, C.P. 06400, Ciudad de México.",
+      "esperado": [
+        { "type": "address", "masked": "****" }
+      ],
+      "accion": "bloquear"
+    },
+    {
+      "id": "caso-6b-calle-famosa",
+      "nombre": "6b · Calle famosa sin más datos",
+      "texto": "¿Qué restaurante me recomiendas para cenar el viernes? Nos vemos en Reforma a las 8.",
+      "esperado": [],
+      "accion": "permitir"
+    }
+  ]
+}

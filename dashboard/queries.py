@@ -11,6 +11,7 @@ Reglas:
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import sqlite3
@@ -33,6 +34,19 @@ SOURCES = {"ambos": None, "extension": "extension", "import": "import"}
 UNCERTAIN = "incierto"
 UNCLASSIFIED = "sin_clasificar"
 WEEKDAYS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+
+
+def _load_catalog():
+    """Catálogo de tipos del backend (backend/detectors/catalog.py, sin dependencias), cargado por ruta
+    para no importar el paquete del backend. Fuente única de nombres, categorías y motivos."""
+    spec = importlib.util.spec_from_file_location("auditor_catalog", REPO / "backend" / "detectors" / "catalog.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+CATALOG = _load_catalog()
+TYPE_NAMES = {t: v["nombre"] for t, v in CATALOG.CATALOG.items()}
 
 EVENT_COLUMNS = ["id", "ts", "platform", "risk", "category", "category_conf", "blocked",
                  "user_decision", "findings_json", "source"]
@@ -256,7 +270,7 @@ def recent_alerts(path: Path | str, f: Filters, limit: int = 20, include_text: b
                   threshold: float | None = None) -> pd.DataFrame:
     """Últimos eventos de riesgo medio o alto. El texto enmascarado (≤ 100 caracteres) SOLO
     con include_text=True; si no, la columna ni siquiera se lee de la BD."""
-    cols = ["hora", "plataforma", "riesgo", "hallazgos", "bloqueo", "tema"] + (["texto"] if include_text else [])
+    cols = ["hora", "plataforma", "riesgo", "motivo", "hallazgos", "bloqueo", "tema"] + (["texto"] if include_text else [])
     df = events(path, f)
     df = df[df["risk"].isin(["medio", "alto"])].sort_values("ts_local", ascending=False).head(limit)
     if df.empty:
@@ -265,6 +279,8 @@ def recent_alerts(path: Path | str, f: Filters, limit: int = 20, include_text: b
         "hora": df["ts_local"].dt.strftime("%Y-%m-%d %H:%M"),
         "plataforma": df["platform"],
         "riesgo": df["risk"],
+        # Fase 5A.1: secreto / dato personal / término propio / inyección (riesgo sin hallazgos).
+        "motivo": [", ".join(CATALOG.motives(t, r)) or "—" for t, r in zip(df["finding_types"], df["risk"])],
         "hallazgos": df["finding_types"].map(lambda t: ", ".join(t) if t else "—"),
         "bloqueo": [("bloqueado · " + (d or "?")) if b else "—" for b, d in zip(df["blocked"], df["user_decision"])],
         "tema": [topic_bucket(c, p, threshold) for c, p in zip(df["category"], df["category_conf"])],
@@ -284,7 +300,8 @@ def _truncate(text: str, n: int = 100) -> str:
 
 
 # ------------------------------------------------------------------ hallazgo (golpe 3)
-PII_TYPES = {"email", "phone_mx", "curp", "rfc", "person", "address"}
+# Datos personales = categoría "dato_personal" del catálogo (correo, teléfono, CURP, RFC, DNI, NIE, nombre, dirección).
+PII_TYPES = {t for t, v in CATALOG.CATALOG.items() if v["categoria"] == "dato_personal"}
 
 
 def headline(path: Path | str, f: Filters, names: dict | None = None) -> dict:

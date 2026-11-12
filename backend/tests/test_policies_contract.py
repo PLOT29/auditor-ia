@@ -59,16 +59,27 @@ def test_dictionary_term_is_medium_risk_and_never_stored(client):
     assert data["findings"] == [{"type": "termino_propio", "masked": "****", "source": "client_pii"}]
 
 
-def test_client_only_pii_is_medium_not_high(client):
+def test_client_only_pii_risk_follows_catalog(client):
+    """Fase 5A.1: el riesgo de un dato personal que solo vio el cliente sale de su tipo:
+    correo/teléfono (advertir) → medio; CURP/dirección (bloquear por default) → alto."""
     import risk
 
     # La regla, sin depender del detector de inyección:
-    assert risk.compute_risk([{"type": "curp", "masked": "****", "source": "client_pii"}], 0.0) == "medio"
+    assert risk.compute_risk([{"type": "email", "masked": "****", "source": "client_pii"}], 0.0) == "medio"
+    assert risk.compute_risk([{"type": "curp", "masked": "****", "source": "client_pii"}], 0.0) == "alto"
+    assert risk.compute_risk([{"type": "address", "masked": "****", "source": "client_pii"}], 0.0) == "alto"
     assert risk.compute_risk([{"type": "openai_key", "masked": "****", "source": "client"}], 0.0) == "alto"
+    assert risk.compute_risk([{"type": "openai_org", "masked": "****", "source": "client"}], 0.0) == "medio"
+    # Dirección vista SOLO por Presidio (NER): dato personal, pero riesgo medio.
+    assert risk.compute_risk([{"type": "address", "masked": "****", "source": "pii_ner"}], 0.0) == "medio"
     # Y de punta a punta con un prompt natural (una frase corta y rara puede dar score de inyección alto).
     data = post(client, text="Llena el formulario de inscripción con mis datos, por favor",
-                client_findings=[{"type": "curp", "masked": "****RN09"}])
+                client_findings=[{"type": "email", "masked": "d****@x.com"}])
     assert data["risk"] == "medio"
+    assert data["findings"] == [{"type": "email", "masked": "d****@x.com", "source": "client_pii"}]
+    data = post(client, text="Llena el formulario de inscripción con mis datos, por favor",
+                client_findings=[{"type": "curp", "masked": "****RN09"}])
+    assert data["risk"] == "alto"
 
 
 def test_stats_since_filter(client):

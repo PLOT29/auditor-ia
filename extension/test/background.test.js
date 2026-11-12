@@ -19,11 +19,12 @@ function load() {
   const store = {};
   const posted = [];
   let messageListener = null;
+  let installedListener = null;
   const state = { backendUp: false };
 
   const chrome = {
     runtime: {
-      onInstalled: { addListener() {} },
+      onInstalled: { addListener: (fn) => (installedListener = fn) },
       onMessage: { addListener: (fn) => (messageListener = fn) },
     },
     storage: {
@@ -55,7 +56,7 @@ function load() {
 
   // JSON ida y vuelta: los objetos del contexto vm tienen otro prototipo (otro "realm").
   const send = (msg) => new Promise((resolve) => messageListener(msg, {}, (r) => resolve(JSON.parse(JSON.stringify(r)))));
-  return { store, posted, state, send };
+  return { store, posted, state, send, install: () => installedListener() };
 }
 
 const payload = (over = {}) => ({
@@ -71,6 +72,30 @@ const payload = (over = {}) => ({
 const settle = () => new Promise((r) => setTimeout(r, 20));
 
 const tests = {
+  async "instalación nueva: políticas por defecto de la 5A.1"() {
+    const bg = load();
+    await bg.install();
+    const p = bg.store.policies;
+    for (const t of ["openai_key", "stripe_key", "uri_credentials", "curp", "rfc", "dni", "nie", "address"]) assert.equal(p[t], "bloquear", t);
+    for (const t of ["email", "phone_mx", "openai_org", "stripe_publishable_key", "termino_propio"]) assert.equal(p[t], "advertir", t);
+    assert.equal(p.person, undefined, "person solo lo detecta el backend: no tiene política local");
+    assert.equal(bg.store.policiesVersion, 2);
+  },
+
+  async "actualización desde la 5A: CURP/RFC en el default viejo pasan a bloquear; lo elegido se respeta"() {
+    const bg = load();
+    Object.assign(bg.store, { policies: { curp: "advertir", rfc: "permitir", email: "bloquear", openai_key: "advertir" } });
+    await bg.install();
+    const p = bg.store.policies;
+    assert.equal(p.curp, "bloquear"); // seguía en el default viejo
+    assert.equal(p.rfc, "permitir"); // elección del usuario
+    assert.equal(p.email, "bloquear");
+    assert.equal(p.openai_key, "advertir");
+    assert.equal(p.dni, "bloquear"); // tipo nuevo → su default
+    await bg.install(); // idempotente: una segunda actualización no vuelve a tocar nada
+    assert.equal(bg.store.policies.rfc, "permitir");
+  },
+
   async "backend caído: evento bloqueado se encola ENMASCARADO"() {
     const bg = load();
     const resp = await bg.send({ type: "analyze", payload: payload() });

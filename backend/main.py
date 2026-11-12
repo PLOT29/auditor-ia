@@ -25,19 +25,18 @@ from typing import Literal
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 import config
 import db
 import masking
 import risk
-from detectors import embeddings, injection, pii, secrets, topic
+from detectors import catalog, embeddings, injection, pii, secrets, topic
 
 log = logging.getLogger("auditor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 MAX_TEXT_LEN = 100_000
-CLIENT_PII_TYPES = {"email", "phone_mx", "curp", "rfc", "person", "address", "termino_propio"}
 
 
 # ---------- Modelos (contrato de la API) ----------
@@ -66,6 +65,16 @@ class FindingOut(BaseModel):
     type: str
     masked: str
     source: str
+    # Fase 5A.1 (opcional, aditivo): solo DNI/NIE — ¿la letra de control coincide? En los demás
+    # tipos el campo NO aparece (el contrato de siempre: type, masked, source).
+    valido: bool | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_empty_valido(self, handler):
+        data = handler(self)
+        if data.get("valido") is None:
+            data.pop("valido", None)
+        return data
 
 
 class AnalyzeResponse(BaseModel):
@@ -181,9 +190,11 @@ def _safe_client_findings(client: list[ClientFinding], server_types: set[str]) -
         if cf.type in server_types:
             continue
         masked = cf.masked if masking.STARS in cf.masked else masking.STARS
-        # Fase 5A: PII y términos propios que solo vio el cliente cuentan como PII (riesgo medio), no
-        # como secreto. El término propio nunca llega: solo el tipo "termino_propio" y "****".
-        source = "client_pii" if cf.type in CLIENT_PII_TYPES else "client"
+        # Fase 5A: PII y términos propios que solo vio el cliente llevan fuente client_pii; secretos e
+        # identificadores, client. El riesgo sale del tipo (catalog.py): un CURP o una dirección del
+        # cliente son "alto" (la extensión los bloquea por default); un correo, "medio".
+        # El término propio nunca llega: solo el tipo "termino_propio" y "****".
+        source = "client_pii" if catalog.is_personal(cf.type) else "client"
         out.append({"type": cf.type, "masked": masked, "source": source})
     return out
 

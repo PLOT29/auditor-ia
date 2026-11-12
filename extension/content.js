@@ -61,11 +61,9 @@
   const PLATFORM = detectPlatform(location.hostname);
   const PLATFORM_NAMES = { chatgpt: "ChatGPT", claude: "Claude", gemini: "Gemini", test: "Prueba" };
 
-  const DEFAULT_POLICIES = Object.fromEntries([
-    ...P.SECRET_TYPES.map((t) => [t, "bloquear"]),
-    ...P.PII_TYPES.map((t) => [t, "advertir"]),
-    [P.DICT_TYPE, "advertir"],
-  ]);
+  // Políticas por defecto (catálogo de patterns.js): secretos, CURP, RFC, DNI, NIE y dirección = bloquear;
+  // correo, teléfono, org- de OpenAI, pk_ de Stripe y diccionario propio = advertir.
+  const DEFAULT_POLICIES = P.DEFAULT_POLICIES;
   const DEFAULT_SETTINGS = {
     monitoring: true,
     blocking: true,
@@ -96,7 +94,6 @@
   const monitoringOn = () => settings.monitoring !== false;
   const policiesOn = () => monitoringOn() && settings.blocking !== false; // "Modo bloqueo" = aplicar políticas
   const policyFor = (type) => (policiesOn() ? settings.policies[type] || DEFAULT_POLICIES[type] || "advertir" : "permitir");
-  const RANK = { permitir: 0, advertir: 1, bloquear: 2 };
 
   function detectPlatform(host) {
     if (host === "chatgpt.com" || host.endsWith(".chatgpt.com")) return "chatgpt";
@@ -111,8 +108,9 @@
     return P.evaluate(text, { dictionary: settings.dictionary }).map((f) => ({ ...f, action: policyFor(f.type) }));
   }
 
-  const maxAction = (findings) =>
-    findings.reduce((a, f) => (RANK[f.action] > RANK[a] ? f.action : a), "permitir");
+  const maxAction = P.maxAction;
+  // Rojo = algo que se bloquearía (o, con las políticas apagadas, un hallazgo de riesgo alto).
+  const isDanger = (f) => f.action === "bloquear" || (f.action === "permitir" && P.riskOf(f.type) === "alto");
   const signature = (findings) => findings.map((f) => `${f.type}:${f.masked}:${f.action}`).join("|");
 
   // ---------------------------------------------------------- editores
@@ -213,7 +211,7 @@
       const ms = performance.now() - t0;
       const sig = signature(findings);
       current = { findings, sig, text };
-      const state = findings.some((f) => f.source === "secret") ? "danger" : findings.length ? "warn" : "ok";
+      const state = findings.some(isDanger) ? "danger" : findings.length ? "warn" : "ok";
       UI.shield.update({ rect: editor.getBoundingClientRect(), state, items: findings, ms });
       const warn = findings.filter((f) => f.action === "advertir");
       if (warn.length && maxAction(findings) === "advertir" && dismissedSig !== signature(warn)) {
@@ -260,14 +258,10 @@
 
   let bannerSig = null;
 
-  const WITH_ARTICLE = {
-    email: "un correo", phone_mx: "un teléfono", curp: "un CURP", rfc: "un RFC", termino_propio: "un término propio",
-    openai_key: "una API key", anthropic_key: "una API key", google_api_key: "una API key", aws_access_key: "una clave de AWS",
-    github_token: "un token", jwt: "un token", private_key: "una clave privada", password: "una contraseña", credit_card: "una tarjeta",
-  };
+  const withArticle = (type) => (P.info(type) && P.info(type).art) || UI.typeName(type);
 
   function warnMessage(findings) {
-    const items = [...new Set(findings.filter((f) => f.action === "advertir").map((f) => WITH_ARTICLE[f.type] || UI.typeName(f.type)))];
+    const items = [...new Set(findings.filter((f) => f.action === "advertir").map((f) => withArticle(f.type)))];
     const list = items.length > 1 ? `${items.slice(0, -1).join(", ")} y ${items.at(-1)}` : items[0];
     return `Tu mensaje incluye ${list}`;
   }
@@ -377,7 +371,7 @@
     const ms = performance.now() - t0;
     const types = [...new Set(fs.map((f) => UI.typeName(f.type)))];
     UI.toast({
-      level: fs.some((f) => f.source === "secret") ? "alto" : fs.length ? "medio" : "info",
+      level: fs.some((f) => P.riskOf(f.type) === "alto") ? "alto" : fs.length ? "medio" : "info",
       title: `Pegaste ${pasted.length.toLocaleString("es-MX")} caracteres`,
       text: types.length ? `Detectado: ${types.join(", ")}` : `Sin datos sensibles · ${ms.toFixed(0)} ms`,
     });
@@ -467,7 +461,7 @@
       text: dict.length ? P.maskText(text, dict) : text,
       platform: PLATFORM,
       timestamp: new Date().toISOString(),
-      client_findings: ctx.findings.map(({ type, masked }) => ({ type, masked })),
+      client_findings: ctx.findings.map(({ type, masked }) => ({ type, masked })), // nunca el valor ni la posición
       blocked: decision === "advertido" ? false : flagged,
       user_decision: decision,
       client_latency_ms: Math.round((ctx.decisionMs || 0) * 100) / 100,
@@ -491,6 +485,7 @@
     };
     return {
       type: f.type,
+      label: P.findingLabel(f), // «formato de DNI (letra de control no válida)» cuando no cuadra la letra
       action: f.action,
       masked: f.masked,
       before: (from > 0 ? "…" : "") + piece(from, f.start),
@@ -732,9 +727,9 @@
 
   function findingChips(findings) {
     return (findings || []).slice(0, 5).map((f) => ({
-      text: UI.typeName(f.type),
+      text: P.findingLabel(f),
       value: f.masked,
-      level: f.source === "secret" || f.source === "client" ? "danger" : "warn",
+      level: P.riskOf(f.type) === "alto" ? "danger" : "warn",
     }));
   }
 

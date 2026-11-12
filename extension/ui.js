@@ -29,13 +29,9 @@
     info: "M12 10.8v4.6M12 8.2v.4",
   };
 
-  const TYPE_NAMES = {
-    openai_key: "API key de OpenAI", anthropic_key: "API key de Anthropic", aws_access_key: "Clave de AWS",
-    github_token: "Token de GitHub", google_api_key: "API key de Google", jwt: "JWT", private_key: "Clave privada",
-    password: "Contraseña", credit_card: "Tarjeta", email: "Correo", phone_mx: "Teléfono", curp: "CURP",
-    rfc: "RFC", person: "Nombre", address: "Dirección", termino_propio: "Término propio",
-  };
-  const typeName = (t) => TYPE_NAMES[t] || t;
+  // Nombres desde el catálogo único de patterns.js (se carga antes que ui.js).
+  const typeName = (t) => (root.AuditorPatterns ? root.AuditorPatterns.typeName(t) : t);
+  const itemLabel = (it) => it.label || (root.AuditorPatterns ? root.AuditorPatterns.findingLabel(it) : typeName(it.type));
   const ACTION_NAMES = { bloquear: "bloquear", advertir: "advertir", permitir: "permitir" };
 
   let host = null;
@@ -156,7 +152,7 @@
       btn.hidden = false;
       btn.dataset.state = state;
       btn.replaceChildren(icon(state));
-      const labels = { ok: "sin datos sensibles", warn: "datos personales o término propio", danger: "secreto detectado", off: "pausado" };
+      const labels = { ok: "sin datos sensibles", warn: "datos que conviene revisar", danger: "datos que se bloquearán", off: "pausado" };
       btn.setAttribute("aria-label", `Centinela: ${labels[state] || state}`);
       // Posición: esquina inferior derecha DENTRO del campo activo; si no hay campo, la de la ventana.
       const size = 30;
@@ -180,7 +176,7 @@
         for (const it of items) {
           const li = el("li");
           const left = el("span");
-          left.append(document.createTextNode(typeName(it.type) + " "), el("code", "val", it.masked));
+          left.append(document.createTextNode(itemLabel(it) + " "), el("code", "val", it.masked));
           li.append(left, el("span", `act ${it.action}`, ACTION_NAMES[it.action] || it.action));
           ul.append(li);
         }
@@ -272,7 +268,7 @@
 
       for (const it of items || []) {
         const frag = el("div", "frag");
-        frag.append(el("span", "kind", `${typeName(it.type)} · ${it.action === "advertir" ? "advertir" : "bloquear"}`));
+        frag.append(el("span", "kind", `${itemLabel(it)} · ${it.action === "advertir" ? "advertir" : "bloquear"}`));
         if (it.before) frag.append(document.createTextNode(it.before));
         frag.append(el("mark", it.action === "advertir" ? "warn" : null, it.masked)); // nunca el valor real
         if (it.after) frag.append(document.createTextNode(it.after));

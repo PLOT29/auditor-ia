@@ -21,20 +21,32 @@ const TIMEOUT_MS = 3000;
 const QUEUE_KEY = "pendingEvents";
 const QUEUE_MAX = 100;
 
-// Políticas por defecto (Fase 5A): secretos = bloquear; PII y diccionario propio = advertir.
-const DEFAULT_POLICIES = Object.fromEntries([
-  ...self.AuditorPatterns.SECRET_TYPES.map((t) => [t, "bloquear"]),
-  ...self.AuditorPatterns.PII_TYPES.map((t) => [t, "advertir"]),
-  [self.AuditorPatterns.DICT_TYPE, "advertir"],
-]);
+// Políticas por defecto: catálogo de patterns.js (Fase 5A.1). Secretos, CURP, RFC, DNI, NIE y dirección
+// = bloquear; correo, teléfono, org- de OpenAI, pk_ de Stripe y diccionario propio = advertir.
+const DEFAULT_POLICIES = self.AuditorPatterns.DEFAULT_POLICIES;
+const POLICIES_VERSION = 2;
 const DEFAULT_SETTINGS = {
   monitoring: true, blocking: true, policies: DEFAULT_POLICIES, dictionary: [], pasteThreshold: 3000,
-  censorFallbackHosts: [],
+  censorFallbackHosts: [], policiesVersion: POLICIES_VERSION,
 };
+
+/**
+ * Migra las políticas guardadas por una versión anterior. v1 (Fase 5A) guardaba CURP y RFC = advertir
+ * porque era el default; en la v2 (5A.1) su default es bloquear. Solo se cambia lo que seguía en el
+ * default viejo: si el usuario lo había elegido distinto, se respeta. Los tipos nuevos toman su default.
+ */
+function migratePolicies(stored, version) {
+  const out = { ...DEFAULT_POLICIES, ...(stored || {}) };
+  if ((version || 1) < 2) {
+    for (const t of ["curp", "rfc"]) if (out[t] === "advertir") out[t] = DEFAULT_POLICIES[t];
+  }
+  return out;
+}
 
 chrome.runtime.onInstalled.addListener(async () => {
   const current = await chrome.storage.local.get(Object.keys(DEFAULT_SETTINGS));
-  await chrome.storage.local.set({ ...DEFAULT_SETTINGS, ...current });
+  const policies = migratePolicies(current.policies, current.policiesVersion);
+  await chrome.storage.local.set({ ...DEFAULT_SETTINGS, ...current, policies, policiesVersion: POLICIES_VERSION });
 });
 
 async function fetchWithTimeout(url, options = {}) {
