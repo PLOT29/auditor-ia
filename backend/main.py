@@ -1,15 +1,22 @@
 """Backend del Auditor de Prompts (FastAPI) — SPEC §5.2.
 
 Ejecutar (desde backend/):
-    uvicorn main:app --host 127.0.0.1 --port 8000
+    python -m uvicorn main:app --reload
 
 Privacidad: el texto original solo existe en memoria durante la petición.
 Nunca se loguea ni se persiste; a la BD llega `text_masked` + `text_sha256`.
+
+Fase 4B: los modelos (embeddings MiniLM, tema, inyección y Presidio) se cargan UNA vez,
+al arrancar (lifespan) o en la primera llamada a process()/classify_text() si este módulo
+se usa sin servidor (ml/import_history.py, ml/reclassify.py). Si alguno falla, el backend
+sigue funcionando en modo degradado (category="sin_clasificar", injection_score=null,
+PII solo con regex) y /health lo reporta.
 """
 from __future__ import annotations
 
 import hashlib
 import logging
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -20,10 +27,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+import config
 import db
 import masking
 import risk
-from detectors import injection, pii, secrets, topic
+from detectors import embeddings, injection, pii, secrets, topic
 
 log = logging.getLogger("auditor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -62,9 +70,60 @@ class AnalyzeResponse(BaseModel):
     risk: Literal["bajo", "medio", "alto"]
     category: str
     category_confidence: float
-    injection_score: float
+    injection_score: float | None  # null si el detector de inyección no está disponible
     findings: list[FindingOut]
     latency_ms: int
+
+
+# ---------- Carga única de modelos ----------
+
+_models_lock = threading.Lock()
+_models = {"loaded": False, "load_count": 0, "load_ms": None}
+
+
+def load_models() -> dict:
+    """Carga embeddings, tema, inyección y Presidio UNA vez (idempotente y thread-safe)."""
+    if _models["loaded"]:
+        return models_status()
+    with _models_lock:
+        if _models["loaded"]:
+            return models_status()
+        t0 = time.perf_counter()
+        if config.models_disabled():
+            log.warning("AUDITOR_DISABLE_MODELS=1 → sin modelos de ML (solo regex)")
+        else:
+            embeddings.load()
+            topic.load()
+            injection.load()
+            pii.load()
+            if topic.is_loaded() and embeddings.is_loaded() and topic.embedding_model() != embeddings.model_name():
+                log.warning("el modelo de tema usa otros embeddings (%s ≠ %s) → se desactiva",
+                            topic.embedding_model(), embeddings.model_name())
+                topic.reset()
+        _models.update(loaded=True, load_count=_models["load_count"] + 1,
+                       load_ms=round((time.perf_counter() - t0) * 1000))
+        st = models_status()
+        log.info("modelos cargados en %sms: %s", _models["load_ms"],
+                 {k: v["loaded"] for k, v in st["models"].items()})
+        return st
+
+
+def reset_models() -> None:
+    """Olvida los modelos cargados (para tests); el siguiente uso los vuelve a cargar."""
+    with _models_lock:
+        for mod in (embeddings, topic, injection, pii):
+            mod.reset()
+        _models.update(loaded=False, load_ms=None)
+
+
+def models_status() -> dict:
+    high, medium = risk.thresholds()
+    return {
+        "models": {"embeddings": embeddings.status(), "topic": topic.status(),
+                   "injection": injection.status(), "presidio": pii.status()},
+        "thresholds": {"injection_high": high, "injection_medium": medium},
+        "load_ms": _models["load_ms"],
+    }
 
 
 # ---------- App ----------
@@ -73,10 +132,11 @@ class AnalyzeResponse(BaseModel):
 async def lifespan(app: FastAPI):
     db.init_db()
     log.info("BD lista en %s", db.db_path())
+    load_models()
     yield
 
 
-app = FastAPI(title="Auditor de Prompts", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Auditor de Prompts", version="0.4.0", lifespan=lifespan)
 
 # CORS: NO se habilita a propósito. La extensión llama desde su service worker
 # (background.js) con host_permissions sobre localhost:8000, y Chrome no aplica
@@ -118,12 +178,48 @@ def _safe_client_findings(client: list[ClientFinding], server_types: set[str]) -
     return out
 
 
-def analyze_text(text: str) -> tuple[list, str]:
-    """Corre los detectores de secretos y PII. Devuelve (findings, text_masked)."""
+def _ms(t0: float) -> float:
+    return round((time.perf_counter() - t0) * 1000, 2)
+
+
+# ---------- Pipeline (reutilizable) ----------
+
+def detect_findings(text: str) -> tuple[list, str, dict]:
+    """Etapas 1–2: secretos → PII (sin solapes) → enmascarado. Devuelve (findings, text_masked, tiempos)."""
+    load_models()
+    t = time.perf_counter()
     found = secrets.detect(text)
+    t_sec = _ms(t)
+    t = time.perf_counter()
     found += pii.detect(text, taken=found)
+    t_pii = _ms(t)
     masking.apply_masks(found)
-    return found, masking.mask_text(text, found)
+    return found, masking.mask_text(text, found), {"secretos": t_sec, "pii": t_pii}
+
+
+def analyze_text(text: str) -> tuple[list, str]:
+    """Secretos + PII. Devuelve (findings, text_masked). Lo usa también el dry-run del importador."""
+    found, masked, _ = detect_findings(text)
+    return found, masked
+
+
+def classify_text(text: str) -> dict:
+    """Etapas 3–5: UN solo cálculo de embeddings, reutilizado por tema e inyección.
+
+    Lo usan process() y ml/reclassify.py (sobre text_masked).
+    """
+    load_models()
+    timings = {}
+    t = time.perf_counter()
+    X = embeddings.encode([text]) if (topic.is_loaded() or injection.needs_embeddings()) else None
+    timings["embeddings"] = _ms(t)
+    t = time.perf_counter()
+    category, conf = topic.classify(text, X)
+    timings["tema"] = _ms(t)
+    t = time.perf_counter()
+    inj = injection.score(text, X)
+    timings["inyeccion"] = _ms(t)
+    return {"category": category, "category_conf": conf, "injection_score": inj, "timings": timings}
 
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -137,27 +233,31 @@ def sha256_of(text: str) -> str:
 
 
 def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False) -> AnalyzeResponse | None:
-    """Pipeline completo: detección → enmascarado → riesgo → BD. Lo usan /analyze y
-    ml/import_history.py (source="import"), para que ambos pasen exactamente por la misma lógica.
+    """Pipeline completo: secretos → PII → embeddings → tema → inyección → riesgo → BD.
 
-    Con `dedupe=True`, si ya existe un prompt con el mismo text_sha256 no se inserta y devuelve None.
+    Lo usan /analyze y ml/import_history.py (source="import"), para que ambos pasen
+    exactamente por la misma lógica. Con `dedupe=True`, si ya existe un prompt con el mismo
+    text_sha256 no se inserta y devuelve None.
     """
+    load_models()  # no-op si ya están cargados
     t0 = time.perf_counter()
     text = req.text
     text_sha256 = sha256_of(text)
     if dedupe and db.sha256_exists(text_sha256):
         return None
 
-    found, text_masked = analyze_text(text)
+    found, text_masked, timings = detect_findings(text)
     public = [f.to_public() for f in found]
     public += _safe_client_findings(req.client_findings, {f.type for f in found})
 
-    category, category_conf = topic.classify(text)
-    inj = float(injection.score(text))
+    cls = classify_text(text)
+    timings.update(cls["timings"])
+    inj = cls["injection_score"]
     level = risk.compute_risk(public, inj)
 
     ts = (req.timestamp or datetime.now(timezone.utc)).isoformat()
     latency_ms = int(round((time.perf_counter() - t0) * 1000))
+    timings["total"] = latency_ms
 
     prompt_id = db.insert_prompt(
         {
@@ -166,8 +266,8 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
             "text_masked": text_masked,
             "text_sha256": text_sha256,
             "length": len(text),
-            "category": category,
-            "category_conf": category_conf,
+            "category": cls["category"],
+            "category_conf": cls["category_conf"],
             "injection_score": inj,
             "risk": level,
             "findings": public,
@@ -179,15 +279,16 @@ def process(req: AnalyzeRequest, source: str = "extension", dedupe: bool = False
     )
     # Solo metadatos en el log — nunca el texto.
     client_ms = "-" if req.client_latency_ms is None else f"{req.client_latency_ms:.2f}ms"
-    log.info("prompt id=%s platform=%s source=%s risk=%s findings=%d blocked=%s decision=%s latency=%dms cliente=%s",
-             prompt_id, req.platform, source, level, len(public), req.blocked, req.user_decision,
-             latency_ms, client_ms)
+    log.info("prompt id=%s platform=%s source=%s risk=%s category=%s findings=%d blocked=%s decision=%s "
+             "cliente=%s etapas_ms=%s",
+             prompt_id, req.platform, source, level, cls["category"], len(public), req.blocked,
+             req.user_decision, client_ms, " ".join(f"{k}={v}" for k, v in timings.items()))
 
     return AnalyzeResponse(
         id=prompt_id,
         risk=level,
-        category=category,
-        category_confidence=category_conf,
+        category=cls["category"],
+        category_confidence=cls["category_conf"],
         injection_score=inj,
         findings=[FindingOut(**f) for f in public],
         latency_ms=latency_ms,
@@ -201,4 +302,6 @@ def stats() -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True}
+    """{"ok": true, "models": {...: {"loaded": bool, ...}}, "thresholds": {...}}"""
+    st = models_status()
+    return {"ok": True, **st}

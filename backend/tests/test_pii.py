@@ -5,7 +5,7 @@ from detectors import pii, secrets
 
 
 def types(text):
-    return [f.type for f in pii.detect(text)]
+    return [f.type for f in pii.detect_regex(text)]
 
 
 @pytest.mark.parametrize(
@@ -38,7 +38,7 @@ def test_demo_prompt_email_and_curp():
 def test_skips_spans_taken_by_secrets():
     text = f"Tarjeta {F.CARD}"
     taken = secrets.detect(text)
-    assert pii.detect(text, taken=taken) == []
+    assert pii.detect_regex(text, taken=taken) == []
 
 
 @pytest.mark.parametrize(

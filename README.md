@@ -9,7 +9,7 @@ Proyecto final · Seguridad de la Información · IBERO. Ver [SPEC.md](SPEC.md).
 | 1 · Backend `/analyze` + secretos + PII básica + SQLite enmascarada + tests | ✅ |
 | 2 · Extensión: captura + etiqueta flotante | ✅ |
 | 3 · Modo bloqueo / DLP local | ✅ en test.html (falta validar el reenvío en ChatGPT / Claude / Gemini) |
-| 4 · Clasificadores de tema e inyección + Presidio | pendiente (`topic.py` e `injection.py` son stubs) |
+| 4 · Clasificadores de tema e inyección + Presidio | ✅ integrados al backend (4B); CE-4 pendiente del test real etiquetado. Ver [ml/README.md](ml/README.md) |
 | 5 · Dashboard | pendiente |
 | 6 · Evaluación y demo | pendiente |
 

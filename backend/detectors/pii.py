@@ -1,56 +1,58 @@
-"""Detector de PII — versión básica de Fase 1 (solo regex).
+"""Detector de PII (Fase 4B): regex propias + Presidio en español.
 
-Tipos: email, phone_mx, curp, rfc.
-En Fase 4 se agrega Presidio + spaCy (es_core_news_md) para nombre de persona
-y dirección; estos recognizers regex se conservarán como recognizers propios.
+- `detect()`        → Presidio (detectors/presidio_es.py) con recognizers propios de CURP,
+                      RFC y teléfono MX, email, NER de spaCy (persona y dirección), lista
+                      negra y fusión de direcciones de la 4A.1. Si Presidio no cargó, cae a
+                      `detect_regex()` y se avisa en el log.
+- `detect_regex()`  → solo regex (email, phone_mx, curp, rfc). Fallback y baseline de
+                      ml/pii_eval.py.
+En ambos casos se ignoran los fragmentos ya reclamados por secretos (`taken`).
 """
 from __future__ import annotations
 
-import re
+import logging
 
+import config
+from detectors import presidio_es
 from detectors.base import Finding, overlaps_any
+from detectors.pii_patterns import CURP_RE, EMAIL_RE, PHONE_RE, RFC_RE, RULES  # noqa: F401 (re-export)
+from detectors.pii_patterns import phone_ok as _phone_ok  # noqa: F401 (compatibilidad)
 
-_STATES = (
-    "AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE"
-)
-_DATE = r"\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
+log = logging.getLogger("auditor")
 
-EMAIL_RE = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b")
-CURP_RE = re.compile(
-    rf"\b[A-Z][AEIOUX][A-Z]{{2}}{_DATE}[HM](?:{_STATES})[B-DF-HJ-NP-TV-Z]{{3}}[A-Z\d]\d\b",
-    re.IGNORECASE,
-)
-RFC_RE = re.compile(rf"\b[A-ZÑ&]{{3,4}}{_DATE}[A-Z\d]{{2}}[A\d]\b", re.IGNORECASE)
-# Candidato de teléfono; se valida después que tenga 10 dígitos nacionales.
-PHONE_RE = re.compile(
-    r"(?<![\w+])(?:\+?52[\s.-]?)?(?:1[\s.-]?)?(?:\(\d{2,3}\)|\d{2,3})[\s.-]?\d{3,4}[\s.-]?\d{4}(?!\d)"
-)
+_state = {"analyzer": None, "error": None, "config": presidio_es.PostConfig()}
 
 
-def _phone_ok(value: str) -> bool:
-    digits = re.sub(r"\D", "", value)
-    if value.lstrip().startswith("+") or len(digits) > 10:
-        if digits.startswith("52"):
-            digits = digits[2:]
-        if len(digits) == 11 and digits.startswith("1"):  # prefijo móvil antiguo
-            digits = digits[1:]
-    return len(digits) == 10
+def load() -> bool:
+    _state.update(analyzer=None, error=None)
+    try:
+        if config.models_disabled():
+            raise RuntimeError("modelos desactivados (AUDITOR_DISABLE_MODELS=1)")
+        _state["analyzer"] = presidio_es.build_analyzer()
+        presidio_es.detect(_state["analyzer"], "calentamiento", _state["config"])
+    except Exception as e:  # noqa: BLE001
+        _state["error"] = f"{type(e).__name__}: {str(e)[:200]}"
+        log.warning("Presidio NO disponible (%s) → PII solo con regex", _state["error"])
+    return _state["analyzer"] is not None
 
 
-# (tipo, regex, validador) — CURP antes que RFC (el RFC es prefijo de la CURP).
-_RULES = [
-    ("email", EMAIL_RE, None),
-    ("curp", CURP_RE, None),
-    ("rfc", RFC_RE, None),
-    ("phone_mx", PHONE_RE, _phone_ok),
-]
+def is_loaded() -> bool:
+    return _state["analyzer"] is not None
 
 
-def detect(text: str, taken: list[Finding] | None = None) -> list[Finding]:
-    """Devuelve PII encontrada, ignorando fragmentos ya reclamados por secretos."""
+def status() -> dict:
+    return {"loaded": is_loaded(), "error": _state["error"]}
+
+
+def reset() -> None:
+    _state.update(analyzer=None, error=None)
+
+
+def detect_regex(text: str, taken: list[Finding] | None = None) -> list[Finding]:
+    """PII solo con regex, ignorando fragmentos ya reclamados por secretos."""
     taken = list(taken or [])
     found: list[Finding] = []
-    for type_, regex, validator in _RULES:
+    for type_, regex, validator in RULES:
         for m in regex.finditer(text):
             start, end = m.span()
             value = m.group()
@@ -61,4 +63,20 @@ def detect(text: str, taken: list[Finding] | None = None) -> list[Finding]:
             f = Finding(type=type_, start=start, end=end, value=value, source="pii")
             found.append(f)
             taken.append(f)
+    return sorted(found, key=lambda f: f.start)
+
+
+def detect(text: str, taken: list[Finding] | None = None) -> list[Finding]:
+    """PII con Presidio (o regex si Presidio no está disponible)."""
+    analyzer = _state["analyzer"]
+    if analyzer is None:
+        return detect_regex(text, taken)
+    taken = list(taken or [])
+    found: list[Finding] = []
+    for e in presidio_es.detect(analyzer, text, _state["config"]):
+        if overlaps_any(e["start"], e["end"], taken):
+            continue
+        f = Finding(type=e["type"], start=e["start"], end=e["end"], value=text[e["start"]:e["end"]], source="pii")
+        found.append(f)
+        taken.append(f)
     return sorted(found, key=lambda f: f.start)

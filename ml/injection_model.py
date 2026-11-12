@@ -55,7 +55,13 @@ def max_by_owner(scores: np.ndarray, owner: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
-def predict_proba(model: dict, texts: list[str]) -> np.ndarray:
+def predict_proba(model: dict, texts: list[str], X_emb: np.ndarray | None = None) -> np.ndarray:
+    """Probabilidad de inyección por texto.
+
+    `X_emb` (opcional): embeddings MiniLM de `texts` ya calculados (U.embed). El backend los
+    pasa para calcularlos una sola vez por prompt y reutilizarlos en tema e inyección.
+    Las ventanas deslizantes siempre recalculan (necesitan un embedding por ventana).
+    """
     texts = [str(t) for t in texts]
     kind = model["kind"]
     if kind == "tfidf+logreg":
@@ -63,11 +69,12 @@ def predict_proba(model: dict, texts: list[str]) -> np.ndarray:
     if kind in ("embeddings+logreg", "embeddings_windows+logreg"):
         assert model["embedding_model"] == U.EMB_MODEL, "modelo de embeddings distinto al de entrenamiento"
         if kind == "embeddings+logreg":
-            return model["clf"].predict_proba(U.embed(texts))[:, 1]
+            X = X_emb if X_emb is not None else U.embed(texts)
+            return model["clf"].predict_proba(X)[:, 1]
         Xw, owner = embed_windows(texts, size=model["window_tokens"], stride=model["stride"])
         return max_by_owner(model["clf"].predict_proba(Xw)[:, 1], owner, len(texts))
     if kind == "ensemble":
-        return np.mean([predict_proba(m, texts) for m in model["members"]], axis=0)
+        return np.mean([predict_proba(m, texts, X_emb) for m in model["members"]], axis=0)
     raise ValueError(f"tipo de modelo desconocido: {kind}")
 
 

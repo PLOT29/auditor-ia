@@ -210,6 +210,72 @@
           "fp": 0,
           "fn": 0
         }
+      },
+      "regex+presidio_4b": {
+        "email": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 32,
+          "fp": 0,
+          "fn": 0
+        },
+        "phone_mx": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 25,
+          "fp": 0,
+          "fn": 0
+        },
+        "curp": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 13,
+          "fp": 0,
+          "fn": 0
+        },
+        "rfc": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 25,
+          "fp": 0,
+          "fn": 0
+        },
+        "person": {
+          "precision": 0.95,
+          "recall": 1.0,
+          "f1": 0.9744,
+          "tp": 38,
+          "fp": 2,
+          "fn": 0
+        },
+        "address": {
+          "precision": 0.9565,
+          "recall": 1.0,
+          "f1": 0.9778,
+          "tp": 22,
+          "fp": 1,
+          "fn": 0
+        },
+        "micro_todos_los_tipos": {
+          "precision": 0.981,
+          "recall": 1.0,
+          "f1": 0.9904,
+          "tp": 155,
+          "fp": 3,
+          "fn": 0
+        },
+        "micro_tipos_regex": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "tp": 95,
+          "fp": 0,
+          "fn": 0
+        }
       }
     },
     "direccion_exacta": {
@@ -224,6 +290,11 @@
         "tasa": 0.0
       },
       "regex+presidio_ajustado": {
+        "exactas": 17,
+        "total": 22,
+        "tasa": 0.7727
+      },
+      "regex+presidio_4b": {
         "exactas": 17,
         "total": 22,
         "tasa": 0.7727
@@ -260,10 +331,16 @@
         "tel."
       ]
     },
+    "config_4b": {
+      "min_person_tokens": 2,
+      "require_street_for_address": true,
+      "nota": "configuración que usa el backend (detectors/pii.py)"
+    },
     "CE3_cumple": {
       "regex": false,
       "regex+presidio": true,
-      "regex+presidio_ajustado": true
+      "regex+presidio_ajustado": true,
+      "regex+presidio_4b": true
     },
     "address_antes_despues": {
       "antes": {
@@ -288,8 +365,9 @@
       }
     },
     "latencia_presidio_ms_por_prompt": {
-      "regex+presidio": 9.3,
-      "regex+presidio_ajustado": 7.6
+      "regex+presidio": 8.5,
+      "regex+presidio_ajustado": 7.1,
+      "regex+presidio_4b": 7.2
     },
     "errores_presidio_muestra": [
       {
@@ -1244,5 +1322,61 @@
       "CE5_es_cumple": true
     },
     "nota_metodologica": "El procedimiento se ajustó DESPUÉS de la primera evaluación en el test (Fase 4A). La regla pre-registrada fijaba el umbral en el límite exacto (recall OOF = 0.85) sin margen, y en el test el recall cayó a 0.81, por debajo de CE-5. Además, en esa revisión se miró en el test cómo quedarían tfidf y embeddings con un objetivo de 0.90; ese resultado orientó este ajuste. Para limitar el sesgo: (1) la nueva regla (objetivo 0.90 en CV, selección por F1 OOF con guarda de recall en español) se aplica solo con datos de train; (2) se agregaron candidatos (ventanas, ensamble) que se comparan solo en CV; (3) el test se usa una única vez, con el modelo y umbral ya fijados. Aun así, el test ya no es completamente ciego para tfidf/embeddings: el resultado final debe leerse como optimista, y la validación definitiva es el uso real (CE-11) y, si hay tiempo, un test nuevo en español."
+  },
+  "latency_backend_4b": {
+    "n": 50,
+    "por_etapa_ms": {
+      "secretos": {
+        "media": 0.06,
+        "p50": 0.04,
+        "p95": 0.1,
+        "max": 0.77
+      },
+      "pii": {
+        "media": 23.35,
+        "p50": 15.56,
+        "p95": 56.82,
+        "max": 226.32
+      },
+      "embeddings": {
+        "media": 20.26,
+        "p50": 18.12,
+        "p95": 36.16,
+        "max": 52.61
+      },
+      "tema": {
+        "media": 0.58,
+        "p50": 0.56,
+        "p95": 0.75,
+        "max": 0.83
+      },
+      "inyeccion": {
+        "media": 4.18,
+        "p50": 3.79,
+        "p95": 5.95,
+        "max": 13.31
+      },
+      "total": {
+        "media": 48.62,
+        "p50": 38.0,
+        "p95": 103.5,
+        "max": 289.0
+      },
+      "http_ida_y_vuelta": {
+        "media": 64.75,
+        "p50": 54.14,
+        "p95": 121.24,
+        "max": 307.64
+      }
+    },
+    "CE7_meta_ms": 1000,
+    "CE7_cumple": true,
+    "modelos": {
+      "embeddings": true,
+      "topic": true,
+      "injection": true,
+      "presidio": true
+    },
+    "nota": "TestClient en proceso, CPU, un prompt a la vez; incluye escritura en SQLite."
   }
 }

@@ -107,6 +107,27 @@ def init_db() -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_prompts_source ON prompts(source)")
 
 
+def fetch_for_reclassify(only_unclassified: bool = False) -> list[dict]:
+    """Filas a reclasificar (ml/reclassify.py). Solo campos necesarios; el texto es el ENMASCARADO."""
+    where = "WHERE category_conf IS NULL OR category_conf = 0" if only_unclassified else ""
+    with connect() as conn:
+        rows = conn.execute(
+            f"SELECT id, text_masked, findings_json, risk, category, category_conf, injection_score "
+            f"FROM prompts {where} ORDER BY id"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_classification(prompt_id: int, category: str, category_conf: float,
+                          injection_score: float | None, risk: str) -> None:
+    """Actualiza SOLO la clasificación (no toca findings, blocked ni user_decision)."""
+    with connect() as conn:
+        conn.execute(
+            "UPDATE prompts SET category = ?, category_conf = ?, injection_score = ?, risk = ? WHERE id = ?",
+            (category, category_conf, injection_score, risk, prompt_id),
+        )
+
+
 def sha256_exists(text_sha256: str) -> bool:
     with connect() as conn:
         return conn.execute("SELECT 1 FROM prompts WHERE text_sha256 = ? LIMIT 1", (text_sha256,)).fetchone() is not None

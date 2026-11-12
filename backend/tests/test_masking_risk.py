@@ -35,15 +35,33 @@ def test_masked_values_never_contain_full_secret():
 
 
 def test_risk_rules():
+    # umbrales fijos de SPEC §5.4 original; los de producción se prueban en test_models.py
     secret = [{"type": "openai_key", "masked": "x", "source": "secret"}]
     client = [{"type": "openai_key", "masked": "x", "source": "client"}]
     pii_ = [{"type": "email", "masked": "x", "source": "pii"}]
-    assert risk.compute_risk([], 0.0) == "bajo"
-    assert risk.compute_risk([], 0.49) == "bajo"
-    assert risk.compute_risk([], 0.50) == "medio"
-    assert risk.compute_risk([], 0.79) == "medio"
-    assert risk.compute_risk([], 0.80) == "alto"
-    assert risk.compute_risk(pii_, 0.0) == "medio"
-    assert risk.compute_risk(secret, 0.0) == "alto"
-    assert risk.compute_risk(client, 0.0) == "alto"
-    assert risk.compute_risk(pii_ + secret, 0.0) == "alto"
+    assert risk.compute_risk_fixed([], 0.0) == "bajo"
+    assert risk.compute_risk_fixed([], 0.49) == "bajo"
+    assert risk.compute_risk_fixed([], 0.50) == "medio"
+    assert risk.compute_risk_fixed([], 0.79) == "medio"
+    assert risk.compute_risk_fixed([], 0.80) == "alto"
+    assert risk.compute_risk_fixed(pii_, 0.0) == "medio"
+    assert risk.compute_risk_fixed(secret, 0.0) == "alto"
+    assert risk.compute_risk_fixed(client, 0.0) == "alto"
+    assert risk.compute_risk_fixed(pii_ + secret, 0.0) == "alto"
+
+
+def _fixed(findings, inj):
+    return risk.compute_risk(findings, inj, high=0.80, medium=0.50)
+
+
+risk.compute_risk_fixed = _fixed
+
+
+def test_none_injection_adds_no_risk():
+    assert risk.compute_risk([], None, high=0.8, medium=0.5) == "bajo"
+    assert risk.compute_risk([{"source": "pii"}], None, high=0.8, medium=0.5) == "medio"
+
+
+def test_max_risk_never_lowers():
+    assert risk.max_risk("alto", "bajo") == "alto"
+    assert risk.max_risk("bajo", "medio") == "medio"

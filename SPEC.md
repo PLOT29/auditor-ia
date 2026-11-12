@@ -165,20 +165,30 @@ Respuesta:
   "latency_ms": 180
 }
 ```
-`GET /stats` → agregados para el dashboard. `GET /health` → `{"ok": true}`.
+`GET /stats` → agregados para el dashboard. `GET /health` → `{"ok": true, "models": {...}, "thresholds": {...}}` (qué modelos cargaron y umbrales vigentes; la extensión solo lee `ok`).
+
+**Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Es el único ajuste al contrato: `injection_score` admite `null`.
 
 ### 5.3 Detectores
 | Detector | Método | Tipos |
 |---|---|---|
 | Secretos | Regex | API keys (OpenAI `sk-`, Anthropic `sk-ant-`, AWS `AKIA…`, GitHub `ghp_`, Google `AIza…`), JWT, claves privadas PEM, `password=`/`contraseña:` , tarjetas (con validación Luhn) |
-| PII | Presidio (es) + recognizers propios | Correo, teléfono MX, CURP, RFC, nombre de persona, dirección |
-| Tema | `paraphrase-multilingual-MiniLM-L12-v2` + LogisticRegression | `programacion`, `academico`, `redaccion`, `ciberseguridad`, `consulta_general`, `personal` |
-| Inyección/jailbreak | Mismos embeddings + clasificador binario | score 0–1 |
+| PII | Presidio (es) con spaCy `es_core_news_md` + recognizers propios (`backend/detectors/presidio_es.py`, compartido con `ml/pii_eval.py`) | Correo, teléfono MX, CURP, RFC, nombre de persona (≥ 2 palabras), dirección (con calle, número, Col. o C.P.; una ciudad sola no cuenta). Fusión de fragmentos de dirección y lista negra de falsos LOCATION |
+| Tema | `paraphrase-multilingual-MiniLM-L12-v2` + LogisticRegression (`ml/models/topic_clf.joblib`) | `programacion`, `academico`, `redaccion`, `ciberseguridad`, `consulta_general`, `personal` |
+| Inyección/jailbreak | **Ensamble**: promedio de TF-IDF (palabras + caracteres) + LR y MiniLM + LR (`ml/models/injection_final.joblib`, inferencia de `ml/injection_model.py`) | score 0–1 |
+
+Los embeddings se calculan **una sola vez por prompt** y los reutilizan tema e inyección. Los modelos se cargan una vez al arrancar (rutas configurables: `AUDITOR_MODELS_DIR`, `AUDITOR_METRICS_PATH`). El backend no sale a internet: sentence-transformers usa la caché local (`HF_HUB_OFFLINE=1`).
+
+**Reclasificación (`ml/reclassify.py`):** recalcula tema, inyección y riesgo de filas ya guardadas usando `text_masked`, porque el texto original no existe por diseño. Los marcadores (`<EMAIL>`, `<OPENAI_KEY>`…) sustituyen los datos, así que la precisión puede ser **un poco menor** que con el texto original. No toca `findings`, `blocked` ni `user_decision`, y el riesgo solo puede subir.
 
 ### 5.4 Reglas de riesgo (`risk.py`)
-- **Alto:** cualquier secreto **o** `injection_score ≥ 0.80`.
-- **Medio:** cualquier PII **o** `0.50 ≤ injection_score < 0.80`.
-- **Bajo:** lo demás.
+- **Alto:** cualquier secreto **o** `injection_score ≥ umbral alto`.
+- **Medio:** cualquier PII **o** `umbral medio ≤ injection_score < umbral alto`.
+- **Bajo:** lo demás. `injection_score = null` no suma riesgo.
+
+Umbrales finales (Fase 4B):
+- **Alto = 0.514**, el umbral del detector elegido. Se lee en tiempo de ejecución de `ml/reports/metrics.json → injection_4A1.final.umbral` (nunca está hardcodeado); se eligió con predicciones out-of-fold del train para recall ≥ 0.90.
+- **Medio = 0.50**, configurable con `AUDITOR_INJECTION_MEDIUM` (nunca mayor que el alto). Con el detector calibrado la franja "medio" por inyección es estrecha (0.50–0.514); en la práctica, "medio" viene sobre todo de la PII.
 
 ### 5.5 Base de datos (SQLite) — tabla `prompts`
 | Campo | Tipo | Nota |
@@ -252,6 +262,19 @@ Respuesta:
 | CE-11 | Uso real | ≥ 150 prompts propios registrados | Conteo en BD antes de la presentación. Los prompts importados del historial (`source = 'import'`) cuentan como uso real, pero se reportan **por separado** de los capturados con la extensión (`/stats → por_origen`) |
 
 **Baselines para comparar en el reporte:** solo regex vs. regex + Presidio (PII); TF-IDF vs. embeddings (tema e inyección).
+
+### Resultados obtenidos (Fase 4B · detalle en `ml/reports/metrics.json`)
+
+| # | Resultado | ¿Cumple? |
+|---|---|---|
+| CE-1 / CE-2 | Paridad JS ↔ Python en 52 casos de secretos (0 falsos positivos en los 24 negativos); falta medirlo con los sets de 100 y 200 prompts | ⏳ |
+| CE-3 | F1 micro PII **0.99** (P 0.98 / R 1.00) con Presidio en la configuración de producción; solo regex: 0.76. Sobre 100 prompts **sintéticos**: es optimista para las regex, que reconocen exactamente los formatos generados | ✅ (sintético) |
+| CE-4 | **Pendiente** del test real (~100 prompts). Provisional, en CV agrupada sobre sintéticos (no cuenta): F1 macro 0.82 [IC 95 % 0.78–0.85] | ⏳ |
+| CE-5 | Ensamble con umbral 0.514, **test (n = 431): P 0.978 / R 0.872 / F1 0.922**; en español (n = 40): **P 0.826 / R 0.950** | ✅ (ver nota) |
+| CE-6 | Decisión de bloqueo en `content.js`: p95 0.1 ms (prompts del set), 0.4 ms (10 000 caracteres) | ✅ |
+| CE-7 | `/analyze` en CPU con 50 prompts: p95 del pipeline **104 ms**, de ida y vuelta HTTP **121 ms** (PII 57 ms y embeddings 36 ms en p95) | ✅ |
+
+> **Nota metodológica (CE-5, Fase 4A.1):** la regla pre-registrada (umbral con recall OOF = 0.85, sin margen) **no cumplía** en el test: recall 0.81. El procedimiento se ajustó **después** de esa primera evaluación: objetivo de recall 0.90 en CV, comparación de 4 candidatos solo en CV y una única evaluación final en el test. Como el test ya se había mirado, el resultado de CE-5 debe leerse como **optimista**; la validación definitiva es el uso real (CE-11). Detalle en `metrics.json → injection_4A1.nota_metodologica`.
 
 ---
 

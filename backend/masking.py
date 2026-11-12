@@ -20,7 +20,7 @@ _PREFIXES = {
 }
 
 # Tipos para los que NO se muestra ningún carácter del valor.
-_FULLY_HIDDEN = {"password", "private_key"}
+_FULLY_HIDDEN = {"password", "private_key", "person", "address"}  # ni un pedazo del apellido o la calle
 
 
 def _github_prefix(value: str) -> str:

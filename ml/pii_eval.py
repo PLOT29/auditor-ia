@@ -6,7 +6,7 @@
    ml/data/pii_synthetic.jsonl (seed fija). ~15 % no tienen PII (miden falsos positivos).
 2. "solo regex"               = backend/detectors/pii.py tal cual (email, phone_mx, curp, rfc).
    "regex+presidio" (base)     = Presidio con spaCy es_core_news_md (PERSON, LOCATION) + Email +
-                                 recognizers propios CURP, RFC y teléfono MX (ver ml/presidio_es.py).
+                                 recognizers propios CURP, RFC y teléfono MX (backend/detectors/presidio_es.py).
    "regex+presidio_ajustado"   = lo mismo + post-proceso de la Fase 4A.1: lista negra de falsos
                                  LOCATION, score mínimo para direcciones y fusión de fragmentos.
                                  `--min-location-score` cambia el score mínimo (default 0.5).
@@ -34,8 +34,8 @@ sys.path.insert(0, str(ML.parent / "backend"))
 sys.stdout.reconfigure(encoding="utf-8")
 
 import mlutils as U  # noqa: E402
-import presidio_es  # noqa: E402
 from detectors import pii as backend_pii  # noqa: E402
+from detectors import presidio_es  # noqa: E402
 
 TYPES = ["email", "phone_mx", "curp", "rfc", "person", "address"]
 REGEX_TYPES = {"email", "phone_mx", "curp", "rfc"}
@@ -178,7 +178,7 @@ def generate(n: int = 100) -> list[dict]:
 
 # ------------------------------------------------------------------ sistemas
 def predict_regex(text: str) -> list[dict]:
-    return [{"type": f.type, "start": f.start, "end": f.end} for f in backend_pii.detect(text)]
+    return [{"type": f.type, "start": f.start, "end": f.end} for f in backend_pii.detect_regex(text)]
 
 
 def address_exact(rows: list[dict], preds: list[list[dict]]) -> dict:
@@ -242,7 +242,8 @@ def main() -> None:
     analyzer = presidio_es.build_analyzer()
     presidio_es.detect(analyzer, "calentamiento")
     configs = {"regex+presidio": presidio_es.PostConfig.base(),
-               "regex+presidio_ajustado": presidio_es.PostConfig(min_location_score=args.min_location_score)}
+               "regex+presidio_ajustado": presidio_es.PostConfig.v4a1(),
+               "regex+presidio_4b": presidio_es.PostConfig(min_location_score=args.min_location_score)}
     preds = {"regex": [predict_regex(r["text"]) for r in rows]}
     ms = {}
     for name, cfg in configs.items():
@@ -284,8 +285,9 @@ def main() -> None:
     keys = TYPES + ["micro_todos_los_tipos"]
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(11, 4.4))
-    for i, (n, lab) in enumerate(zip(names, ["solo regex", "regex + Presidio", "regex + Presidio ajustado"])):
-        ax.bar(x + (i - 1) * 0.27, [res[n][k]["f1"] for k in keys], 0.27, label=lab)
+    labs = ["solo regex", "Presidio base (4A)", "Presidio ajustado (4A.1)", "Presidio producción (4B)"]
+    for i, (n, lab) in enumerate(zip(names, labs)):
+        ax.bar(x + (i - 1.5) * 0.2, [res[n][k]["f1"] for k in keys], 0.2, label=lab)
     ax.axhline(0.85, ls="--", c="gray", lw=1, label="CE-3 (0.85)")
     ax.set_xticks(x, labels)
     ax.set_ylim(0, 1.05)
@@ -300,6 +302,8 @@ def main() -> None:
         "CE3_meta": 0.85, "resultados": res, "direccion_exacta": exact,
         "config_ajustada": {"min_location_score": args.min_location_score,
                             "lista_negra": sorted(presidio_es.LOCATION_BLACKLIST)},
+        "config_4b": {"min_person_tokens": 2, "require_street_for_address": True,
+                      "nota": "configuración que usa el backend (detectors/pii.py)"},
         "CE3_cumple": {n: res[n]["micro_todos_los_tipos"]["f1"] >= 0.85 for n in names},
         "address_antes_despues": {
             "antes": {k: res["regex+presidio"]["address"][k] for k in ("precision", "recall", "f1")},

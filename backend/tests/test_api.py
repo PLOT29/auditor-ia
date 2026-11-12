@@ -26,7 +26,9 @@ def post(client, text, **extra):
 
 
 def test_health(client):
-    assert client.get("/health").json() == {"ok": True}
+    h = client.get("/health").json()
+    assert h["ok"] is True
+    assert set(h["models"]) == {"embeddings", "topic", "injection", "presidio"}
 
 
 def test_analyze_clean_prompt(client):
@@ -35,7 +37,8 @@ def test_analyze_clean_prompt(client):
                          "injection_score", "findings", "latency_ms"}
     assert data["risk"] == "bajo"
     assert data["findings"] == []
-    assert data["category"] == "consulta_general"
+    assert data["category"] in ("programacion", "academico", "redaccion", "ciberseguridad",
+                                "consulta_general", "personal", "sin_clasificar")
     assert isinstance(data["id"], int)
     assert data["latency_ms"] >= 0
 

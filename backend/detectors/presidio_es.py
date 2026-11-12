@@ -1,11 +1,12 @@
-"""Presidio en español + post-proceso de direcciones (Fase 4A.1).
+"""Presidio en español + post-proceso (módulo compartido backend ↔ ml/pii_eval.py).
 
     analyzer = build_analyzer()
-    ents = detect(analyzer, text, PostConfig())          # con ajustes
+    ents = detect(analyzer, text, PostConfig())          # configuración de producción (4B)
+    ents = detect(analyzer, text, PostConfig.v4a1())     # ajustes de la 4A.1
     ents = detect(analyzer, text, PostConfig.base())     # sin ajustes (como en la Fase 4A)
 
 Recognizers: spaCy es_core_news_md (PERSON, LOCATION), Email y propios de CURP, RFC y
-teléfono MX con las MISMAS regex/validador de backend/detectors/pii.py.
+teléfono MX con las MISMAS regex/validador de detectors/pii_patterns.py.
 
 Post-proceso (`PostConfig`):
   1. Una PERSON que empieza con "Av.", "Calle", "Blvd."… se reclasifica como dirección.
@@ -17,16 +18,24 @@ Post-proceso (`PostConfig`):
      baja su score ×0.6 antes de comparar).
   5. Si una entidad de patrón (email, teléfono, CURP, RFC) se solapa con una del NER, gana
      la de patrón.
+  Fase 4B (precisión en tráfico real; desactivables):
+  6. `min_person_tokens=2`: una PERSON de una sola palabra ("avisa", "Explícame") se descarta;
+     un nombre identificable tiene al menos nombre + apellido.
+  7. `require_street_for_address=True`: una dirección solo cuenta si tiene calle/avenida,
+     número o "Col."/"C.P."; una ciudad sola ("Guadalajara") no identifica a nadie.
 """
 from __future__ import annotations
 
+import logging
 import re
-import sys
 from dataclasses import dataclass, field
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from detectors import pii as backend_pii  # noqa: E402
+from detectors import pii_patterns as P
+
+# PRIVACIDAD: en DEBUG, presidio-analyzer registra los tokens del texto analizado
+# ("Context list is: …"), con secretos y PII en claro. Se fija en WARNING para que nunca
+# emita DEBUG/INFO aunque el nivel global sea DEBUG (lo verifica test_api.test_privacy…).
+logging.getLogger("presidio-analyzer").setLevel(logging.WARNING)
 
 TYPE_MAP = {"EMAIL_ADDRESS": "email", "PHONE_MX": "phone_mx", "CURP": "curp", "RFC": "rfc",
             "PERSON": "person", "LOCATION": "address"}
@@ -45,6 +54,9 @@ TAIL_RE = re.compile(r"^(?:[\s,]*(?:#|no\.?|n[uú]m\.?)?\s*\d{1,5}[a-z]?\b)?(?:[
                      re.IGNORECASE)
 
 
+STREET_HINT = re.compile(r"\d|\b(?:col\.?|colonia|c\.?\s?p\.?)\b", re.IGNORECASE)
+
+
 @dataclass
 class PostConfig:
     adjust: bool = True
@@ -52,10 +64,16 @@ class PostConfig:
     blacklist: set[str] = field(default_factory=lambda: set(LOCATION_BLACKLIST))
     max_gap: int = 40
     score_threshold: float = 0.4  # umbral general de Presidio
+    min_person_tokens: int = 2
+    require_street_for_address: bool = True
 
     @classmethod
     def base(cls) -> "PostConfig":
-        return cls(adjust=False)
+        return cls(adjust=False, min_person_tokens=1, require_street_for_address=False)
+
+    @classmethod
+    def v4a1(cls) -> "PostConfig":
+        return cls(min_person_tokens=1, require_street_for_address=False)
 
 
 def build_analyzer():
@@ -65,7 +83,7 @@ def build_analyzer():
 
     class PhoneMxRecognizer(PatternRecognizer):
         def validate_result(self, pattern_text: str):  # mismo validador que el backend
-            return backend_pii._phone_ok(pattern_text)
+            return P.phone_ok(pattern_text)
 
     nlp = NlpEngineProvider(nlp_configuration={
         "nlp_engine_name": "spacy",
@@ -76,13 +94,13 @@ def build_analyzer():
     registry.add_recognizer(EmailRecognizer(supported_language="es"))
     registry.add_recognizer(PatternRecognizer(
         supported_entity="CURP", supported_language="es", context=["curp"],
-        patterns=[Pattern("curp", backend_pii.CURP_RE.pattern, 0.9)]))
+        patterns=[Pattern("curp", P.CURP_RE.pattern, 0.9)]))
     registry.add_recognizer(PatternRecognizer(
         supported_entity="RFC", supported_language="es", context=["rfc", "fiscal"],
-        patterns=[Pattern("rfc", backend_pii.RFC_RE.pattern, 0.8)]))
+        patterns=[Pattern("rfc", P.RFC_RE.pattern, 0.8)]))
     registry.add_recognizer(PhoneMxRecognizer(
         supported_entity="PHONE_MX", supported_language="es", context=["tel", "teléfono", "cel", "celular"],
-        patterns=[Pattern("phone_mx", backend_pii.PHONE_RE.pattern, 0.7)]))
+        patterns=[Pattern("phone_mx", P.PHONE_RE.pattern, 0.7)]))
     return AnalyzerEngine(nlp_engine=nlp, registry=registry, supported_languages=["es"])
 
 
@@ -136,6 +154,10 @@ def detect(analyzer, text: str, cfg: PostConfig | None = None) -> list[dict]:
                 score = e["score"] * (0.6 if (span.islower() and " " not in span) else 1.0)
                 if score < cfg.min_location_score:
                     continue
+                if cfg.require_street_for_address and not (ADDRESS_PREFIX.match(span) or STREET_HINT.search(span)):
+                    continue  # ciudad o lugar suelto: no es una dirección
+            elif e["type"] == "person" and len(text[e["start"]:e["end"]].split()) < cfg.min_person_tokens:
+                continue  # una sola palabra: casi siempre ruido del NER
             kept.append(e)
         ents = kept
 
