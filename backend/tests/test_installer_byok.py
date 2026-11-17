@@ -203,7 +203,7 @@ def test_installer_endpoints_require_token_and_local_origin(tmp_path, monkeypatc
 
     with TestClient(app) as anon:
         assert anon.post("/ia/local/activar").status_code == 403
-    with TestClient(app, headers=F.auth()) as c:
+    with TestClient(app, base_url="http://127.0.0.1:8000", headers=F.auth()) as c:
         assert c.post("/ia/local/activar", headers={"Origin": "https://evil.example"}).status_code == 403
         assert started == []
         assert c.post("/ia/local/activar", headers={"Origin": "http://127.0.0.1:8000"}).status_code == 200

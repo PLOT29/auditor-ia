@@ -14,6 +14,7 @@
   <meta name="centinela-token" content="__CENTINELA_TOKEN__">
   <link rel="stylesheet" href="panel.css">
   <script src="vendor/echarts/echarts.min.js" defer></script>
+  <script src="range.js" defer></script>
   <script src="panel.js" defer></script>
 </head>
 <body class="presentacion">
@@ -52,6 +53,7 @@
         <label class="sr" for="f-fin">Hasta</label>
         <input type="date" id="f-fin">
       </div>
+      <p class="range-note" id="range-note" role="status" hidden></p>
       <label class="switch" title="Activo: tipografía grande y sin detalles técnicos. El panel nunca muestra texto de prompts.">
         <input type="checkbox" id="presentacion" checked>
         <span class="track" aria-hidden="true"></span>

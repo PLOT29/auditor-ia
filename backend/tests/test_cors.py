@@ -5,6 +5,7 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 
+import config
 import fakes as F
 
 
@@ -21,7 +22,7 @@ def test_extension_origin_is_accepted(client):
     r = client.post(
         "/analyze",
         json={"text": "hola", "platform": "test"},
-        headers={"Origin": "chrome-extension://abcdefghijklmnopabcdefghijklmnop"},
+        headers={"Origin": f"chrome-extension://{config.extension_id()}"},  # el id de la "key" del manifest
     )
     assert r.status_code == 200
     assert r.json()["risk"] == "bajo"

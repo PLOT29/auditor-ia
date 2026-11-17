@@ -127,11 +127,14 @@ nada fuera de `localhost`, así que funciona sin internet. Nunca muestra texto d
 - **Detalle de evento:** clic (o Enter) en un evento del feed o de la pestaña «Tabla». Esc cierra; ←/→ recorren.
   El texto enmascarado solo se ve con el modo presentación apagado.
 
-### API protegida (Fase 5C)
+### API protegida (Fases 5C–5C.1)
 
 Las rutas de datos y del asistente exigen el token de sesión que el backend genera al arrancar (header
 `X-Centinela-Token`) y rechazan cualquier `Origin`/`Host` que no sea local (CSRF y DNS rebinding). El panel y
-la extensión lo obtienen solos; para probar con curl, cópialo del `<meta name="centinela-token">` de
+la extensión lo obtienen solos. La extensión tiene un ID fijo, `oaenmoogbjlciahffnfdffcpjlphgjic` (por la
+`key` de su manifest): tras actualizar a la 5C.1, recárgala una vez en `chrome://extensions`. Si algo responde
+403, el motivo («origen no permitido», «token inválido», «host no permitido») aparece en la respuesta, en el
+log del backend y en el popup («N en cola · último error: …»); para probar con curl, cópialo del `<meta name="centinela-token">` de
 http://localhost:8000/panel/ (cambia en cada arranque):
 
 ```bash

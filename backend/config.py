@@ -7,14 +7,20 @@
     AUDITOR_INJECTION_MEDIUM  umbral de riesgo "medio" por inyección (default: 0.50)
     AUDITOR_DISABLE_MODELS    "1" → no cargar ML (tema/inyección/Presidio); solo regex
     AUDITOR_HF_ONLINE         "1" → permitir que sentence-transformers consulte Hugging Face.
+    AUDITOR_EXTENSION_ID      id de la extensión permitida (default: el que resulta de la "key" de
+                              extension/manifest.json, ver extension_id())
                               Por defecto el backend NO sale a internet (RNF-03): usa la caché local.
 
 Las funciones leen el entorno cada vez (no al importar), para que los tests puedan cambiarlo.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
 import os
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -60,3 +66,30 @@ def enable_ml_imports() -> None:
     if os.environ.get("AUDITOR_HF_ONLINE", "").strip() != "1":
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
         os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
+
+MANIFEST = REPO / "extension" / "manifest.json"
+
+
+@lru_cache(maxsize=4)
+def _manifest_extension_id(path: str, mtime: float) -> str | None:
+    """Id de Chrome que resulta de la "key" pública del manifest: los 32 primeros dígitos hex del
+    SHA-256 de la clave (DER), con 0-f → a-p. Es estable aunque se recargue o se mueva la carpeta."""
+    try:
+        key = json.loads(Path(path).read_text(encoding="utf-8"))["key"]
+        digest = hashlib.sha256(base64.b64decode(key)).hexdigest()[:32]
+    except (OSError, ValueError, KeyError):
+        return None
+    return "".join(chr(ord("a") + int(c, 16)) for c in digest)
+
+
+def extension_id() -> str | None:
+    """Id de la extensión Centinela que el backend acepta como Origin (fuente única: el manifest)."""
+    env = os.environ.get("AUDITOR_EXTENSION_ID", "").strip()
+    if env:
+        return env
+    try:
+        mtime = MANIFEST.stat().st_mtime
+    except OSError:
+        return None
+    return _manifest_extension_id(str(MANIFEST), mtime)

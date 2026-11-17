@@ -335,3 +335,7 @@ body:not(.presentacion) .tech { display: inline; }
 }
 #ia-nube-form label.accept { flex-direction: row; align-items: flex-start; gap: 8px; color: var(--text); }
 @keyframes slidein { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Fase 5C.1 · aviso de rango manual (fijo) */
+.range-note { margin: 0; max-width: 520px; font-size: .78rem; color: var(--warn); }
+.range-note::before { content: "⚠ "; }

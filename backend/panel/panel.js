@@ -83,8 +83,6 @@
     return n;
   };
   const fmtInt = (n) => Math.round(n).toLocaleString("es-MX");
-  const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const typeName = (t) => TYPE_NAMES[t] || t;
 
   function animateNumber(node, to, fmt) {
@@ -145,40 +143,57 @@
   }
 
   // ------------------------------------------------------------ filtros
+  // Fase 5C.1: los presets (7/14/30 d, Todo) son relativos a "ahora" y se recalculan en CADA refresco
+  // (cruzan la medianoche solos); un rango manual es fijo y muestra un aviso. El feed En vivo siempre
+  // muestra los eventos nuevos por SSE, sea cual sea el rango.
+  const R = window.CentinelaRange;
+  let preset = "14";
+
+  /** Si hay un preset activo, recalcula inicio/fin respecto a ahora; muestra el aviso del rango fijo. */
+  function applyRange() {
+    if (preset) {
+      const first = state.data && state.data.rango_datos && state.data.rango_datos[0];
+      const r = R.presetRange(preset, new Date(), first);
+      $("f-inicio").value = r.inicio;
+      $("f-fin").value = r.fin;
+    }
+    const note = R.fixedRangeNote(preset, $("f-inicio").value, $("f-fin").value);
+    $("range-note").hidden = !note;
+    $("range-note").textContent = note || "";
+  }
+
   function initRange() {
-    const today = new Date();
     const saved = store.get("rango", null);
-    $("f-fin").value = saved ? saved.fin : isoDay(today);
-    $("f-inicio").value = saved ? saved.inicio : isoDay(addDays(today, -13));
-    markPreset(saved ? saved.preset : "14");
+    preset = saved ? saved.preset : "14";
+    if (!preset && saved) {
+      $("f-inicio").value = saved.inicio;
+      $("f-fin").value = saved.fin;
+    }
+    markPreset(preset);
+    applyRange();
     document.querySelectorAll(".chip-btn[data-days]").forEach((b) =>
       b.addEventListener("click", () => {
-        const days = b.dataset.days;
-        const end = new Date();
-        let start = addDays(end, -(Number(days) - 1));
-        if (days === "todo") {
-          const r = state.data && state.data.rango_datos;
-          start = r && r[0] ? new Date(`${r[0]}T00:00:00`) : addDays(end, -364);
-        }
-        $("f-inicio").value = isoDay(start);
-        $("f-fin").value = isoDay(end);
-        markPreset(days);
-        saveRange(days);
+        preset = b.dataset.days;
+        markPreset(preset);
+        applyRange();
+        saveRange();
         load();
       })
     );
     for (const id of ["f-inicio", "f-fin"]) {
       $(id).addEventListener("change", () => {
         if ($("f-inicio").value > $("f-fin").value) $("f-fin").value = $("f-inicio").value;
+        preset = null;
         markPreset(null);
-        saveRange(null);
+        applyRange();
+        saveRange();
         load();
       });
     }
   }
   const markPreset = (days) =>
     document.querySelectorAll(".chip-btn[data-days]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.days === days)));
-  const saveRange = (preset) => store.set("rango", { inicio: $("f-inicio").value, fin: $("f-fin").value, preset });
+  const saveRange = () => store.set("rango", { inicio: $("f-inicio").value, fin: $("f-fin").value, preset });
 
   function initPresentation() {
     const on = store.get("presentacion", true);
@@ -194,6 +209,7 @@
 
   // ------------------------------------------------------------ carga de /stats
   async function load() {
+    applyRange(); // los presets avanzan con el reloj (p. ej. después de la medianoche)
     const qs = new URLSearchParams({ detalle: "1", inicio: $("f-inicio").value, fin: $("f-fin").value });
     try {
       const r = await api(`/stats?${qs}`);

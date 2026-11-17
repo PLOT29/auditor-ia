@@ -4,6 +4,7 @@
   "short_name": "Centinela",
   "version": "0.5.0",
   "version_name": "0.5.0-dev (incluye localhost:5500 para test.html)",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkEY915gJgZQPFF6TDYOlqn7EHVw/egPsVPokkskTIYhXlmP4qwWEaQ+23lNVHAPvR9j2lYlkbeS6RijEePpnxs9mWjLoXh7+PIPBxIM/UKtLZabhw02Ns8iYEo1okHSaeno8AswfYCBvQva4orZERjvTwCc8OhCIhnYRtq3piMYdi0fBZ7nS5up5ZwtTSTCqFkM76ucT6SWczi+1GiPXt+geTHMtNW/nJoFIeFM0RPleITxNw8Pi32NjwDo9rbIZ22uvuDdOnfCo8LkwDk0704QvL5D615LmoeD9mMreG4OFxd25lnrbz9ez/Had0Dq7jM0B+litdSBcThS1qwpKZQIDAQAB",
   "description": "Evalúa localmente lo que escribes en ChatGPT, Claude y Gemini y evita fugas de secretos y datos personales. Proyecto académico IBERO.",
   "icons": {
     "16": "icons/centinela-16.png",
@@ -11,7 +12,7 @@
     "48": "icons/centinela-48.png",
     "128": "icons/centinela-128.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://claude.ai/*",

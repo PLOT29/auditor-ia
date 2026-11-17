@@ -97,8 +97,15 @@ function render(monitoring) {
   ]);
   const ok = health && health.ok;
   $("dot").className = `dot ${ok ? "ok" : "off"}`;
-  $("backend").textContent = ok ? "Backend conectado" : "Backend no disponible";
-  if (health && health.pending) $("backend").textContent += ` · ${health.pending} en cola`;
+  // Fase 5C.1: con eventos en cola o un fallo reciente, se dice cuántos y por qué (no solo "conectado").
+  const pending = (health && health.pending) || 0;
+  const error = health && health.error;
+  let label = ok ? "Backend conectado" : "Backend no disponible";
+  if (pending || (error && error !== "backend no disponible")) {
+    label = `${pending} en cola${error ? ` · último error: ${error}` : ""}`;
+    $("dot").className = "dot warn";
+  }
+  $("backend").textContent = label;
   if (today && today.ok) {
     $("t-prompts").textContent = today.prompts;
     $("t-adv").textContent = today.advertencias;

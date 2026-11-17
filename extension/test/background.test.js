@@ -20,12 +20,20 @@ function load() {
   const posted = [];
   let messageListener = null;
   let installedListener = null;
-  const state = { backendUp: false, token: "tok-1", tokenRequests: 0, headers: [] };
+  let alarmListener = null;
+  const alarms = new Map();
+  const state = { backendUp: false, token: "tok-1", tokenRequests: 0, headers: [], tokenStatus: 200, authStatus: 403 };
 
   const chrome = {
     runtime: {
       onInstalled: { addListener: (fn) => (installedListener = fn) },
+      onStartup: { addListener() {} },
       onMessage: { addListener: (fn) => (messageListener = fn) },
+    },
+    alarms: {
+      create: (name, info) => alarms.set(name, info),
+      clear: async (name) => alarms.delete(name),
+      onAlarm: { addListener: (fn) => (alarmListener = fn) },
     },
     storage: {
       local: {
@@ -35,19 +43,25 @@ function load() {
           return out;
         },
         set: async (obj) => Object.assign(store, structuredClone(obj)),
+        remove: async (k) => { for (const x of [].concat(k)) delete store[x]; },
       },
     },
   };
   const fetch = async (url, opts = {}) => {
     if (!state.backendUp) throw Object.assign(new Error("down"), { name: "TypeError" });
     if (url.endsWith("/health")) return { ok: true, json: async () => ({ ok: true }) };
+    const res = (status, body) => {
+      const r = { ok: status === 200, status, json: async () => body };
+      r.clone = () => r;
+      return r;
+    };
     if (url.endsWith("/auth/token")) {
       state.tokenRequests++;
-      return { ok: true, status: 200, json: async () => ({ token: state.token }) };
+      return state.tokenStatus === 200 ? res(200, { token: state.token }) : res(state.tokenStatus, { detail: "origen no permitido" });
     }
     const sent = (opts.headers || {})["X-Centinela-Token"];
     state.headers.push(sent);
-    if (sent !== state.token) return { ok: false, status: 403, json: async () => ({ detail: "token" }) };
+    if (sent !== state.token) return res(state.authStatus, { detail: "token inválido" });
     const body = JSON.parse(opts.body);
     posted.push(body);
     return { ok: true, status: 200, json: async () => ({ id: posted.length, risk: "alto", latency_ms: 1 }) };
@@ -63,7 +77,11 @@ function load() {
 
   // JSON ida y vuelta: los objetos del contexto vm tienen otro prototipo (otro "realm").
   const send = (msg) => new Promise((resolve) => messageListener(msg, {}, (r) => resolve(JSON.parse(JSON.stringify(r)))));
-  return { store, posted, state, send, install: () => installedListener() };
+  const fireAlarm = async (name) => {
+    alarmListener({ name });
+    await new Promise((r) => setTimeout(r, 30));
+  };
+  return { store, posted, state, send, alarms, fireAlarm, install: () => installedListener() };
 }
 
 const payload = (over = {}) => ({
@@ -79,6 +97,51 @@ const payload = (over = {}) => ({
 const settle = () => new Promise((r) => setTimeout(r, 20));
 
 const tests = {
+  async "401 por token también renueva el token y reintenta una vez"() {
+    const bg = load();
+    bg.state.backendUp = true;
+    bg.state.authStatus = 401;
+    await bg.send({ type: "analyze", payload: payload({ blocked: false, user_decision: "no_aplica", text: "uno" }) });
+    bg.state.token = "tok-9"; // reinicio del backend sin recargar la extensión
+    const resp = await bg.send({ type: "analyze", payload: payload({ blocked: false, user_decision: "no_aplica", text: "dos" }) });
+    assert.equal(resp.id, 2);
+    assert.deepEqual(bg.state.headers, ["tok-1", "tok-1", "tok-9"]);
+  },
+
+  async "sin token (403 en /auth/token): el evento queda en cola y el popup ve el motivo"() {
+    const bg = load();
+    bg.state.backendUp = true;
+    bg.state.tokenStatus = 403;
+    const resp = await bg.send({ type: "analyze", payload: payload() });
+    assert.deepEqual(resp, { error: "backend_unavailable", queued: true });
+    assert.equal(bg.store.syncError.motivo, "origen no permitido");
+    assert.ok(bg.alarms.has("centinela-flush"), "alarma de reintento programada");
+    const st = await bg.send({ type: "health" });
+    assert.deepEqual(st, { ok: true, pending: 1, error: "origen no permitido" });
+    assert.ok(!JSON.stringify(bg.store).includes(KEY));
+  },
+
+  async "la alarma vacía la cola sola al reconectar y luego se apaga"() {
+    const bg = load();
+    await bg.send({ type: "analyze", payload: payload({ user_decision: "cancelado" }) });
+    await bg.send({ type: "analyze", payload: payload({ user_decision: "censurado" }) });
+    assert.equal(bg.store.pendingEvents.length, 2);
+    assert.equal(bg.alarms.get("centinela-flush").periodInMinutes, 0.5);
+    assert.equal(bg.store.syncError.motivo, "backend no disponible");
+    await bg.fireAlarm("centinela-flush"); // sigue caído: nada se pierde
+    assert.equal(bg.store.pendingEvents.length, 2);
+    assert.ok(bg.alarms.has("centinela-flush"));
+    bg.state.backendUp = true; // el backend volvió (con token nuevo)
+    bg.state.token = "tok-2";
+    await bg.fireAlarm("centinela-flush");
+    assert.deepEqual(bg.store.pendingEvents, []);
+    assert.deepEqual(bg.posted.map((p) => p.user_decision), ["cancelado", "censurado"]);
+    assert.ok(!bg.alarms.has("centinela-flush"), "sin pendientes no queda alarma");
+    assert.equal(bg.store.syncError, undefined, "el error se limpia al reconectar");
+    const st = await bg.send({ type: "health" });
+    assert.deepEqual(st, { ok: true, pending: 0, error: null });
+  },
+
   async "manda el token de sesión y lo renueva si el backend se reinició (403)"() {
     const bg = load();
     bg.state.backendUp = true;
@@ -166,10 +229,10 @@ const tests = {
     const bg = load();
     await bg.send({ type: "analyze", payload: payload() });
     let st = await bg.send({ type: "health" });
-    assert.deepEqual(st, { ok: false, pending: 1 });
+    assert.deepEqual(st, { ok: false, pending: 1, error: "backend no disponible" });
     bg.state.backendUp = true;
     st = await bg.send({ type: "health" });
-    assert.deepEqual(st, { ok: true, pending: 1 });
+    assert.deepEqual(st, { ok: true, pending: 0, error: null }); // health ya vacía la cola antes de responder
     await settle();
     assert.deepEqual(bg.store.pendingEvents, []);
   },

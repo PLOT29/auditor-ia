@@ -188,16 +188,12 @@ async def latency_log(request: Request, call_next):
     (CSRF); en las sensibles, además, el token de sesión (X-Centinela-Token; en /events, ?token=)."""
     t0 = time.perf_counter()
     path = request.url.path
-    if not security.host_ok(request.headers.get("host")):
-        return JSONResponse(status_code=403, content={"detail": "host no permitido"})
-    if not security.origin_ok(request.headers.get("origin")):
-        return JSONResponse(status_code=403, content={"detail": "origen no permitido"})
-    if path.startswith(LOCAL_ONLY_PREFIXES) and (request.client is None or request.client.host not in LOOPBACK):
-        return JSONResponse(status_code=403, content={"detail": "solo localhost"})
-    if security.requires_token(path) and not security.token_ok(
-            request.headers.get(security.TOKEN_HEADER), request.query_params.get(security.TOKEN_QUERY),
-            allow_query=(path == "/events")):
-        return JSONResponse(status_code=403, content={"detail": "falta el token de sesión o no es válido"})
+    reason = security.check(path, request.headers, request.query_params, request.url.scheme)
+    if reason is None and path.startswith(LOCAL_ONLY_PREFIXES) and (
+            request.client is None or request.client.host not in LOOPBACK):
+        reason = "solo localhost"
+    if reason:
+        return _denied(request, reason)
     response = await call_next(request)
     if path.startswith("/panel"):
         response.headers["Content-Security-Policy"] = PANEL_CSP
@@ -208,6 +204,13 @@ async def latency_log(request: Request, call_next):
     response.headers["X-Process-Time-Ms"] = f"{ms:.1f}"
     log.info("%s %s -> %s %.1fms", request.method, request.url.path, response.status_code, ms)
     return response
+
+
+def _denied(request: Request, reason: str) -> JSONResponse:
+    """403 con un motivo corto y no sensible, registrado en el log para que el fallo se diagnostique solo
+    (con el origen y Sec-Fetch-Site; nunca el token, la query ni texto)."""
+    log.warning("403 %s %s: %s (%s)", request.method, request.url.path, reason, security.describe(request.headers))
+    return JSONResponse(status_code=403, content={"detail": reason})
 
 
 @app.exception_handler(RequestValidationError)
@@ -454,10 +457,12 @@ def event_detail(event_id: int, presentacion: bool = False) -> dict:
 
 @app.get("/auth/token", include_in_schema=False)
 def auth_token(request: Request) -> JSONResponse:
-    """Fase 5C · token de sesión para la extensión (background.js). Solo responde a un Origin
-    chrome-extension:// (una página web no puede leerlo: no hay CORS y su Origin se rechaza)."""
-    if not security.is_extension_origin(request.headers.get("origin")):
-        return JSONResponse(status_code=403, content={"detail": "solo la extensión"})
+    """Fase 5C.1 · token de sesión para la extensión (background.js). Solo responde a la extensión:
+    Origin chrome-extension://<id de Centinela>, o SIN Origin con Sec-Fetch-Site "none" (así llegan los GET
+    del service worker; una página web nunca produce "none"). Ver security.py."""
+    reason = security.token_issuance_reason(request.headers)
+    if reason:
+        return _denied(request, reason)
     return JSONResponse({"token": security.SESSION_TOKEN}, headers={"Cache-Control": "no-store"})
 
 
