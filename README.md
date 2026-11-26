@@ -10,7 +10,7 @@ Proyecto final · Seguridad de la Información · IBERO. Ver [SPEC.md](SPEC.md).
 | 2 · Extensión: captura + etiqueta flotante | ✅ |
 | 3 · Modo bloqueo / DLP local | ✅ en test.html (falta validar el reenvío en ChatGPT / Claude / Gemini) |
 | 4 · Clasificadores de tema e inyección + Presidio | ✅ integrados al backend (4B); CE-4 pendiente del test real etiquetado. Ver [ml/README.md](ml/README.md) |
-| 5 · Centro de control | ✅ `/panel` en vivo (5B); detalle de eventos, asistente con 3 niveles de IA y API local protegida (5C). Streamlit retirado |
+| 5 · Centro de control | ✅ `/panel` en vivo (5B); detalle de eventos, asistente con 3 niveles de IA y API local protegida (5C); revisor humano y aprendizaje asistido (5D). Streamlit retirado |
 | 6 · Evaluación y demo | pendiente |
 
 ## Entorno
@@ -140,6 +140,18 @@ http://localhost:8000/panel/ (cambia en cada arranque):
 ```bash
 curl -s -H "X-Centinela-Token: <token>" "http://127.0.0.1:8000/stats?detalle=1&inicio=2026-11-01&fin=2026-11-12"
 ```
+
+### Corregir y reentrenar (Fase 5D)
+
+- **Corregir:** en la etiqueta flotante del chat, «Tema: … ▾» y «Riesgo … ▾» abren un mini‑menú; en el panel,
+  el detalle del evento tiene la sección «Revisión» (con nota opcional y «Deshacer»).
+- **Propagar:** tras corregir en el panel, se proponen hasta 25 eventos parecidos (similitud ≥ 0.85); solo se
+  guardan los que confirmes. El test real y el probe set nunca entran.
+- **Reentrenar:** cabecera → «Aprendizaje» → «Reentrenar» (se habilita con 20 etiquetas nuevas), o
+  `python ml/retrain_from_feedback.py [--adoptar]`. El candidato se compara con el modelo activo en el probe set;
+  si el F1 baja más de 0.01 se rechaza. Si pasa, decides «Adoptar» o «Descartar»; «Volver a la versión anterior»
+  deshace la adopción. Versiones en `ml/reports/model_registry.json`.
+- Variables: `AUDITOR_PROPAGATION_THRESHOLD` (0.85), `AUDITOR_RETRAIN_MIN` (20), `AUDITOR_PROPAGATED_WEIGHT` (0.5).
 
 ### «Pregúntale a Centinela» — los tres niveles de IA
 

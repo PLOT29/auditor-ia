@@ -17,7 +17,7 @@ ml/data/topic_test_real.csv. Ese archivo es el ÚNICO test de tema.
 - RESPETA el CSV existente: las filas que ya tienen etiqueta nunca se sobrescriben ni se
   quitan; las filas sin etiqueta que ya estaban se conservan (el muestreo es estable) y
   solo se agregan filas nuevas hasta llegar a --n. Tampoco repite ids que ya estén en
-  topic_test_real.csv.
+  topic_test_real.csv, ni eventos con correcciones humanas de la Fase 5D (tabla labels: pudieron usarse para entrenar).
 - Ambos CSV están en .gitignore: son prompts reales.
 """
 from __future__ import annotations
@@ -60,9 +60,13 @@ def load_candidates(db: str) -> list[dict]:
         ORDER BY p.id
         """
     ).fetchall()
+    # Fase 5D: un evento con correcciones humanas (manuales o propagadas, aunque se hayan deshecho) pudo usarse
+    # para reentrenar: nunca debe entrar al test real (sería evaluar con datos de entrenamiento).
+    has_labels = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='labels'").fetchone()
+    trained = {r[0] for r in conn.execute("SELECT DISTINCT event_id FROM labels")} if has_labels else set()
     conn.close()
     return [{"id": str(r["id"]), "platform": r["platform"], "text": r["text_masked"], "sha": r["text_sha256"]}
-            for r in rows]
+            for r in rows if r["id"] not in trained]
 
 
 def stratified_pick(pool: dict[str, list[dict]], n: int, start: Counter, rng: random.Random) -> list[dict]:

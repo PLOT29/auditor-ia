@@ -48,7 +48,7 @@ from detectors import catalog as CATALOG  # noqa: E402  (fuente única de nombre
 TYPE_NAMES = {t: v["nombre"] for t, v in CATALOG.CATALOG.items()}
 
 EVENT_COLUMNS = ["id", "ts", "platform", "risk", "category", "category_conf", "blocked",
-                 "user_decision", "findings_json", "source", "latency_ms"]
+                 "user_decision", "findings_json", "source", "latency_ms", "injection_score"]
 
 
 @dataclass(frozen=True)
@@ -111,9 +111,57 @@ def _where(f: Filters, cols: set[str]) -> tuple[str, list]:
 
 
 # ------------------------------------------------------------------ base
+EFFECTIVE_COLUMNS = ["category_model", "category_conf_model", "risk_model", "tema_por", "inyeccion_por",
+                     "tema_label_id", "inyeccion_label_id"]
+
+
+def _labels(conn) -> dict[tuple[int, str], dict]:
+    """Última etiqueta NO deshecha por (evento, tarea). {} si la tabla aún no existe (BD de antes de la 5D)."""
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='labels'").fetchone() is None:
+        return {}
+    out = {}
+    for r in conn.execute("SELECT id, event_id, tarea, valor, origen FROM labels WHERE deshecho = 0 ORDER BY id"):
+        out[(int(r["event_id"]), r["tarea"])] = dict(r)
+    return out
+
+
+def _finding_level(findings_json) -> str:
+    try:
+        fs = json.loads(findings_json or "[]")
+    except ValueError:
+        fs = []
+    levels = {CATALOG.finding_risk(f.get("type", ""), f.get("source")) for f in fs}
+    return "alto" if "alto" in levels else "medio" if levels else "bajo"
+
+
+def apply_labels(df: pd.DataFrame, labels: dict) -> pd.DataFrame:
+    """Fase 5D · valor EFECTIVO = última etiqueta humana no deshecha > predicción del modelo.
+
+    Tema: la categoría corregida (confianza 1.0: ya no es «incierta»). Inyección: «sí» → riesgo alto;
+    «no» → el riesgo que justifican solo los hallazgos (se quita lo que aportaba el detector). Las
+    predicciones originales quedan en *_model y en la BD nunca se borran.
+    """
+    df["category_model"], df["category_conf_model"], df["risk_model"] = df["category"], df["category_conf"], df["risk"]
+    df["tema_por"], df["inyeccion_por"] = "modelo", "modelo"
+    df["tema_label_id"], df["inyeccion_label_id"] = None, None
+    if not labels or df.empty:
+        return df
+    for idx, row in df.iterrows():
+        t = labels.get((int(row["id"]), "tema"))
+        if t:
+            df.at[idx, "category"], df.at[idx, "category_conf"] = t["valor"], 1.0
+            df.at[idx, "tema_por"], df.at[idx, "tema_label_id"] = t["origen"], t["id"]
+        i = labels.get((int(row["id"]), "inyeccion"))
+        if i:
+            df.at[idx, "risk"] = "alto" if i["valor"] == "si" else _finding_level(row["findings_json"])
+            df.at[idx, "inyeccion_por"], df.at[idx, "inyeccion_label_id"] = i["origen"], i["id"]
+    return df
+
+
 def events(path: Path | str, f: Filters) -> pd.DataFrame:
-    """Eventos filtrados SIN texto. Agrega ts_local (Ciudad de México) y la lista de hallazgos."""
-    empty = pd.DataFrame(columns=EVENT_COLUMNS + ["ts_local", "finding_types"])
+    """Eventos filtrados SIN texto, con el valor EFECTIVO (Fase 5D: etiquetas humanas > modelo).
+    Agrega ts_local (Ciudad de México) y la lista de hallazgos."""
+    empty = pd.DataFrame(columns=EVENT_COLUMNS + ["ts_local", "finding_types"] + EFFECTIVE_COLUMNS)
     path = Path(path)
     if not path.is_file():
         return empty
@@ -125,15 +173,18 @@ def events(path: Path | str, f: Filters) -> pd.DataFrame:
         src = "source" if "source" in cols else "'extension' AS source"
         rows = conn.execute(
             f"SELECT id, ts, platform, risk, category, category_conf, blocked, user_decision, findings_json, {src}, "
-            f"latency_ms "
+            f"latency_ms, injection_score "
             f"FROM prompts WHERE {where} ORDER BY julianday(ts)", params).fetchall()
+        labels = _labels(conn) if rows else {}
     if not rows:
         return empty
     df = pd.DataFrame([dict(r) for r in rows], columns=EVENT_COLUMNS)
     df["ts_local"] = pd.to_datetime(df["ts"], utc=True, format="ISO8601").dt.tz_convert(TZ)
     df["finding_types"] = df["findings_json"].map(_types)
     df["blocked"] = df["blocked"].fillna(0).astype(int)
-    return df
+    df["category"] = df["category"].astype(object)
+    df["category_conf"] = df["category_conf"].astype(object)
+    return apply_labels(df, labels)
 
 
 def _types(findings_json) -> list[str]:
@@ -333,7 +384,7 @@ def headline(path: Path | str, f: Filters, names: dict | None = None) -> dict:
 PLATFORM_NAMES = {"chatgpt": "ChatGPT", "claude": "Claude", "gemini": "Gemini", "test": "Prueba"}
 TOPIC_NAMES = {"programacion": "Programación", "academico": "Académico", "redaccion": "Redacción",
                "ciberseguridad": "Ciberseguridad", "consulta_general": "Consulta general", "personal": "Personal",
-               UNCERTAIN: "Incierto", UNCLASSIFIED: "Sin clasificar"}
+               UNCERTAIN: "Incierto", UNCLASSIFIED: "Sin clasificar", "otro": "Otro / no sé"}
 MOTIVES = ["secreto", "dato personal", "inyección", "término propio"]
 # Índice de exposición (SPEC §5.6): peso 0 a un evento bajo, 0.5 a uno medio y 1 a uno alto.
 EXPOSURE_WEIGHTS = {"bajo": 0.0, "medio": 0.5, "alto": 1.0}
@@ -452,8 +503,12 @@ def panel(path: Path | str, f: Filters, threshold: float | None = None) -> dict:
 MARKER_PATTERN = r"<[A-Z_]+>|\[[A-ZÁÉÍÓÚÑ_]+\]"  # <OPENAI_KEY> (backend) y [API_KEY_OCULTA] (censura)
 
 
+def _decided(origen: str | None, model_text: str) -> str:
+    return {"manual": "corregido por ti", "propagado": "propagado y confirmado"}.get(origen, model_text)
+
+
 def event_detail(path: Path | str, event_id: int, include_text: bool = False,
-                 threshold: float | None = None) -> dict | None:
+                 threshold: float | None = None, inj_threshold: float | None = None) -> dict | None:
     """Detalle de UN evento (conexión de solo lectura). El único texto que existe es `text_masked`; solo
     se lee de la BD si `include_text` (el panel lo pide con el modo presentación apagado)."""
     path = Path(path)
@@ -468,22 +523,38 @@ def event_detail(path: Path | str, event_id: int, include_text: bool = False,
         row = conn.execute(
             f"SELECT id, ts, platform, risk, category, category_conf, injection_score, findings_json, blocked, "
             f"user_decision, latency_ms, length, {src}{text_col} FROM prompts WHERE id = ?", (event_id,)).fetchone()
+        history = []
+        if row is not None and conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='labels'").fetchone() is not None:
+            history = [dict(h) for h in conn.execute(
+                "SELECT id, tarea, valor, origen, similitud_origen, label_padre_id, creado_en, deshecho, nota "
+                "FROM labels WHERE event_id = ? ORDER BY id", (event_id,))]
     if row is None:
         return None
     r = dict(row)
+    live = {h["tarea"]: h for h in history if not h["deshecho"]}  # la última no deshecha de cada tarea
     try:
         findings = json.loads(r["findings_json"] or "[]")
     except ValueError:
         findings = []
     types = [f.get("type", "?") for f in findings]
-    base = event_summary(id=r["id"], ts=r["ts"], platform=r["platform"], risk=r["risk"], category=r["category"],
-                         category_conf=r["category_conf"], types=types, blocked=r["blocked"],
+    # Fase 5D · valor efectivo (etiqueta humana > modelo); la predicción del modelo se conserva aparte.
+    t_lab, i_lab = live.get("tema"), live.get("inyeccion")
+    cat_eff = t_lab["valor"] if t_lab else r["category"]
+    conf_eff = 1.0 if t_lab else r["category_conf"]
+    risk_eff = r["risk"] if not i_lab else ("alto" if i_lab["valor"] == "si" else _finding_level(r["findings_json"]))
+    score = r["injection_score"]
+    inj_model = None if score is None or inj_threshold is None else ("si" if score >= inj_threshold else "no")
+    conf_txt = f"modelo (conf. {r['category_conf']:.2f})" if r["category_conf"] else "modelo"
+    score_txt = f"modelo (score {score:.2f})" if score is not None else "modelo"
+    base = event_summary(id=r["id"], ts=r["ts"], platform=r["platform"], risk=risk_eff, category=cat_eff,
+                         category_conf=conf_eff, types=types, blocked=r["blocked"],
                          decision=r["user_decision"], latency_ms=r["latency_ms"], threshold=threshold)
     base.update({
         "fecha": base["ts"][:10],
         "origen": r["source"] or "extension",
         "categoria_modelo": r["category"],
-        "confianza": None if r["category_conf"] is None else round(float(r["category_conf"]), 3),
+        "confianza": None if conf_eff is None else round(float(conf_eff), 3),
         "injection_score": None if r["injection_score"] is None else round(float(r["injection_score"]), 3),
         "longitud": r["length"],
         "hallazgos": [{"type": f.get("type", "?"), "nombre": TYPE_NAMES.get(f.get("type"), f.get("type", "?")),
@@ -492,5 +563,15 @@ def event_detail(path: Path | str, event_id: int, include_text: bool = False,
         "texto": r.get("text_masked") if include_text else None,
         "texto_oculto": not include_text,
         "marcadores": MARKER_PATTERN,
+        "revision": {
+            "tema": {"modelo": r["category"], "efectivo": cat_eff,
+                     "confianza_modelo": None if r["category_conf"] is None else round(float(r["category_conf"]), 3),
+                     "decidido_por": _decided(t_lab and t_lab["origen"], conf_txt), "etiqueta": t_lab},
+            "inyeccion": {"modelo": inj_model, "score": None if score is None else round(float(score), 3),
+                          "efectivo": (i_lab["valor"] if i_lab else inj_model),
+                          "riesgo_modelo": r["risk"], "decidido_por": _decided(i_lab and i_lab["origen"], score_txt),
+                          "etiqueta": i_lab},
+            "historial": history,
+        },
     })
     return base

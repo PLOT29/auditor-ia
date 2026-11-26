@@ -34,7 +34,7 @@
   const PLATFORM_COLORS = { ChatGPT: "#22D3EE", Claude: "#C084FC", Gemini: "#60A5FA" };
   const TOPICS = {
     programacion: "Programación", academico: "Académico", redaccion: "Redacción", ciberseguridad: "Ciberseguridad",
-    consulta_general: "Consulta general", personal: "Personal", incierto: "Incierto", sin_clasificar: "Sin clasificar",
+    consulta_general: "Consulta general", personal: "Personal", incierto: "Incierto", sin_clasificar: "Sin clasificar", otro: "Otro / no sé",
   };
   const MOTIVES = {
     secreto: { label: "Secreto", color: C.danger },
@@ -663,6 +663,7 @@
       if (f.valido === false) li.append(el("span", "muted", "letra de control no válida"));
       ul.append(li);
     }
+    renderReview(d, simulated); // Fase 5D
 
     const box = $("detail-text");
     box.classList.toggle("hidden-text", !d.texto);
@@ -954,6 +955,278 @@
     setInterval(() => { if ($("ia-drawer").hidden) refreshIA(); }, 15000);
   }
 
+
+  // ================================================================ Fase 5D · revisor humano
+  const TOPIC_OPTIONS = ["programacion", "academico", "redaccion", "ciberseguridad", "consulta_general", "personal", "otro"];
+  const TOPIC_LABEL = (t) => (t === "otro" ? "otro / no sé" : TOPICS[t] || t);
+  const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const errText = async (r) => { try { const j = await r.json(); return typeof j.detail === "string" ? j.detail : `HTTP ${r.status}`; } catch { return `HTTP ${r.status}`; } };
+
+  /** Sección «Revisión» del detalle: quién decidió, corregir tema/inyección (con nota) y deshacer. */
+  function renderReview(d, simulated) {
+    const box = $("detail-review");
+    box.replaceChildren();
+    $("detail-prop").hidden = true;
+    if (simulated || !d.revision) {
+      box.append(el("p", "muted", simulated ? "Evento simulado: no se puede corregir." : "Cargando…"));
+      return;
+    }
+    const rv = d.revision;
+    const note = el("textarea");
+    note.placeholder = "Nota opcional (se guarda solo en tu BD local; nunca se envía ni se registra en el log)";
+    note.maxLength = 300;
+    note.setAttribute("aria-label", "Nota opcional de la corrección");
+
+    // --- tema
+    const t = el("div", "task");
+    const th = el("div", "task-h");
+    th.append(el("span", null, "Tema:"), el("span", "eff", TOPIC_LABEL(rv.tema.efectivo) || "—"),
+      el("span", `who${rv.tema.etiqueta ? " human" : ""}`, rv.tema.decidido_por));
+    if (rv.tema.etiqueta && rv.tema.modelo && rv.tema.modelo !== rv.tema.efectivo) th.append(el("span", "who", `(el modelo dijo ${TOPICS[rv.tema.modelo] || rv.tema.modelo})`));
+    t.append(th);
+    const opts = el("div", "opts");
+    opts.setAttribute("role", "group");
+    opts.setAttribute("aria-label", "Corregir tema");
+    for (const o of TOPIC_OPTIONS) {
+      const b = el("button", "opt", TOPIC_LABEL(o));
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(o === rv.tema.efectivo));
+      b.addEventListener("click", () => correct(d.id, "tema", o, note.value));
+      opts.append(b);
+    }
+    t.append(opts);
+    if (rv.tema.etiqueta) t.append(undoButton(rv.tema.etiqueta, d.id));
+    box.append(t);
+
+    // --- inyección
+    const i = el("div", "task");
+    const ih = el("div", "task-h");
+    const eff = rv.inyeccion.efectivo === "si" ? "sí es inyección" : rv.inyeccion.efectivo === "no" ? "no es inyección" : "sin dato";
+    ih.append(el("span", null, "Inyección:"), el("span", "eff", eff), el("span", `who${rv.inyeccion.etiqueta ? " human" : ""}`, rv.inyeccion.decidido_por));
+    i.append(ih);
+    const io = el("div", "opts");
+    for (const [v, label] of [["no", "¿No era inyección?"], ["si", "Sí era inyección"]]) {
+      const b = el("button", "opt", label);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(rv.inyeccion.efectivo === v && !!rv.inyeccion.etiqueta));
+      b.addEventListener("click", () => correct(d.id, "inyeccion", v, note.value));
+      io.append(b);
+    }
+    i.append(io);
+    if (rv.inyeccion.etiqueta) i.append(undoButton(rv.inyeccion.etiqueta, d.id));
+    box.append(i, note);
+  }
+
+  function undoButton(label, eventId) {
+    const b = el("button", "link-btn", "Deshacer esta corrección");
+    b.type = "button";
+    b.addEventListener("click", async () => {
+      const r = await post(`/labels/${label.id}/deshacer`, { incluir_propagadas: false });
+      if (!r.ok) return toastMsg(`No se pudo deshacer: ${await errText(r)}`);
+      const j = await r.json();
+      // Si la corrección manual se había propagado, se ofrece deshacer también esas.
+      if (j.propagadas_restantes > 0 && window.confirm(`Esta corrección se propagó a ${j.propagadas_restantes} eventos. ¿Deshacer también esas?`)) {
+        await post(`/labels/${label.id}/deshacer`, { incluir_propagadas: true });
+      }
+      toastMsg("Corrección deshecha");
+      showDetail();
+      scheduleReload();
+    });
+    return b;
+  }
+
+  function toastMsg(text) {
+    const n = $("detail-title");
+    n.dataset.msg = text;
+    const s = el("span", "muted", ` · ${text}`);
+    n.append(s);
+    setTimeout(() => s.remove(), 3500);
+  }
+
+  async function correct(eventId, tarea, valor, nota) {
+    const r = await post("/labels", { event_id: eventId, tarea, valor, nota: (nota || "").trim() || null });
+    if (!r.ok) return toastMsg(`No se guardó: ${await errText(r)}`);
+    const j = await r.json();
+    await showDetail();
+    scheduleReload();
+    if (valor !== "otro") showPropagation(j.etiqueta.id);
+  }
+
+  /** Vecinos similares que podrían recibir la misma etiqueta: el panel los PROPONE, la persona decide. */
+  async function showPropagation(labelId) {
+    const box = $("detail-prop");
+    box.hidden = false;
+    box.replaceChildren(el("p", "muted", "Buscando eventos parecidos…"));
+    const presentation = document.body.classList.contains("presentacion");
+    const r = await api(`/labels/${labelId}/similares?presentacion=${presentation ? 1 : 0}`);
+    if (!r.ok) {
+      box.replaceChildren(el("p", "muted", `No se pudieron buscar similares: ${await errText(r)}`));
+      return;
+    }
+    const j = await r.json();
+    box.replaceChildren();
+    const cands = j.candidatos || [];
+    box.append(el("h4", null, cands.length ? `${cands.length} eventos parecidos (similitud ≥ ${j.umbral})` : "No hay eventos parecidos que cambiar"));
+    if (!cands.length) {
+      box.append(el("p", "muted", j.motivo || "Nada que proponer (se excluyen el test real, el probe set y lo ya corregido a mano)."));
+      return;
+    }
+    box.append(el("p", "muted", `¿Aplicar «${TOPIC_LABEL(j.etiqueta.valor) || j.etiqueta.valor}» también a estos? Solo se guarda lo que confirmes.`));
+    const ul = el("ul");
+    const checks = [];
+    for (const c of cands) {
+      const li = el("li");
+      const cb = el("input");
+      cb.type = "checkbox";
+      cb.checked = true;
+      cb.value = c.event_id;
+      cb.id = `prop-${c.event_id}`;
+      checks.push(cb);
+      const lab = el("label");
+      lab.htmlFor = cb.id;
+      lab.append(el("span", "sim", c.similitud.toFixed(2)), ` · #${c.event_id} · ${PLATFORMS[c.plataforma] || c.plataforma || ""} · actual: ${c.actual ? (TOPIC_LABEL(c.actual) || c.actual) : "—"}`);
+      li.append(cb, lab);
+      if (c.texto) li.append(el("span", "snip", c.texto));
+      ul.append(li);
+    }
+    box.append(ul);
+    if (presentation) box.append(el("p", "muted", "Texto oculto en modo presentación."));
+    const row = el("div", "row-btns");
+    const apply = async (ids) => {
+      const res = await post(`/labels/${labelId}/propagar`, { event_ids: ids });
+      const msg = res.ok ? `${(await res.json()).aplicadas} etiquetas propagadas` : `No se aplicó: ${await errText(res)}`;
+      box.replaceChildren(el("p", "muted", msg));
+      scheduleReload();
+    };
+    const mk = (label, cls, fn) => { const b = el("button", `btn ${cls}`, label); b.type = "button"; b.addEventListener("click", fn); return b; };
+    row.append(
+      mk("Aplicar a todos", "", () => apply(cands.map((c) => c.event_id))),
+      mk("Aplicar seleccionados", "ghost", () => apply(checks.filter((c) => c.checked).map((c) => Number(c.value)))),
+      mk("Ninguno", "ghost", () => { box.replaceChildren(el("p", "muted", "No se propagó nada.")); }),
+    );
+    box.append(row);
+  }
+
+  // ================================================================ Fase 5D · sección «Aprendizaje»
+  const learn = { poll: null };
+
+  async function refreshLearning() {
+    const r = await api("/learning/estado");
+    if (!r.ok) return;
+    const st = await r.json();
+    renderLearning(st);
+    clearInterval(learn.poll);
+    const busy = ["entrenando", "reclasificando"].includes(st.trabajo.estado);
+    if (busy || !$("learn-drawer").hidden) learn.poll = setInterval(refreshLearning, busy ? 1000 : 5000);
+    if (!busy && learn.wasBusy) scheduleReload(); // al terminar de reclasificar, refrescar KPIs y gráficas
+    learn.wasBusy = busy;
+  }
+
+  function renderLearning(st) {
+    const body = $("learn-body");
+    body.replaceChildren();
+    const s = st.estadisticas;
+    const grid = el("div", "learn-grid");
+    const kpi = (n, t) => { const k = el("div", "kpi-s"); k.append(el("b", null, String(n)), el("span", null, t)); return k; };
+    grid.append(kpi(s.correcciones.manual, "correcciones manuales"), kpi(s.correcciones.propagado, "propagadas confirmadas"),
+      kpi(s.pendientes.tema + s.pendientes.inyeccion, `pendientes de usar (mín. ${st.minimo})`));
+    body.append(grid);
+    body.append(el("p", "muted", `Modelos activos: tema ${st.activo.tema.version} · inyección ${st.activo.inyeccion.version}. ` +
+      `Excluidos siempre del aprendizaje: ${s.excluidos_test_probe} eventos del test real y del probe set.`));
+
+    const job = st.trabajo;
+    const row = el("div", "row-btns");
+    const mk = (label, cls, fn, disabled = false) => { const b = el("button", `btn ${cls}`, label); b.type = "button"; b.disabled = disabled; b.addEventListener("click", fn); return b; };
+    const busy = ["entrenando", "reclasificando"].includes(job.estado);
+    row.append(mk("Reentrenar", "", async () => { const r = await post("/learning/reentrenar"); if (!r.ok) learnMsg(await errText(r)); refreshLearning(); },
+      !st.puede_reentrenar));
+    for (const t of ["tema", "inyeccion"]) {
+      if (st.activo[t].anterior) row.append(mk(`Volver a la versión anterior (${t})`, "ghost", async () => {
+        if (!window.confirm(`¿Volver ${t} de ${st.activo[t].version} a ${st.activo[t].anterior}? Se reclasificará la BD (tus correcciones se conservan).`)) return;
+        const r = await post("/learning/volver", { tarea: t }); if (!r.ok) learnMsg(await errText(r)); refreshLearning();
+      }, busy));
+    }
+    body.append(row);
+    const msg = el("p", "msg");
+    msg.id = "learn-msg";
+    if (!st.puede_reentrenar && !busy) msg.textContent = st.faltan ? `Faltan ${st.faltan} etiquetas nuevas para reentrenar.` : "";
+    body.append(msg);
+
+    if (job.estado !== "inactivo") {
+      const j = el("div", "job");
+      const label = { entrenando: "Entrenando en segundo plano…", reclasificando: "Aplicando versión y reclasificando…", listo: "Terminado", error: "Error" }[job.estado] || job.estado;
+      j.append(el("b", null, `${label}${job.segundos != null ? ` · ${job.segundos} s` : ""}`));
+      if (job.error) j.append(el("p", "msg", job.error));
+      const ol = el("ol");
+      for (const p of job.pasos) ol.append(el("li", null, p.mensaje));
+      j.append(ol);
+      body.append(j);
+    }
+
+    // Candidatos: comparar y decidir (adoptar o descartar). Nunca se adoptan solos.
+    const cands = st.versiones.filter((v) => v.estado === "candidato");
+    for (const v of cands) {
+      const c = el("div", "job");
+      c.append(el("b", null, `Candidato ${v.tarea} ${v.version} · ${v.motivo}`));
+      c.append(el("p", "muted", metricsText(v)));
+      const r2 = el("div", "row-btns");
+      r2.append(mk("Adoptar", "", async () => { const r = await post("/learning/adoptar", { tarea: v.tarea, version: v.version }); if (!r.ok) learnMsg(await errText(r)); refreshLearning(); }, busy),
+        mk("Descartar", "ghost", async () => { const r = await post("/learning/descartar", { tarea: v.tarea, version: v.version }); if (!r.ok) learnMsg(await errText(r)); refreshLearning(); }, busy));
+      c.append(r2);
+      body.append(c);
+    }
+
+    body.append(el("h3", null, "Confusiones más corregidas"));
+    if (!s.confusiones.length) body.append(el("p", "muted", "Aún no hay correcciones de tema."));
+    else {
+      const ul = el("ul");
+      for (const x of s.confusiones) {
+        const [a, b] = x.de_a.split(" → ");
+        ul.append(el("li", null, `${TOPICS[a] || a} → ${TOPIC_LABEL(b) || b} (${x.n})`));
+      }
+      body.append(ul);
+    }
+
+    body.append(el("h3", null, "Historial de versiones"));
+    const tbl = el("table", "versions");
+    const head = el("tr");
+    for (const h of ["Versión", "Estado", "Fecha", "Etiquetas", "Métricas (antes → después)"]) head.append(el("th", null, h));
+    tbl.append(head);
+    for (const v of st.versiones) {
+      const tr = el("tr");
+      tr.append(el("td", null, `${v.tarea} ${v.version}${st.activo[v.tarea].version === v.version ? " (activa)" : ""}`),
+        el("td", `st-${v.estado}`, v.estado), el("td", null, (v.adoptado_en || v.fecha || "").slice(0, 16).replace("T", " ")),
+        el("td", null, `${v.etiquetas.manual} man. · ${v.etiquetas.propagado} prop.`), el("td", null, metricsText(v)));
+      if (v.motivo && (v.estado === "rechazado" || v.estado === "candidato")) tr.title = v.motivo;
+      tbl.append(tr);
+    }
+    body.append(tbl);
+  }
+
+  function metricsText(v) {
+    const m = v.metricas || {};
+    const parts = [];
+    for (const k of ["probe", "test_real"]) if (m[k]) parts.push(`${k === "probe" ? "probe" : "test real"} F1 ${m[k].actual.toFixed(3)} → ${m[k].candidato.toFixed(3)}`);
+    if (m.test) parts.push(`test F1 ${m.test.actual.f1.toFixed(3)} → ${m.test.candidato.f1.toFixed(3)}`);
+    if (!parts.length && m.probe_f1_macro != null) parts.push(`probe F1 ${m.probe_f1_macro.toFixed(3)}`);
+    if (v.estado === "rechazado" && v.motivo) parts.push(v.motivo);
+    return parts.join(" · ") || "—";
+  }
+
+  function learnMsg(text) { const m = $("learn-msg"); if (m) m.textContent = text; }
+
+  function initLearning() {
+    const open = () => { $("learn-drawer").hidden = false; $("learn-backdrop").hidden = false; refreshLearning(); $("learn-close").focus(); };
+    const close = () => { $("learn-drawer").hidden = true; $("learn-backdrop").hidden = true; $("st-learn").focus(); };
+    $("st-learn").addEventListener("click", open);
+    $("learn-close").addEventListener("click", close);
+    $("learn-backdrop").addEventListener("click", close);
+    $("learn-drawer").addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); close(); } else if (e.key === "Tab") trapFocus(e, $("learn-drawer"));
+    });
+    refreshLearning();
+  }
+
   // ------------------------------------------------------------ arranque
   function resizeAll() {
     Object.values(state.charts).forEach((c) => c.resize());
@@ -969,6 +1242,7 @@
     initDetail();
     initChat();
     initIA();
+    initLearning();
     if (!window.echarts) showAlert("No se pudo cargar la librería de gráficas (vendor/echarts). Los KPIs y el feed siguen funcionando.");
     checkHealth();
     setInterval(checkHealth, 10000);

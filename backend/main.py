@@ -38,6 +38,7 @@ import masking
 import risk
 import security
 from agent.api import router as agent_router
+from feedback_api import router as feedback_router
 from detectors import catalog, embeddings, injection, pii, secrets, topic
 from events_bus import bus
 
@@ -449,7 +450,7 @@ def event_detail(event_id: int, presentacion: bool = False) -> dict:
     panel está en modo presentación y la respuesta NO lo incluye (solo metadatos).
     """
     d = analytics.event_detail(db.db_path(), event_id, include_text=not presentacion,
-                               threshold=topic.confidence_threshold())
+                               threshold=topic.confidence_threshold(), inj_threshold=injection.threshold())
     if d is None:
         raise HTTPException(status_code=404, detail="evento no encontrado")
     return d
@@ -481,6 +482,7 @@ def panel_index() -> HTMLResponse:
 
 
 app.include_router(agent_router)
+app.include_router(feedback_router)  # Fase 5D: /labels/*, /learning/*
 
 
 # Centro de control (Fase 5B): archivos estáticos de backend/panel/ (index.html, panel.css, panel.js y

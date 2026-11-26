@@ -38,6 +38,25 @@ CREATE INDEX IF NOT EXISTS idx_prompts_ts ON prompts(ts);
 CREATE INDEX IF NOT EXISTS idx_prompts_sha ON prompts(text_sha256);
 """
 
+# Fase 5D · tabla NUEVA de correcciones humanas (no se toca `prompts`: las predicciones originales del
+# modelo nunca se borran). Valor efectivo = última etiqueta no deshecha > predicción del modelo.
+LABELS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS labels (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id         INTEGER NOT NULL REFERENCES prompts(id),
+    tarea            TEXT    NOT NULL CHECK (tarea IN ('tema', 'inyeccion')),
+    valor            TEXT    NOT NULL,
+    origen           TEXT    NOT NULL CHECK (origen IN ('manual', 'propagado')),
+    similitud_origen REAL,
+    label_padre_id   INTEGER REFERENCES labels(id),
+    creado_en        TEXT    NOT NULL,
+    deshecho         INTEGER NOT NULL DEFAULT 0,
+    nota             TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_labels_event ON labels(event_id, tarea);
+CREATE INDEX IF NOT EXISTS idx_labels_padre ON labels(label_padre_id);
+"""
+
 SOURCES = ("extension", "import")
 
 # Migraciones idempotentes: (columna, DDL). Se aplican solo si la columna no existe.
@@ -105,6 +124,69 @@ def init_db() -> None:
             if column not in cols:
                 conn.execute(ddl)  # filas existentes quedan con el DEFAULT ('extension')
         conn.execute("CREATE INDEX IF NOT EXISTS idx_prompts_source ON prompts(source)")
+        conn.executescript(LABELS_SCHEMA)  # Fase 5D: idempotente (IF NOT EXISTS)
+
+
+# ---------------------------------------------------------------- etiquetas (Fase 5D)
+def event_exists(event_id: int) -> bool:
+    with connect() as conn:
+        return conn.execute("SELECT 1 FROM prompts WHERE id = ?", (event_id,)).fetchone() is not None
+
+
+def insert_label(event_id: int, tarea: str, valor: str, origen: str, creado_en: str,
+                 similitud: float | None = None, padre: int | None = None, nota: str | None = None) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO labels (event_id, tarea, valor, origen, similitud_origen, label_padre_id, creado_en, nota) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (event_id, tarea, valor, origen, similitud, padre, creado_en, nota))
+        return int(cur.lastrowid)
+
+
+def get_label(label_id: int) -> dict | None:
+    with connect() as conn:
+        r = conn.execute("SELECT * FROM labels WHERE id = ?", (label_id,)).fetchone()
+    return dict(r) if r else None
+
+
+def undo_labels(ids: list[int]) -> int:
+    if not ids:
+        return 0
+    with connect() as conn:
+        cur = conn.execute(f"UPDATE labels SET deshecho = 1 WHERE deshecho = 0 AND id IN ({','.join('?' * len(ids))})", ids)
+        return cur.rowcount
+
+
+def children_of(label_id: int) -> list[dict]:
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM labels WHERE label_padre_id = ? AND deshecho = 0 ORDER BY id",
+                            (label_id,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def fetch_labels(include_undone: bool = False) -> list[dict]:
+    where = "" if include_undone else "WHERE deshecho = 0"
+    with connect() as conn:
+        rows = conn.execute(f"SELECT * FROM labels {where} ORDER BY id").fetchall()
+    return [dict(r) for r in rows]
+
+
+def fetch_texts(ids: list[int] | None = None) -> dict[int, str]:
+    """text_masked (lo ÚNICO que existe) por id. Solo para embeddings y reentrenamiento: nunca se loguea."""
+    with connect() as conn:
+        if ids is None:
+            rows = conn.execute("SELECT id, text_masked FROM prompts ORDER BY id").fetchall()
+        else:
+            if not ids:
+                return {}
+            rows = conn.execute(f"SELECT id, text_masked FROM prompts WHERE id IN ({','.join('?' * len(ids))})",
+                                ids).fetchall()
+    return {int(r["id"]): r["text_masked"] or "" for r in rows}
+
+
+def fetch_shas() -> dict[int, str]:
+    with connect() as conn:
+        return {int(r[0]): r[1] for r in conn.execute("SELECT id, text_sha256 FROM prompts")}
 
 
 def fetch_for_reclassify(only_unclassified: bool = False) -> list[dict]:

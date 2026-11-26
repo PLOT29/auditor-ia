@@ -173,6 +173,23 @@ def comparar_periodos(desde_a, hasta_a, desde_b, hasta_b, plataforma=None) -> di
             "diferencia_b_menos_a": {k: round(b[k] - a[k], 1) for k in keys}}
 
 
+def aprendizaje() -> dict:
+    """Fase 5D · cifras del aprendizaje asistido: correcciones (manuales vs propagadas), pendientes de usar y
+    versión activa de cada modelo. SOLO lectura: el agente no puede crear etiquetas ni reentrenar."""
+    import feedback  # noqa: PLC0415
+    import registry  # noqa: PLC0415
+
+    reg = registry.load()
+    st = feedback.stats(registry.max_label_ids(reg))
+    active = {t: registry.active(t, reg) for t in registry.TASKS}
+    return {"correcciones": st["correcciones"], "por_tarea": st["por_tarea"], "pendientes_de_usar": st["pendientes"],
+            "deshechas": st["deshechas"],
+            "confusiones_mas_corregidas": st["confusiones"][:5],
+            "modelos_activos": {t: {"version": v["version"], "desde": v.get("adoptado_en") or v.get("fecha")}
+                                for t, v in active.items()},
+            "versiones": len(reg["versiones"])}
+
+
 # ------------------------------------------------------------------ registro (lista cerrada)
 _DATE_PROP = {"type": "string", "description": "Fecha AAAA-MM-DD (día de la Ciudad de México)"}
 _PLAT_PROP = {"type": "string", "enum": PLATFORMS, "description": "Opcional: limitar a una plataforma"}
@@ -220,6 +237,10 @@ TOOLS: dict[str, Tool] = {t.name: t for t in [
          {"desde_a": _DATE_PROP, "hasta_a": _DATE_PROP, "desde_b": _DATE_PROP, "hasta_b": _DATE_PROP,
           "plataforma": _PLAT_PROP},
          ("desde_a", "hasta_a", "desde_b", "hasta_b")),
+    Tool("aprendizaje", aprendizaje,
+         "Cifras del aprendizaje asistido: cuántas correcciones hizo la persona (manuales y propagadas), cuántas "
+         "faltan por usar, confusiones más corregidas y versión activa de los modelos. Solo lectura.",
+         {}),
 ]}
 
 

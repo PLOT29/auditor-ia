@@ -1,0 +1,40 @@
+{
+  "activo": {
+    "tema": "v2",
+    "inyeccion": "v1"
+  },
+  "versiones": [
+    {
+      "version": "v2",
+      "tarea": "tema",
+      "archivo": "topic_clf.joblib",
+      "estado": "adoptado",
+      "fecha": "2026-11-12T03:45:39+00:00",
+      "etiquetas": {
+        "manual": 0,
+        "propagado": 0
+      },
+      "max_label_id": 0,
+      "metricas": {
+        "probe_f1_macro": 0.8313
+      },
+      "anterior": null,
+      "motivo": "base: sintéticos v2 (Fase 4C)"
+    },
+    {
+      "version": "v1",
+      "tarea": "inyeccion",
+      "archivo": "injection_final.joblib",
+      "estado": "adoptado",
+      "fecha": "2026-11-11T21:12:32+00:00",
+      "etiquetas": {
+        "manual": 0,
+        "propagado": 0
+      },
+      "max_label_id": 0,
+      "metricas": {},
+      "anterior": null,
+      "motivo": "base: ensamble TF-IDF + MiniLM (Fase 4A.1)"
+    }
+  ]
+}

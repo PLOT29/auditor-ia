@@ -48,3 +48,11 @@ def test_console_logs_do_not_print_text_variables():
     for path in SOURCES:
         if path.suffix == ".js":
             assert not forbidden.search(path.read_text(encoding="utf-8")), path
+
+
+def test_overlay_css_keeps_core_styles():
+    """Guarda: los estilos de la capa de Centinela (escudo, banner, modal, tarjetas) siguen ahí."""
+    css = (EXT / "overlay.css").read_text(encoding="utf-8")
+    for sel in (".shield", ".banner", ".modal", ".card", ".chip", "prefers-reduced-motion", ".card-actions"):
+        assert sel in css, sel
+    assert len(css) > 5000

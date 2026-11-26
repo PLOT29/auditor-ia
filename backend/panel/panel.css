@@ -339,3 +339,33 @@ body:not(.presentacion) .tech { display: inline; }
 /* Fase 5C.1 · aviso de rango manual (fijo) */
 .range-note { margin: 0; max-width: 520px; font-size: .78rem; color: var(--warn); }
 .range-note::before { content: "⚠ "; }
+
+/* ================================================================= Fase 5D · revisor humano */
+.review { display: flex; flex-direction: column; gap: 10px; }
+.review .task { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #0F1730; }
+.review .task-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.review .eff { font-weight: 700; }
+.review .who { font-size: .82rem; color: var(--muted); }
+.review .who.human { color: var(--accent); }
+.review .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.opt { font: inherit; font-size: .82rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.opt:hover { border-color: var(--accent); }
+.opt[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.review textarea { width: 100%; min-height: 48px; margin-top: 8px; font: inherit; font-size: .88rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; resize: vertical; }
+.link-btn { font: inherit; font-size: .82rem; background: none; border: 0; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 0; }
+.propagation { border: 1px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: rgba(34, 211, 238, .06); }
+.propagation h4 { margin: 0 0 6px; font-size: .95rem; }
+.propagation ul { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; max-height: 32vh; overflow-y: auto; }
+.propagation li { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: start; font-size: .85rem; }
+.propagation .sim { font-family: var(--mono); color: var(--accent); }
+.propagation .snip { grid-column: 2; color: var(--muted); font-size: .8rem; }
+.learn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.learn-grid .kpi-s { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.learn-grid .kpi-s b { display: block; font: 700 1.6rem var(--mono); font-variant-numeric: tabular-nums; }
+.learn-grid .kpi-s span { color: var(--muted); font-size: .8rem; }
+.versions { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.versions th, .versions td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #1C2642; vertical-align: top; }
+.versions th { color: var(--muted); font-weight: 600; }
+.st-adoptado { color: var(--safe); } .st-rechazado, .st-retirado { color: var(--danger); } .st-candidato { color: var(--warn); }
+.job { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: .86rem; }
+.job ol { margin: 4px 0 0; padding-left: 18px; color: var(--muted); }

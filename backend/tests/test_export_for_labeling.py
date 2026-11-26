@@ -117,3 +117,16 @@ def test_skips_ids_already_in_final_test(setup):
     run(setup, 65)
     assert ids[0] not in {r["id"] for r in read(setup["out"])}
     assert Counter(r["platform"] for r in read(setup["out"]))["test"] == 0
+
+
+def test_events_with_human_corrections_are_never_exported(setup):
+    """Fase 5D: un evento corregido (pudo usarse para reentrenar) nunca entra al test real."""
+    import db
+
+    db.insert_label(3, "tema", "personal", "manual", "2026-11-25T00:00:00+00:00")
+    db.insert_label(60, "tema", "personal", "propagado", "2026-11-25T00:00:00+00:00", similitud=0.9, padre=1)
+    lid = db.insert_label(55, "inyeccion", "no", "manual", "2026-11-25T00:00:00+00:00")
+    db.undo_labels([lid])  # aunque se haya deshecho, pudo entrar a una versión anterior
+    run(setup, 64)
+    ids = {r["id"] for r in read(setup["out"])}
+    assert not ids & {"3", "60", "55"}

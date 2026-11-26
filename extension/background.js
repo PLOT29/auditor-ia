@@ -259,6 +259,16 @@ async function today() {
   }
 }
 
+async function labelRequest(path, body) {
+  try {
+    const res = await authFetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => ({}));
+    return res.ok ? j : { error: typeof j.detail === "string" ? j.detail : `HTTP ${res.status}` };
+  } catch (err) {
+    return { error: err.motivo || "backend no disponible" };
+  }
+}
+
 async function status() {
   const [h, stored] = await Promise.all([health(), chrome.storage.local.get([QUEUE_KEY, ERROR_KEY])]);
   const queue = stored[QUEUE_KEY] || [];
@@ -279,6 +289,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   if (msg?.type === "health") {
     status().then(sendResponse);
+    return true;
+  }
+  // Fase 5D · corrección desde la etiqueta del chat (solo crear o deshacer; nunca propagar ni reentrenar).
+  if (msg?.type === "label") {
+    labelRequest("/labels", { event_id: msg.event_id, tarea: msg.tarea, valor: msg.valor }).then(sendResponse);
+    return true;
+  }
+  if (msg?.type === "unlabel") {
+    labelRequest(`/labels/${Number(msg.id)}/deshacer`, { incluir_propagadas: false }).then(sendResponse);
     return true;
   }
   return false;

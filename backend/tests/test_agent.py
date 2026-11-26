@@ -72,6 +72,7 @@ def test_every_tool_returns_only_aggregates(seeded):
         "temas_frecuentes": {"plataforma": "claude"}, "bloqueos": {}, "tendencia": {"desde": (t - timedelta(days=6)).isoformat()},
         "comparar_periodos": {"desde_a": (t - timedelta(days=13)).isoformat(), "hasta_a": (t - timedelta(days=7)).isoformat(),
                               "desde_b": (t - timedelta(days=6)).isoformat(), "hasta_b": t.isoformat()},
+        "aprendizaje": {},
     }
     assert set(calls) == set(tools.TOOLS)
     for name, args in calls.items():

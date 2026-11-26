@@ -350,7 +350,12 @@
   }
 
   /** Tarjeta de resultado: franja por riesgo, chips por hallazgo, categoría, plataforma, latencia. */
-  function card({ level = "gris", title, chips = [], meta = [], ttl = 6000 }) {
+  /**
+   * Tarjeta de resultado. Fase 5D: `actions` = [{label, title, menu: [{label, onSelect}]}] → botones que abren
+   * un mini-menú dentro de la tarjeta (corregir tema / inyección sin salir del chat). Mientras el menú está
+   * abierto la tarjeta no se cierra sola. `footer` = [{label, onClick}] (p. ej. «Deshacer»).
+   */
+  function card({ level = "gris", title, chips = [], meta = [], ttl = 6000, actions = [], footer = [] }) {
     const s = ensureStack();
     const node = el("div", `card ${level}`);
     node.title = "Centinela · clic para cerrar";
@@ -368,10 +373,52 @@
       for (const x of meta) if (x) m.append(el("span", null, x));
       node.append(m);
     }
+    let timer = null;
+    const arm = (ms) => { clearTimeout(timer); timer = setTimeout(() => dismiss(node), ms); };
+    if (actions.length) {
+      const row = el("div", "card-actions");
+      const menu = el("div", "card-menu");
+      menu.hidden = true;
+      menu.setAttribute("role", "menu");
+      for (const a of actions) {
+        const b = el("button", "card-act", a.label);
+        b.type = "button";
+        if (a.title) b.title = a.title;
+        b.setAttribute("aria-haspopup", "menu");
+        b.addEventListener("click", (e) => {
+          e.stopPropagation();
+          menu.replaceChildren();
+          for (const it of a.menu) {
+            const mi = el("button", "card-mi", it.label);
+            mi.type = "button";
+            mi.setAttribute("role", "menuitem");
+            mi.addEventListener("click", (ev) => { ev.stopPropagation(); menu.hidden = true; it.onSelect(); arm(ttl); });
+            menu.append(mi);
+          }
+          menu.hidden = false;
+          clearTimeout(timer); // con el menú abierto, la tarjeta no se va
+          const first = menu.querySelector("button");
+          if (first) first.focus();
+        });
+        row.append(b);
+      }
+      menu.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Escape") { menu.hidden = true; arm(ttl); } });
+      node.append(row, menu);
+    }
+    if (footer.length) {
+      const f = el("div", "card-actions");
+      for (const a of footer) {
+        const b = el("button", "card-act", a.label);
+        b.type = "button";
+        b.addEventListener("click", (e) => { e.stopPropagation(); a.onClick(); });
+        f.append(b);
+      }
+      node.append(f);
+    }
     node.addEventListener("click", () => dismiss(node));
     s.append(node);
     while (s.children.length > MAX_CARDS) s.firstElementChild.remove();
-    setTimeout(() => dismiss(node), ttl);
+    arm(actions.length ? Math.max(ttl, 12000) : ttl);
     return node;
   }
 

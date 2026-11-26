@@ -762,6 +762,32 @@
     }
   }
 
+  // Fase 5D · corregir la clasificación desde la etiqueta, sin salir del chat (un clic). La corrección viaja
+  // por background.js (POST /labels con el token); la propagación y el reentrenamiento solo se hacen en el panel.
+  const TOPIC_CHOICES = ["programacion", "academico", "redaccion", "ciberseguridad", "consulta_general", "personal", "otro"];
+  const topicLabel = (t) => (t === "otro" ? "otro / no sé" : CATEGORY_NAMES[t] || t);
+
+  function sendLabel(eventId, tarea, valor) {
+    try {
+      chrome.runtime.sendMessage({ type: "label", event_id: eventId, tarea, valor }, (r) => {
+        if (chrome.runtime.lastError || !r || r.error) {
+          UI.toast({ level: "gris", title: "No se guardó la corrección", text: (r && r.error) || "Backend no disponible" });
+          return;
+        }
+        const what = tarea === "tema" ? `tema → ${topicLabel(valor)}` : valor === "si" ? "sí era inyección" : "no era inyección";
+        UI.card({
+          level: "info", title: `Corregido por ti: ${what}`, ttl: 9000,
+          meta: ["Ve eventos parecidos en el centro de control"],
+          footer: [{ label: "Deshacer", onClick: () => chrome.runtime.sendMessage({ type: "unlabel", id: r.etiqueta.id }, (u) => {
+            UI.toast({ level: "info", title: u && !u.error ? "Corrección deshecha" : "No se pudo deshacer" });
+          }) }],
+        });
+      });
+    } catch (_err) {
+      UI.card({ level: "gris", title: "Extensión recargada", meta: ["Refresca la página"] });
+    }
+  }
+
   function showResult(resp) {
     const findings = resp.findings || [];
     const inj = resp.injection_score;
@@ -770,12 +796,21 @@
     if (!findings.length && inj != null && resp.risk !== "bajo") {
       chips.push({ text: "Posible inyección", value: inj.toFixed(2), level: "danger" });
     }
+    const who = resp.category_confidence ? `modelo (conf. ${resp.category_confidence.toFixed(2)})` : null;
+    const actions = resp.id ? [
+      { label: `Tema: ${categoryName(resp)} ▾`, title: "Corregir tema",
+        menu: TOPIC_CHOICES.map((t) => ({ label: topicLabel(t), onSelect: () => sendLabel(resp.id, "tema", t) })) },
+      { label: `${titles[resp.risk] || resp.risk} ▾`, title: "Corregir inyección",
+        menu: [{ label: "¿No era inyección?", onSelect: () => sendLabel(resp.id, "inyeccion", "no") },
+          { label: "Sí era inyección", onSelect: () => sendLabel(resp.id, "inyeccion", "si") }] },
+    ] : [];
     UI.card({
       level: resp.risk,
       title: titles[resp.risk] || resp.risk,
       chips,
-      meta: [categoryName(resp), PLATFORM_NAMES[PLATFORM] || PLATFORM,
+      meta: [who, PLATFORM_NAMES[PLATFORM] || PLATFORM,
         resp.rtt_ms != null ? `${resp.rtt_ms} ms` : resp.latency_ms != null ? `${resp.latency_ms} ms` : null],
+      actions,
     });
   }
 })();

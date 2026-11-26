@@ -80,6 +80,8 @@ def parse_platform(q: str) -> str | None:
 
 
 def intent(q: str) -> str:
+    if re.search(r"correcci|corregi|aprendizaje|reentren|version del modelo|que version|etiquetas? (manual|propagad)", q):
+        return "aprendizaje"
     if re.search(r"compar|vs\.?|versus|frente a|contra la", q):
         return "comparar_periodos"
     if re.search(r"bloque|cancel|censur|evit", q):
@@ -127,6 +129,17 @@ def answer(question: str):
         yield_ev = {"type": "tool", "nombre": name, "argumentos": args, "ok": True}
         return result, yield_ev
 
+    if kind == "aprendizaje":
+        r, ev = run("aprendizaje", {})
+        yield ev
+        c, p, act = r["correcciones"], r["pendientes_de_usar"], r["modelos_activos"]
+        conf = ", ".join(f"{x['de_a']} ({x['n']})" for x in r["confusiones_mas_corregidas"][:3])
+        text = (f"Llevas {c['manual']} correcciones manuales y {c['propagado']} propagadas confirmadas; "
+                f"{p['tema'] + p['inyeccion']} aún no se han usado para reentrenar. Modelo de tema activo: "
+                f"{act['tema']['version']}; de inyección: {act['inyeccion']['version']}."
+                + (f" Lo que más corriges: {conf}." if conf else ""))
+        yield {"type": "delta", "text": text}
+        return
     if kind == "comparar_periodos":
         t = tools.today()
         if re.search(r"mes", q):

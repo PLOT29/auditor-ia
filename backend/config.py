@@ -42,12 +42,21 @@ def metrics_path() -> Path:
     return _env_path("AUDITOR_METRICS_PATH", ML_DIR / "reports" / "metrics.json")
 
 
+def _registry_file(tarea: str, default: str) -> str:
+    """Fase 5D: archivo de la versión ACTIVA según ml/reports/model_registry.json (si existe ese archivo)."""
+    import registry  # noqa: PLC0415
+
+    name = registry.active_file(tarea)
+    return name if (models_dir() / name).is_file() else default
+
+
 def topic_model_path() -> Path:
-    return models_dir() / (os.environ.get("AUDITOR_TOPIC_MODEL", "").strip() or "topic_clf.joblib")
+    return models_dir() / (os.environ.get("AUDITOR_TOPIC_MODEL", "").strip() or _registry_file("tema", "topic_clf.joblib"))
 
 
 def injection_model_path() -> Path:
-    return models_dir() / (os.environ.get("AUDITOR_INJECTION_MODEL", "").strip() or "injection_final.joblib")
+    return models_dir() / (os.environ.get("AUDITOR_INJECTION_MODEL", "").strip()
+                           or _registry_file("inyeccion", "injection_final.joblib"))
 
 
 def injection_medium() -> float:

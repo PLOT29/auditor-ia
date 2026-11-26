@@ -55,9 +55,9 @@ def test_presentation_mode_never_returns_text(client, monkeypatch):
     seen = {}
     real = analytics.event_detail
 
-    def spy(path, event_id, include_text=False, threshold=None):
+    def spy(path, event_id, include_text=False, **kw):
         seen["include_text"] = include_text
-        return real(path, event_id, include_text=include_text, threshold=threshold)
+        return real(path, event_id, include_text=include_text, **kw)
 
     monkeypatch.setattr(analytics, "event_detail", spy)
     r = client.get(f"/events/{data['id']}", params={"presentacion": 1})

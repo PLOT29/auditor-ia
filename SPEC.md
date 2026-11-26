@@ -209,6 +209,8 @@ Respuesta:
 - `GET /agent/sugeridas` · `POST /agent/preguntar {"pregunta"}` → NDJSON en streaming: `{"type":"tool",nombre,argumentos,ok}` · `{"type":"delta",text}` · `{"type":"done",nivel,proveedor,herramientas,ms}`. La pregunta no se guarda en la BD ni en logs.
 - `GET /ia/estado` · `POST /ia/nivel` · `POST /ia/local/{activar,confirmar,desactivar}` · `POST /ia/nube/{configurar,probar,borrar}` (§5.8). La API key nunca aparece en ninguna respuesta.
 
+**Fase 5D (aditivo; §5.9):** `POST /labels {event_id, tarea: tema|inyeccion, valor, nota?}` · `POST /labels/{id}/deshacer {incluir_propagadas}` · `GET /labels/{id}/similares?presentacion=` · `POST /labels/{id}/propagar {event_ids}` · `GET /learning/estado` · `POST /learning/{reentrenar,adoptar,descartar,volver}`. `GET /events/{id}` agrega `revision` (tema e inyección: predicción del modelo, valor efectivo, quién decidió, etiqueta vigente e historial). El contrato de `/analyze` no cambia.
+
 **Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Por eso `injection_score` admite `null`.
 
 **Fase 4C — campo opcional `category_uncertain: bool | null`** (cambio aditivo; los clientes que no lo lean no se ven afectados): `true` si `category_confidence` < umbral de confianza del tema (`metrics.json → topic_v2.umbral_confianza.umbral`), `false` si no, y `null` sin clasificador de tema. La BD no cambia: sigue guardando la categoría más probable y su confianza. La extensión muestra "tema incierto (¿categoría?)" cuando es `true`.
@@ -276,6 +278,8 @@ Umbrales finales (Fase 4B):
 | source | TEXT | `extension` (capturado en vivo) \| `import` (historial importado con `ml/import_history.py`). Default `extension` |
 
 **Migraciones:** `db.init_db()` agrega las columnas nuevas de forma idempotente (`ALTER TABLE … ADD COLUMN` solo si no existen); las filas anteriores quedan con el valor por defecto.
+
+**Tabla `labels` (Fase 5D, NUEVA; `prompts` no cambia):** `id`, `event_id` (→ prompts.id), `tarea` (`tema` | `inyeccion`), `valor` (categoría u «otro»; `si` | `no`), `origen` (`manual` | `propagado`), `similitud_origen`, `label_padre_id` (la manual de la que se propagó), `creado_en`, `deshecho` (0/1; deshacer no borra) y `nota` (opcional, solo local). Se crea con `CREATE TABLE IF NOT EXISTS` en `init_db()` (idempotente).
 
 **Ubicación:** la ruta de la BD se lee de la variable de entorno `AUDITOR_DB_PATH` (default: `C:\auditor-data\auditor.db`). Nunca dentro del repo; la carpeta se crea si no existe.
 
@@ -345,6 +349,34 @@ Chat dentro del centro de control (pestaña «Pregúntale») que responde en esp
 
 Verificado en `tests/test_agent.py` y `tests/test_installer_byok.py` (con un modelo simulado malicioso, el instalador y el almacén de claves simulados: pytest no instala ni ejecuta nada real).
 
+### 5.9 Revisor humano y aprendizaje asistido (Fase 5D)
+
+**Corregir la clasificación.** En la etiqueta flotante del chat, el tema y el riesgo son botones con un mini‑menú: «Corregir tema» (las 6 categorías + «otro / no sé») y «¿No era inyección?» / «Sí era inyección»; un clic, sin salir del chat (`content.js` → `background.js` → `POST /labels` con el token). En el detalle del evento del panel están las mismas opciones, más una nota opcional. Siempre se muestra quién decidió: «modelo (conf. 0.72)», «corregido por ti» o «propagado y confirmado». Cada corrección tiene «Deshacer»; deshacer una manual que se propagó ofrece deshacer también sus propagadas.
+
+**Almacenamiento (tabla NUEVA `labels`, §5.5).** El valor **efectivo** que usan el panel, las estadísticas (`analytics.events()`) y el agente es: última etiqueta no deshecha > predicción del modelo. Tema corregido → esa categoría (confianza 1.0); inyección «sí» → riesgo alto; «no» → el riesgo que justifican solo los hallazgos. Las predicciones originales de `prompts` nunca se borran ni se modifican por una corrección.
+
+**Propagación por similitud (propone, no aplica).** Tras una corrección manual, el panel pide `GET /labels/{id}/similares`: embeddings MiniLM (el mismo modelo del backend) de `text_masked`, con caché en la carpeta de datos (`C:\auditor-data\embeddings_cache.npz`: ids, SHA‑256 del texto enmascarado y vectores; nunca texto), y vecinos con similitud coseno ≥ 0.85 (`AUDITOR_PROPAGATION_THRESHOLD`), máximo 25, excluyendo el propio evento, los ya corregidos a mano, los que ya tienen ese valor y **todos los del test real y del probe set**. El panel muestra similitud, valor actual y —solo con el modo presentación apagado— el texto enmascarado truncado; «Aplicar a todos», selección individual o «Ninguno». Solo lo confirmado se guarda (`origen = 'propagado'`, `similitud_origen`, `label_padre_id`), y el backend recalcula los candidatos: un id que el cliente mande y no sea candidato se rechaza.
+
+**Exclusiones permanentes.** Test real = los ids de `ml/data/topic_to_label.csv` (exportados antes de esta fase, aunque aún no tengan etiqueta) y de `topic_test_real.csv`; probe set = eventos cuyo texto o huella coincide con `ml/data/topic_probe.csv`. Quedan fuera de la propagación, de las correcciones usadas para entrenar (`assert_no_leak` lanza `LeakError` y un test lo verifica) y de futuros `export_for_labeling`.
+
+**Reentrenamiento manual** (`ml/retrain_from_feedback.py` o botón «Reentrenar» de la sección «Aprendizaje», en segundo plano con progreso):
+1. Datos: sintéticos v2 (peso 1; se descartan los idénticos a un caso del probe) + etiquetas manuales (peso 1) + propagadas confirmadas (peso `AUDITOR_PROPAGATED_WEIGHT`, default 0.5). De cada evento cuenta su última etiqueta no deshecha; «otro» no se usa.
+2. Requiere un mínimo de etiquetas **nuevas** —las que no usó la versión activa— (`AUDITOR_RETRAIN_MIN`, default 20); antes, el botón está deshabilitado y dice cuántas faltan.
+3. Tema: MiniLM + LR con la misma C del modelo activo. Inyección (si hay correcciones nuevas): ensamble TF‑IDF + MiniLM con las mismas C, evaluado en el split de test de `injection.csv` con el umbral vigente.
+4. Evaluación contra el modelo **activo** en el probe set (y en el test real si ya está etiquetado). Un candidato es apto solo si su F1 (macro en tema) **no baja más de 0.01 en ningún conjunto**; si no, queda «rechazado» con el motivo (p. ej. «F1 en probe baja de 0.830 a 0.790»), no se guarda su archivo y no se puede adoptar.
+5. Un candidato apto **no se adopta solo**: la persona ve la comparación (antes → después) y pulsa «Adoptar» o «Descartar».
+6. Versionado: `ml/models/topic_clf_vN.joblib` / `injection_vN.joblib` y `ml/reports/model_registry.json` (fecha, etiquetas manuales/propagadas usadas, `max_label_id`, métricas antes/después, versión anterior, estado: candidato · adoptado · rechazado · descartado · retirado). «Volver a la versión anterior» reactiva la anterior y marca la actual como retirada. `config.topic_model_path()`/`injection_model_path()` cargan la versión activa del registro.
+7. Tras adoptar o volver atrás: se recarga el modelo en memoria y se reclasifica la BD (`ml/reclassify.py`), que solo actualiza las predicciones; las etiquetas humanas siguen mandando.
+
+**Sección «Aprendizaje» del panel:** correcciones totales (manuales vs propagadas), etiquetas pendientes de usar, versión activa de cada modelo, trabajo en curso, candidatos con su comparación, historial de versiones con métricas antes/después y confusiones más corregidas (p. ej. ciberseguridad → consulta general).
+
+**Seguridad.** `/labels/*` y `/learning/*` exigen el token y la validación de origen (§5.7). Reentrenar, adoptar, descartar, volver atrás, ver similares y confirmar propagaciones exigen además que la petición venga del **panel** (403 «solo desde el panel» para la extensión, aunque tenga token); la extensión solo puede corregir y deshacer. El agente tiene una herramienta de solo lectura, `aprendizaje()` (nº de correcciones, pendientes, confusiones, versiones), y ninguna para etiquetar ni reentrenar. Nunca se loguea texto ni notas: solo ids y conteos.
+
+#### Por qué el sistema no se autoentrena sin confirmación humana (OWASP LLM04 · Data and Model Poisoning)
+- **Refuerzo de errores:** si el modelo se reentrenara con sus propias predicciones (o con propagaciones sin revisar), cada error se convertiría en dato de entrenamiento y la confusión se amplificaría en la siguiente versión (deriva por auto‑refuerzo).
+- **Envenenamiento:** los textos vienen de lo que el usuario escribe o pega desde cualquier sitio; un texto preparado para parecerse a muchos otros podría arrastrar etiquetas en masa. Por eso la propagación solo *propone*, con umbral alto y máximo 25, y el backend nunca acepta ids que no sean candidatos.
+- **Salvaguardas:** (1) solo entran etiquetas humanas o propagaciones confirmadas una a una o en bloque por la persona; (2) peso menor para las propagadas; (3) test real y probe set excluidos siempre (si se colaran, la evaluación dejaría de ser válida) con un test que lo verifica; (4) puerta de calidad: el candidato se compara con el modelo activo y se rechaza si el F1 baja más de 0.01; (5) adopción y rollback manuales, versionados y auditables en el registro; (6) solo el panel o el script local pueden entrenar; ni la extensión ni el agente; (7) las predicciones originales y las etiquetas se conservan, así que todo es reversible.
+
 ## 6. Requisitos
 
 ### Funcionales
@@ -361,6 +393,9 @@ Verificado en `tests/test_agent.py` y `tests/test_installer_byok.py` (con un mod
 - **RF-11** (5A) Censurar: reemplazar los hallazgos por marcadores en el campo antes de enviar, con verificación.
 - **RF-12** (5A) Diccionario propio de términos confidenciales que nunca salen de la extensión.
 - **RF-13** (5A) Aviso al pegar textos grandes (umbral configurable).
+- **RF-19** (5D) Corregir tema e inyección desde la etiqueta del chat y desde el detalle del panel, con deshacer y «quién decidió».
+- **RF-20** (5D) Propagación por similitud que propone y solo guarda lo confirmado; exclusión permanente del test real y del probe set.
+- **RF-21** (5D) Reentrenamiento manual versionado con evaluación contra el modelo activo, adopción humana y vuelta a la versión anterior.
 - **RF-16** (5C) Detalle de evento en el panel (`/events/{id}`), con el texto enmascarado solo fuera del modo presentación.
 - **RF-17** (5C) Asistente «Pregúntale a Centinela» con herramientas cerradas y tres niveles de IA (sin IA · local · nube con clave propia).
 - **RF-18** (5C) API local protegida: Host/Origin locales y token de sesión.
@@ -439,7 +474,8 @@ Verificado en `tests/test_agent.py` y `tests/test_installer_byok.py` (con un mod
 **Remate — "Ahora usted" (1 min)**
 1. Ofrecer el teclado al profesor para que escriba lo que quiera (incluido un intento de jailbreak).
 2. Su prompt aparece clasificado en la página y en el centro de control.
-3. (Opcional, 5C) Pestaña «Pregúntale» → «¿Qué plataforma tiene más riesgo?»: la respuesta llega en streaming con las «Herramientas usadas». Si lo piden, «muéstrame el último prompt» → el asistente se niega: solo tiene cifras (OWASP LLM01/LLM06).
+3. (Opcional, 5D) En la etiqueta del chat, «Tema: … ▾» → corregir; en el panel, el detalle del evento muestra «corregido por ti» y propone eventos parecidos para confirmar. En «Aprendizaje» se ve la cuenta de correcciones y, con suficientes, «Reentrenar» → comparación antes/después → «Adoptar» o rechazo automático si empeora → «Volver a la versión anterior».
+4. (Opcional, 5C) Pestaña «Pregúntale» → «¿Qué plataforma tiene más riesgo?»: la respuesta llega en streaming con las «Herramientas usadas». Si lo piden, «muéstrame el último prompt» → el asistente se niega: solo tiene cifras (OWASP LLM01/LLM06).
 
 **Cierre:** mapeo a OWASP Top 10 for LLM Applications (LLM01 Prompt Injection, LLM02 Sensitive Information Disclosure) y limitaciones.
 
@@ -468,6 +504,7 @@ Verificado en `tests/test_agent.py` y `tests/test_installer_byok.py` (con un mod
 | Enmascarado y almacenamiento local | Minimización de datos (LFPDPPP, principios de privacidad) |
 | Auditoría y estadísticas | NIST AI RMF — función *Measure* |
 | Asistente con herramientas cerradas, sin acceso a texto | OWASP LLM01 — Prompt Injection (indirecta) · LLM06 — Excessive Agency · LLM02 |
+| Aprendizaje solo con confirmación humana, exclusión del test/probe, puerta de calidad y rollback | OWASP LLM04 — Data and Model Poisoning · NIST AI RMF *Manage* |
 | Token de sesión + validación de Host/Origin | OWASP Top 10 A01 (Broken Access Control) · CSRF y DNS rebinding contra servicios locales |
 
 > Verificar versiones vigentes de OWASP Top 10 for LLM y MITRE ATLAS antes de citarlas.

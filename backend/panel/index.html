@@ -38,6 +38,8 @@
       <span class="pill" id="st-feed"><span class="dot"></span><span class="txt">Feed…</span></span>
       <button type="button" class="pill pill-btn" id="st-ia" aria-haspopup="dialog" aria-controls="ia-drawer"
               title="Elegir el nivel de IA del asistente"><span class="dot"></span><span class="txt">IA: Sin IA</span></button>
+      <button type="button" class="pill pill-btn" id="st-learn" aria-haspopup="dialog" aria-controls="learn-drawer"
+              title="Correcciones, reentrenamiento y versiones del modelo"><span class="dot"></span><span class="txt">Aprendizaje</span></button>
       <span class="pill warn" id="st-nube" hidden><span class="dot"></span><span class="txt">Proveedor externo: solo se envían cifras agregadas</span></span>
     </div>
 
@@ -171,10 +173,23 @@
     <dl class="meta-grid" id="detail-meta"></dl>
     <h3>Hallazgos</h3>
     <ul class="findings" id="detail-findings"></ul>
+    <h3>Revisión</h3>
+    <div class="review" id="detail-review"></div>
+    <div class="propagation" id="detail-prop" hidden></div>
     <h3>Texto conservado</h3>
     <div class="masked-text" id="detail-text"></div>
     <p class="note">Centinela nunca guarda el texto original; esto es lo único que se conservó.</p>
   </div>
+</aside>
+
+<!-- Aprendizaje asistido (Fase 5D) -->
+<div class="backdrop" id="learn-backdrop" hidden></div>
+<aside class="drawer ia" id="learn-drawer" role="dialog" aria-modal="true" aria-labelledby="learn-title" hidden tabindex="-1">
+  <header class="drawer-h">
+    <h2 id="learn-title">Aprendizaje</h2>
+    <button type="button" class="icon-btn" id="learn-close" aria-label="Cerrar">✕</button>
+  </header>
+  <div class="drawer-body" id="learn-body"></div>
 </aside>
 
 <!-- Niveles de IA (Fase 5C) -->

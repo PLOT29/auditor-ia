@@ -46,7 +46,7 @@ TOKEN_HEADER = "X-Centinela-Token"
 TOKEN_QUERY = "token"  # solo para /events (EventSource no admite headers)
 
 LOCAL_HOSTNAMES = {"127.0.0.1", "localhost", "::1"}
-TOKEN_PREFIXES = ("/analyze", "/stats", "/events", "/agent", "/ia")
+TOKEN_PREFIXES = ("/analyze", "/stats", "/events", "/agent", "/ia", "/labels", "/learning")  # 5D: labels, learning
 NO_ORIGIN_OK_SITES = {"none", "same-origin"}
 
 HOST_DENIED = "host no permitido"
@@ -155,3 +155,18 @@ def describe(headers) -> str:
         except ValueError:
             origin = "inválido"
     return f"origin={origin or '-'} sec-fetch-site={(headers.get('sec-fetch-site') or '-')[:20]}"
+
+
+PANEL_ONLY = "solo desde el panel"
+
+
+def is_panel_request(headers, scheme: str = "http") -> bool:
+    """Fase 5D · ¿la petición viene del PANEL (o de un proceso local que no es un navegador)?
+    Sí: Origin del propio backend, o sin Origin con Sec-Fetch-Site same-origin, o sin ninguna cabecera de
+    navegador (script/tests). No: la extensión (Origin chrome-extension:// o Sec-Fetch-Site none) ni nada más.
+    Se exige para reentrenar, adoptar, volver atrás y confirmar propagaciones (SPEC §5.9)."""
+    origin = headers.get("origin")
+    site = (headers.get("sec-fetch-site") or "").strip().lower() or None
+    if origin is not None:
+        return is_panel_origin(origin, headers.get("host"), scheme)
+    return site in (None, "same-origin")
