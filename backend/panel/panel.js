@@ -599,6 +599,7 @@
   }
 
   function closeDetail() {
+    flushNote(); // Fase 5D.1: si quedaron cambios sin guardar (Esc, ✕, clic fuera), se guardan antes de cerrar
     $("detail").hidden = true;
     $("detail-backdrop").hidden = true;
     document.querySelectorAll(".current").forEach((n) => n.classList.remove("current"));
@@ -607,11 +608,12 @@
     if (back && back.focus) back.focus();
   }
 
-  function moveDetail(step) {
+  async function moveDetail(step) {
     const nodes = detailNodes();
     const i = nodes.indexOf(detail.node);
     const next = nodes[i + step];
     if (!next) return;
+    await flushNote(); // la nota del evento que se deja se guarda primero
     detail.node = next;
     showDetail();
   }
@@ -664,6 +666,7 @@
       ul.append(li);
     }
     renderReview(d, simulated); // Fase 5D
+    renderNote(d, simulated); // Fase 5D.1
 
     const box = $("detail-text");
     box.classList.toggle("hidden-text", !d.texto);
@@ -704,7 +707,9 @@
     $("detail-prev").addEventListener("click", () => moveDetail(-1));
     $("detail-next").addEventListener("click", () => moveDetail(1));
     $("detail").addEventListener("keydown", (e) => {
+      const typing = e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT");
       if (e.key === "Escape") { e.preventDefault(); closeDetail(); }
+      else if (typing) return; // ←/→ dentro de la nota mueven el cursor (antes cambiaban de evento y se perdía)
       else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); moveDetail(1); }
       else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); moveDetail(-1); }
       else if (e.key === "Tab") trapFocus(e, $("detail"));
@@ -972,10 +977,6 @@
       return;
     }
     const rv = d.revision;
-    const note = el("textarea");
-    note.placeholder = "Nota opcional (se guarda solo en tu BD local; nunca se envía ni se registra en el log)";
-    note.maxLength = 300;
-    note.setAttribute("aria-label", "Nota opcional de la corrección");
 
     // --- tema
     const t = el("div", "task");
@@ -991,10 +992,11 @@
       const b = el("button", "opt", TOPIC_LABEL(o));
       b.type = "button";
       b.setAttribute("aria-pressed", String(o === rv.tema.efectivo));
-      b.addEventListener("click", () => correct(d.id, "tema", o, note.value));
+      b.addEventListener("click", () => correct(d.id, "tema", o));
       opts.append(b);
     }
     t.append(opts);
+    if (rv.tema.etiqueta && rv.tema.etiqueta.nota) t.append(el("p", "label-note", `Nota de la corrección: ${rv.tema.etiqueta.nota}`));
     if (rv.tema.etiqueta) t.append(undoButton(rv.tema.etiqueta, d.id));
     box.append(t);
 
@@ -1009,12 +1011,85 @@
       const b = el("button", "opt", label);
       b.type = "button";
       b.setAttribute("aria-pressed", String(rv.inyeccion.efectivo === v && !!rv.inyeccion.etiqueta));
-      b.addEventListener("click", () => correct(d.id, "inyeccion", v, note.value));
+      b.addEventListener("click", () => correct(d.id, "inyeccion", v));
       io.append(b);
     }
     i.append(io);
+    if (rv.inyeccion.etiqueta && rv.inyeccion.etiqueta.nota) i.append(el("p", "label-note", `Nota de la corrección: ${rv.inyeccion.etiqueta.nota}`));
     if (rv.inyeccion.etiqueta) i.append(undoButton(rv.inyeccion.etiqueta, d.id));
-    box.append(i, note);
+    box.append(i);
+  }
+
+  // ---------------------------------------------------------------- Fase 5D.1 · nota del evento
+  // Una nota por evento, editable, independiente de las correcciones. Se guarda sola tras 1 s sin escribir,
+  // al salir del campo y antes de cerrar o cambiar de evento (notes.js). Nunca se registra en el log.
+  const noteCtl = { eventId: null, saver: null, state: null };
+  const NOTE_STATES = { guardado: "Guardado ✓", guardando: "Guardando…", error: "Error al guardar", sin_cambios: "" };
+
+  function flushNote() {
+    return noteCtl.saver ? noteCtl.saver.flush() : Promise.resolve(true);
+  }
+
+  function renderNote(d, simulated) {
+    const box = $("detail-note");
+    box.replaceChildren();
+    if (simulated || !d.revision) return;
+    const same = noteCtl.eventId === d.id && noteCtl.saver;
+    if (!same) {
+      const eventId = d.id;
+      noteCtl.eventId = eventId;
+      noteCtl.saver = window.CentinelaNotes.autosaver({
+        delay: 1000,
+        save: async (texto) => {
+          const r = await api(`/events/${eventId}/nota`, { method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nota: texto }) });
+          if (!r.ok) throw new Error(await errText(r));
+        },
+        onState: (st) => {
+          noteCtl.state = st;
+          const s = $("note-state");
+          if (s && noteCtl.eventId === eventId) {
+            s.className = `note-state ${st}`;
+            s.textContent = st === "sin_cambios" ? (noteCtl.saver && noteCtl.saver.value() ? NOTE_STATES.guardado : "") : NOTE_STATES[st];
+          }
+        },
+      });
+    }
+    const head = el("div", "note-h");
+    const lab = el("label", null, "Nota del evento");
+    lab.htmlFor = "note-input";
+    const state = el("span", "note-state");
+    state.id = "note-state";
+    state.setAttribute("role", "status");
+    state.setAttribute("aria-live", "polite");
+    head.append(lab, state);
+    const ta = el("textarea");
+    ta.id = "note-input";
+    ta.maxLength = 500;
+    ta.setAttribute("aria-describedby", "note-help");
+    // Si se re-dibuja el mismo evento (p. ej. tras una corrección) con cambios aún sin guardar, se conservan.
+    if (same && noteCtl.saver.dirty()) ta.value = noteCtl.saver.value();
+    else {
+      ta.value = (d.nota && d.nota.nota) || "";
+      noteCtl.saver.load(ta.value);
+    }
+    ta.addEventListener("input", () => {
+      noteCtl.saver.input(ta.value);
+      // Con cambios pendientes nunca se muestra «Guardado ✓»: se guardará en ≤ 1 s, al salir o al cerrar.
+      state.className = "note-state guardando";
+      state.textContent = NOTE_STATES.guardando;
+    });
+    ta.addEventListener("blur", () => noteCtl.saver.flush());
+    const help = el("p", "help", "Se guarda solo en tu BD local. No escribas datos sensibles: la nota no se enmascara.");
+    help.id = "note-help";
+    box.append(head, ta, help);
+    if (noteCtl.state && noteCtl.state !== "sin_cambios" && same) {
+      state.className = `note-state ${noteCtl.state}`;
+      state.textContent = NOTE_STATES[noteCtl.state];
+    } else if (ta.value) {
+      state.className = "note-state guardado";
+      state.textContent = NOTE_STATES.guardado;
+    }
   }
 
   function undoButton(label, eventId) {
@@ -1043,8 +1118,9 @@
     setTimeout(() => s.remove(), 3500);
   }
 
-  async function correct(eventId, tarea, valor, nota) {
-    const r = await post("/labels", { event_id: eventId, tarea, valor, nota: (nota || "").trim() || null });
+  async function correct(eventId, tarea, valor) {
+    await flushNote();
+    const r = await post("/labels", { event_id: eventId, tarea, valor });
     if (!r.ok) return toastMsg(`No se guardó: ${await errText(r)}`);
     const j = await r.json();
     await showDetail();

@@ -210,6 +210,7 @@ Respuesta:
 - `GET /ia/estado` · `POST /ia/nivel` · `POST /ia/local/{activar,confirmar,desactivar}` · `POST /ia/nube/{configurar,probar,borrar}` (§5.8). La API key nunca aparece en ninguna respuesta.
 
 **Fase 5D (aditivo; §5.9):** `POST /labels {event_id, tarea: tema|inyeccion, valor, nota?}` · `POST /labels/{id}/deshacer {incluir_propagadas}` · `GET /labels/{id}/similares?presentacion=` · `POST /labels/{id}/propagar {event_ids}` · `GET /learning/estado` · `POST /learning/{reentrenar,adoptar,descartar,volver}`. `GET /events/{id}` agrega `revision` (tema e inyección: predicción del modelo, valor efectivo, quién decidió, etiqueta vigente e historial). El contrato de `/analyze` no cambia.
+**Fase 5D.1:** `PUT /events/{id}/nota {nota}` (solo panel, token; máx. 500 caracteres; vacía = se borra) y `GET /events/{id}` agrega `nota: {nota, actualizado_en} | null`.
 
 **Fase 4B — modo degradado:** si un modelo no carga, el backend sigue funcionando: `category = "sin_clasificar"` (con `category_confidence = 0.0`), `injection_score = null` y PII solo con regex. Por eso `injection_score` admite `null`.
 
@@ -281,6 +282,8 @@ Umbrales finales (Fase 4B):
 
 **Tabla `labels` (Fase 5D, NUEVA; `prompts` no cambia):** `id`, `event_id` (→ prompts.id), `tarea` (`tema` | `inyeccion`), `valor` (categoría u «otro»; `si` | `no`), `origen` (`manual` | `propagado`), `similitud_origen`, `label_padre_id` (la manual de la que se propagó), `creado_en`, `deshecho` (0/1; deshacer no borra) y `nota` (opcional, solo local). Se crea con `CREATE TABLE IF NOT EXISTS` en `init_db()` (idempotente).
 
+**Tabla `event_notes` (Fase 5D.1, NUEVA):** `event_id` (PK → prompts.id), `nota` (≤ 500 caracteres), `actualizado_en`. Una nota libre por evento, editable e independiente de las correcciones; vaciarla borra la fila. Migración idempotente en `init_db()`.
+
 **Ubicación:** la ruta de la BD se lee de la variable de entorno `AUDITOR_DB_PATH` (default: `C:\auditor-data\auditor.db`). Nunca dentro del repo; la carpeta se crea si no existe.
 
 **Regla de oro:** el texto original **nunca** se escribe en disco ni en logs.
@@ -351,7 +354,8 @@ Verificado en `tests/test_agent.py` y `tests/test_installer_byok.py` (con un mod
 
 ### 5.9 Revisor humano y aprendizaje asistido (Fase 5D)
 
-**Corregir la clasificación.** En la etiqueta flotante del chat, el tema y el riesgo son botones con un mini‑menú: «Corregir tema» (las 6 categorías + «otro / no sé») y «¿No era inyección?» / «Sí era inyección»; un clic, sin salir del chat (`content.js` → `background.js` → `POST /labels` con el token). En el detalle del evento del panel están las mismas opciones, más una nota opcional. Siempre se muestra quién decidió: «modelo (conf. 0.72)», «corregido por ti» o «propagado y confirmado». Cada corrección tiene «Deshacer»; deshacer una manual que se propagó ofrece deshacer también sus propagadas.
+**Corregir la clasificación.** En la etiqueta flotante del chat, el tema y el riesgo son botones con un mini‑menú: «Corregir tema» (las 6 categorías + «otro / no sé») y «¿No era inyección?» / «Sí era inyección»; un clic, sin salir del chat (`content.js` → `background.js` → `POST /labels` con el token). En el detalle del evento del panel están las mismas opciones.
+**Nota del evento (5D.1):** un campo libre por evento, editable, que se guarda solo —1 s sin escribir, al salir del campo y antes de cerrar o cambiar de evento (Esc, ✕, ←/→)— con indicador «Guardando…» / «Guardado ✓» / «Error al guardar» (`backend/panel/notes.js`). Al reabrir el evento aparece cargada; si hay correcciones, cada una muestra además su propia nota. Texto de ayuda: «Se guarda solo en tu BD local. No escribas datos sensibles: la nota no se enmascara». La nota es de la persona (no texto del prompt), así que se ve también en modo presentación. Nunca se registra en el log. Las flechas dentro del campo mueven el cursor y no cambian de evento. Siempre se muestra quién decidió: «modelo (conf. 0.72)», «corregido por ti» o «propagado y confirmado». Cada corrección tiene «Deshacer»; deshacer una manual que se propagó ofrece deshacer también sus propagadas.
 
 **Almacenamiento (tabla NUEVA `labels`, §5.5).** El valor **efectivo** que usan el panel, las estadísticas (`analytics.events()`) y el agente es: última etiqueta no deshecha > predicción del modelo. Tema corregido → esa categoría (confianza 1.0); inyección «sí» → riesgo alto; «no» → el riesgo que justifican solo los hallazgos. Las predicciones originales de `prompts` nunca se borran ni se modifican por una corrección.
 

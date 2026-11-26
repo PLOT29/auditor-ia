@@ -524,6 +524,11 @@ def event_detail(path: Path | str, event_id: int, include_text: bool = False,
             f"SELECT id, ts, platform, risk, category, category_conf, injection_score, findings_json, blocked, "
             f"user_decision, latency_ms, length, {src}{text_col} FROM prompts WHERE id = ?", (event_id,)).fetchone()
         history = []
+        note = None
+        if row is not None and conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='event_notes'").fetchone() is not None:
+            n = conn.execute("SELECT nota, actualizado_en FROM event_notes WHERE event_id = ?", (event_id,)).fetchone()
+            note = dict(n) if n else None
         if row is not None and conn.execute(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='labels'").fetchone() is not None:
             history = [dict(h) for h in conn.execute(
@@ -573,5 +578,7 @@ def event_detail(path: Path | str, event_id: int, include_text: bool = False,
                           "etiqueta": i_lab},
             "historial": history,
         },
+        # Fase 5D.1 · nota libre del evento (la escribió la persona en el panel; no se enmascara).
+        "nota": note,
     })
     return base

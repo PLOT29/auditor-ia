@@ -35,6 +35,7 @@ TOPIC_VALUES = TOPICS + ("otro",)
 INJECTION_VALUES = ("si", "no")
 VALUES = {"tema": TOPIC_VALUES, "inyeccion": INJECTION_VALUES}
 MAX_NOTE = 300
+MAX_EVENT_NOTE = 500
 MAX_CANDIDATES = 25
 
 DATA_ML = config.REPO / "ml" / "data"
@@ -138,6 +139,19 @@ def undo(label_id: int, include_propagated: bool = False) -> dict:
     n = db.undo_labels(ids)
     log.info("deshacer etiqueta id=%s (+%d propagadas)", label_id, n - 1 if n else 0)
     return {"deshechas": n, "propagadas_restantes": 0 if include_propagated else len(children)}
+
+
+def save_event_note(event_id: int, nota: str | None) -> dict:
+    """Fase 5D.1 · nota libre del evento (una por evento, editable; vacía = se borra). Nunca se loguea."""
+    if not db.event_exists(event_id):
+        raise FeedbackError("el evento no existe")
+    text = (nota or "").strip()
+    if len(text) > MAX_EVENT_NOTE:
+        raise FeedbackError(f"la nota no puede pasar de {MAX_EVENT_NOTE} caracteres")
+    ts = now()
+    db.set_event_note(event_id, text, ts)
+    log.info("nota de evento %s evento=%s", "guardada" if text else "borrada", event_id)  # nunca el contenido
+    return {"event_id": event_id, "nota": text or None, "actualizado_en": ts if text else None}
 
 
 # ------------------------------------------------------------------ embeddings con caché

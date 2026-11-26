@@ -57,6 +57,15 @@ CREATE INDEX IF NOT EXISTS idx_labels_event ON labels(event_id, tarea);
 CREATE INDEX IF NOT EXISTS idx_labels_padre ON labels(label_padre_id);
 """
 
+# Fase 5D.1 · tabla NUEVA: una nota libre por evento, editable, independiente de las correcciones.
+EVENT_NOTES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS event_notes (
+    event_id       INTEGER PRIMARY KEY REFERENCES prompts(id),
+    nota           TEXT    NOT NULL,
+    actualizado_en TEXT    NOT NULL
+);
+"""
+
 SOURCES = ("extension", "import")
 
 # Migraciones idempotentes: (columna, DDL). Se aplican solo si la columna no existe.
@@ -125,6 +134,7 @@ def init_db() -> None:
                 conn.execute(ddl)  # filas existentes quedan con el DEFAULT ('extension')
         conn.execute("CREATE INDEX IF NOT EXISTS idx_prompts_source ON prompts(source)")
         conn.executescript(LABELS_SCHEMA)  # Fase 5D: idempotente (IF NOT EXISTS)
+        conn.executescript(EVENT_NOTES_SCHEMA)  # Fase 5D.1: idempotente
 
 
 # ---------------------------------------------------------------- etiquetas (Fase 5D)
@@ -182,6 +192,24 @@ def fetch_texts(ids: list[int] | None = None) -> dict[int, str]:
             rows = conn.execute(f"SELECT id, text_masked FROM prompts WHERE id IN ({','.join('?' * len(ids))})",
                                 ids).fetchall()
     return {int(r["id"]): r["text_masked"] or "" for r in rows}
+
+
+def get_event_note(event_id: int) -> dict | None:
+    with connect() as conn:
+        r = conn.execute("SELECT event_id, nota, actualizado_en FROM event_notes WHERE event_id = ?",
+                         (event_id,)).fetchone()
+    return dict(r) if r else None
+
+
+def set_event_note(event_id: int, nota: str, actualizado_en: str) -> None:
+    """Una nota por evento: inserta o reemplaza; una nota vacía la borra."""
+    with connect() as conn:
+        if nota:
+            conn.execute("INSERT INTO event_notes (event_id, nota, actualizado_en) VALUES (?, ?, ?) "
+                         "ON CONFLICT(event_id) DO UPDATE SET nota = excluded.nota, actualizado_en = excluded.actualizado_en",
+                         (event_id, nota, actualizado_en))
+        else:
+            conn.execute("DELETE FROM event_notes WHERE event_id = ?", (event_id,))
 
 
 def fetch_shas() -> dict[int, str]:

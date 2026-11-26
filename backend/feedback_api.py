@@ -7,6 +7,7 @@ POST /labels                     corregir tema o inyección de un evento (panel 
 POST /labels/{id}/deshacer       deshacer (y, si se pide, sus propagadas)
 GET  /labels/{id}/similares      vecinos propuestos (solo panel; texto enmascarado solo sin modo presentación)
 POST /labels/{id}/propagar       confirmar vecinos (solo panel)
+PUT  /events/{id}/nota           nota libre del evento, una por evento (solo panel; 5D.1)
 GET  /learning/estado            cifras, versiones, trabajo en curso
 POST /learning/reentrenar | adoptar | descartar | volver   (solo panel)
 """
@@ -29,6 +30,10 @@ class Correccion(BaseModel):
     tarea: Literal["tema", "inyeccion"]
     valor: str = Field(min_length=1, max_length=20)
     nota: str | None = Field(default=None, max_length=feedback.MAX_NOTE)
+
+
+class Nota(BaseModel):
+    nota: str | None = Field(default=None, max_length=feedback.MAX_EVENT_NOTE)
 
 
 class Deshacer(BaseModel):
@@ -64,6 +69,16 @@ def corregir(c: Correccion) -> dict:
     except feedback.FeedbackError as e:
         _err(e, 404 if "no existe" in str(e) else 422)
     return {"etiqueta": label, "decidido_por": feedback.decided_by(label, None)}
+
+
+@router.put("/events/{event_id}/nota")
+def guardar_nota(event_id: int, n: Nota, request: Request) -> dict:
+    """Fase 5D.1 · nota libre del evento desde el panel (token + origen del panel). Nunca se loguea."""
+    _panel_only(request)
+    try:
+        return feedback.save_event_note(event_id, n.nota)
+    except feedback.FeedbackError as e:
+        _err(e, 404 if "no existe" in str(e) else 422)
 
 
 @router.post("/labels/{label_id}/deshacer")
